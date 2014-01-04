@@ -162,6 +162,7 @@ class JSSImporter(Processor):
             crit_val = [e.text for e in xmldata.findall('criteria/criterion/value')]
             item_nameplusvals = zip(crit_name, crit_val)
             self.output(item_nameplusvals)
+            found_pkg_ver = None
             for tup in item_nameplusvals:
                 if "Application Version" == tup[0]:
                     found_pkg_ver = tup[1]
