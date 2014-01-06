@@ -6,7 +6,7 @@ As announced [here](http://www.318.com/2014/01/introducing-jssimporter-for-autop
 Installation
 =================
 
-INSTALL THE AUTOPKG TOOLS (and recipes) FIRST! (Sorry to yell.) Then use the releases tab, to the right above, to download a package that will install the latest release version for you.
+INSTALL THE MOST CURRENT AUTOPKG TOOLS (and recipes) FIRST! (Sorry to yell.) Then use the releases tab, to the right above, to download a package that will install the latest release version for you.
 
 Comments/Questions/Ideas
 =================
