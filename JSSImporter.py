@@ -128,7 +128,7 @@ class JSSImporter(Processor):
         try:
             xmldata = ElementTree.fromstring(jss_results)
         except:
-            raise ProcessorError("Error parsing XML from checkItem results.")
+            raise ProcessorError("Successfully communicated, but error'd when parsing XML return while checking for %s" % item_to_check)
         if apiUrl == "computergroup":
             item_ids = [e.text for e in xmldata.findall('computer_group/id')]
             item_names = [e.text for e in xmldata.findall('computer_group/name')]
@@ -157,7 +157,7 @@ class JSSImporter(Processor):
             try:
                 xmldata = ElementTree.fromstring(jss_results)
             except:
-                raise ProcessorError("Error parsing XML from checkItem results.")
+                raise ProcessorError("Error parsing the specific groups XML from checkSpecificItem results.")
             crit_name = [e.text for e in xmldata.findall('criteria/criterion/name')]
             crit_val = [e.text for e in xmldata.findall('criteria/criterion/value')]
             item_nameplusvals = zip(crit_name, crit_val)
@@ -176,7 +176,7 @@ class JSSImporter(Processor):
             try:
                 xmldata = ElementTree.fromstring(jss_results)
             except:
-                raise ProcessorError("Error parsing XML from checkItem results.")
+                raise ProcessorError("Error parsing the XML for a specific policy from checkSpecificItem results.")
             found_list = []
             item_ids = [e.text for e in xmldata.findall('scope/computer_groups/computer_group/id')]
             item_names = [e.text for e in xmldata.findall('scope/computer_groups/computer_group/name')]
