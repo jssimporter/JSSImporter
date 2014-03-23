@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2013 Allister Banks
+# Copyright 2014 Allister Banks
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -266,16 +266,19 @@ class JSSImporter(Processor):
         #
         if self.env.get("category"):
             category_name = self.env.get("category")
-            item_to_check = category_name
-            apiUrl = "category"
-            proceed_list = self.checkItem(repoUrl, apiUrl, item_to_check, base64string)
-            template_string = """<?xml version="1.0" encoding="UTF-8"?><category><name>%CAT_NAME%</name></category>"""
-            if "proceed" not in proceed_list:
-                replace_dict = {"%CAT_NAME%" : category_name}
-                cat_id = self.createObject(repoUrl, apiUrl, replace_dict, template_string, base64string)
-                self.env["jss_category_added"] = True
+            if not category_name == "*LEAVE_OUT*":
+                item_to_check = category_name
+                apiUrl = "category"
+                proceed_list = self.checkItem(repoUrl, apiUrl, item_to_check, base64string)
+                template_string = """<?xml version="1.0" encoding="UTF-8"?><category><name>%CAT_NAME%</name></category>"""
+                if "proceed" not in proceed_list:
+                    replace_dict = {"%CAT_NAME%" : category_name}
+                    cat_id = self.createObject(repoUrl, apiUrl, replace_dict, template_string, base64string)
+                    self.env["jss_category_added"] = True
+                else:
+                    self.output("Category already exists according to JSS, moving on")
             else:
-                self.output("Category already exists according to JSS, moving on")
+                self.output("Category creation for the pkg not desired, moving on")
         #
         # check for package by pkg_name for both API POST
         #   and if exists at repo_path
@@ -311,59 +314,68 @@ class JSSImporter(Processor):
         #
         if self.env.get("smart_group"):
             smart_group_name = self.env.get("smart_group")
-            item_to_check = smart_group_name
-            apiUrl = "computergroup"
-            proceed_list = self.checkItem(repoUrl, apiUrl, item_to_check, base64string)
-            template_string = """<?xml version="1.0" encoding="UTF-8"?><computer_group><name>LessThanMostRecent_%PROD_NAME%</name><is_smart>true</is_smart><criteria><size>2</size><criterion><name>Application Title</name><priority>0</priority><and_or>and</and_or><search_type>is</search_type><value>%PROD_NAME%</value></criterion><criterion><name>Application Version</name><priority>1</priority><and_or>and</and_or><search_type>is not</search_type><value>%version%</value></criterion></criteria><computers><size>0</size></computers></computer_group>"""
-            replace_dict = {"%PROD_NAME%" : prod_name, "%version%" : version}
-            if "proceed" not in proceed_list:
-                grp_id = self.createObject(repoUrl, apiUrl, replace_dict, template_string, base64string)
-                self.env["jss_smartgroup_added"] = True
+            if not smart_group_name == "*LEAVE_OUT*":
+                item_to_check = smart_group_name
+                apiUrl = "computergroup"
+                proceed_list = self.checkItem(repoUrl, apiUrl, item_to_check, base64string)
+                template_string = """<?xml version="1.0" encoding="UTF-8"?><computer_group><name>LessThanMostRecent_%PROD_NAME%</name><is_smart>true</is_smart><criteria><size>2</size><criterion><name>Application Title</name><priority>0</priority><and_or>and</and_or><search_type>is</search_type><value>%PROD_NAME%.app</value></criterion><criterion><name>Application Version</name><priority>1</priority><and_or>and</and_or><search_type>is not</search_type><value>%version%</value></criterion></criteria><computers><size>0</size></computers></computer_group>"""
+                replace_dict = {"%PROD_NAME%" : prod_name, "%version%" : version}
+                if "proceed" not in proceed_list:
+                    grp_id = self.createObject(repoUrl, apiUrl, replace_dict, template_string, base64string)
+                    self.env["jss_smartgroup_added"] = True
+                else:
+                    grp_id = str(proceed_list[1])
+                    pkg_ver = self.checkSpecificItem(repoUrl, apiUrl, grp_id, base64string)
+                    if pkg_ver != version:
+                        self.putUpdate(repoUrl, apiUrl, grp_id, replace_dict, template_string, base64string)
+                        self.env["jss_smartgroup_updated"] = True
             else:
-                grp_id = str(proceed_list[1])
-                pkg_ver = self.checkSpecificItem(repoUrl, apiUrl, grp_id, base64string)
-                if pkg_ver != version:
-                    self.putUpdate(repoUrl, apiUrl, grp_id, replace_dict, template_string, base64string)
-                    self.env["jss_smartgroup_updated"] = True
+                self.output("Smart group creation not desired, moving on")
         #
         # check for arbitraryGroupID if var set
         #
         if self.env.get("arb_group_name"):
             static_group_name = self.env.get("arb_group_name")
-            item_to_check = static_group_name
-            apiUrl = "computergroup"
-            proceed_list = self.checkItem(repoUrl, apiUrl, item_to_check, base64string)
-            if "proceed" not in proceed_list:
-                raise ProcessorError("Static group not present in JSS.")
+            if not static_group_name == "*LEAVE_OUT*":
+                item_to_check = static_group_name
+                apiUrl = "computergroup"
+                proceed_list = self.checkItem(repoUrl, apiUrl, item_to_check, base64string)
+                if "proceed" not in proceed_list:
+                    raise ProcessorError("Static group not present in JSS.")
+                else:
+                    grp_id = str(proceed_list[1])
             else:
-                grp_id = str(proceed_list[1])
+                self.output("Static group check/creation not desired, moving on")
         #
         # check for policy if var set
         #
         if self.env.get("selfserve_policy"):
             item_to_check = self.env.get("selfserve_policy")
-            apiUrl = "policy"
-            proceed_list = self.checkItem(repoUrl, apiUrl, item_to_check, base64string)
-            template_string = """<?xml version="1.0" encoding="UTF-8"?><policy><general><name>SelfServeLatest_%PROD_NAME%</name><enabled>true</enabled><frequency>Once per computer</frequency></general><scope><computer_groups><computer_group><id>%grp_id%</id></computer_group></computer_groups></scope><self_service><use_for_self_service>true</use_for_self_service></self_service><package_configuration><packages><size>1</size><package><id>%pkg_id%</id><action>Install</action></package></packages></package_configuration><maintenance><recon>true</recon></maintenance></policy>"""
-            self.output("Current grp_id is %s, pkg_id is %s" % (grp_id, pkg_id))
-            replace_dict = {"%PROD_NAME%" : prod_name, "%grp_id%" : grp_id, "%pkg_id%" : pkg_id}
-            if "proceed" not in proceed_list:
-                self.createObject(repoUrl, apiUrl, replace_dict, template_string, base64string)
-                self.env["jss_policy_added"] = True
-            else:
-                policy_id = str(proceed_list[1])
-                if self.env.get("smart_group"):
-                    group_name = smart_group_name
+            if not item_to_check == "*LEAVE_OUT*":
+                apiUrl = "policy"
+                proceed_list = self.checkItem(repoUrl, apiUrl, item_to_check, base64string)
+                template_string = """<?xml version="1.0" encoding="UTF-8"?><policy><general><name>SelfServeLatest_%PROD_NAME%</name><enabled>true</enabled><frequency>Once per computer</frequency></general><scope><computer_groups><computer_group><id>%grp_id%</id></computer_group></computer_groups></scope><self_service><use_for_self_service>true</use_for_self_service></self_service><package_configuration><packages><size>1</size><package><id>%pkg_id%</id><action>Install</action></package></packages></package_configuration><maintenance><recon>true</recon></maintenance></policy>"""
+                self.output("Current grp_id is %s, pkg_id is %s" % (grp_id, pkg_id))
+                replace_dict = {"%PROD_NAME%" : prod_name, "%grp_id%" : grp_id, "%pkg_id%" : pkg_id}
+                if "proceed" not in proceed_list:
+                    self.createObject(repoUrl, apiUrl, replace_dict, template_string, base64string)
+                    self.env["jss_policy_added"] = True
                 else:
-                    group_name = static_group_name
-                found_list = self.checkSpecificItem(repoUrl, apiUrl, policy_id, base64string, [group_name, pkg_name])
-                if len(found_list) != 2:
-                    self.putUpdate(repoUrl, apiUrl, policy_id, replace_dict, template_string, base64string)
-                    self.env["jss_policy_updated"] = True
-                elif grp_id != found_list[0] or pkg_id != found_list[1]:
-                    self.output("current pkg_id is %s, found is %s current group_id is %s, found is %s" % (pkg_id, found_list[1], grp_id, found_list[0]))
-                    self.putUpdate(repoUrl, apiUrl, policy_id, replace_dict, template_string, base64string)
-                    self.env["jss_policy_updated"] = True
+                    policy_id = str(proceed_list[1])
+                    if self.env.get("smart_group"):
+                        group_name = smart_group_name
+                    else:
+                        group_name = static_group_name
+                    found_list = self.checkSpecificItem(repoUrl, apiUrl, policy_id, base64string, [group_name, pkg_name])
+                    if len(found_list) != 2:
+                        self.putUpdate(repoUrl, apiUrl, policy_id, replace_dict, template_string, base64string)
+                        self.env["jss_policy_updated"] = True
+                    elif grp_id != found_list[0] or pkg_id != found_list[1]:
+                        self.output("current pkg_id is %s, found is %s current group_id is %s, found is %s" % (pkg_id, found_list[1], grp_id, found_list[0]))
+                        self.putUpdate(repoUrl, apiUrl, policy_id, replace_dict, template_string, base64string)
+                        self.env["jss_policy_updated"] = True
+            else:
+                self.output("Policy creation not desired, moving on")
 
 if __name__ == "__main__":
     processor = JSSImporter()
