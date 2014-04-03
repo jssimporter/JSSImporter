@@ -302,7 +302,10 @@ class JSSImporter(Processor):
             self.output("Pkg already exists at %s, moving on" % dest_item)
         else:
             try:
-                shutil.copyfile(source_item, dest_item)
+                if os.path.isdir(source_item):
+                    shutil.copytree(source_item, dest_item)
+                else:
+                    shutil.copyfile(source_item, dest_item)
                 self.output("Copied %s to %s" % (source_item, dest_item))
                 # set output variables
                 self.env["jss_repo_changed"] = True
