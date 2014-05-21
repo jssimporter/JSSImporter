@@ -104,8 +104,10 @@ class JSSImporter(Processor):
         # build our request for the entire list of items
         if apiUrl[-1] == "y":
             submitRequest = urllib2.Request(repoUrl + "/JSSResource/" + apiUrl[:-1] + "ies")
+            self.output('Trying to reach JSS and fetch all %s at URL %s' % (apiUrl[:-1] + "ies", repoUrl))
         else:
             submitRequest = urllib2.Request(repoUrl + "/JSSResource/" + apiUrl + "s")
+            self.output('Trying to reach JSS and fetch all %s at URL %s' % (apiUrl + "s", repoUrl))
         submitRequest.add_header("Authorization", "Basic %s" % base64string)
         # try reaching the server and performing the GET
         try:
