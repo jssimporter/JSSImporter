@@ -180,12 +180,12 @@ class JSSImporter(Processor):
                         group.update()
                         self.env["jss_smartgroup_updated"] = True
                 except jss.JSSGetError:
-                    group_template = jss.ComputerGroupTemplate(str(smart_group_name), True)
-                    criterion1 = jss.SearchCriterion("Application Title", 0, 'and', 'is', prod_name)
-                    criterion2 = jss.SearchCriterion("Application Version", 1, 'and', 'is not', version)
+                    group_template = jss.JSSComputerGroupTemplate(str(smart_group_name), True)
+                    criterion1 = jss.SearchCriteria("Application Title", 0, 'and', 'is', prod_name)
+                    criterion2 = jss.SearchCriteria("Application Version", 1, 'and', 'is not', version)
                     group_template.add_criterion(criterion1)
                     group_template.add_criterion(criterion2)
-                    group = jss.ComputerGroup(group_template)
+                    group = j.ComputerGroup(group_template)
                     self.env["jss_smartgroup_added"] = True
             else:
                 self.output("Smart group creation not desired, moving on")
