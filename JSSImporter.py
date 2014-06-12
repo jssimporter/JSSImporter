@@ -16,9 +16,9 @@
 
 
 import os
-import urllib2
+#import urllib2
 import shutil
-from xml.etree import ElementTree
+#from xml.etree import ElementTree
 
 import jss
 from autopkglib import Processor, ProcessorError
