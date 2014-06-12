@@ -55,7 +55,7 @@ class JSSImporter(Processor):
         },
         "category": {
             "required": False,
-            "description": ("Category to create/associate imported app with"),
+            "description": ("Category to create/associate imported app package with."),
         },
         "smart_group": {
             "required": False,
@@ -114,6 +114,9 @@ class JSSImporter(Processor):
             else:
                 self.output("Category creation for the pkg not desired, moving on")
                 category = None
+        else:
+            category = None
+
         return category
 
     def handle_package(self):
@@ -147,9 +150,7 @@ class JSSImporter(Processor):
         return package
 
     def handle_group(self):
-        #
         # check for smartGroup if var set
-        #
         if self.env.get("smart_group"):
             smart_group_name = self.env.get("smart_group")
             if not smart_group_name == "*LEAVE_OUT*":
@@ -170,9 +171,7 @@ class JSSImporter(Processor):
                     self.env["jss_smartgroup_added"] = True
             else:
                 self.output("Smart group creation not desired, moving on")
-        #
         # check for arbitraryGroupID if var set
-        #
         if self.env.get("arb_group_name"):
             static_group_name = self.env.get("arb_group_name")
             if not static_group_name == "*LEAVE_OUT*":
@@ -230,11 +229,8 @@ class JSSImporter(Processor):
         self.env["jss_policy_updated"] = False
 
         self.category = self.handle_category()
-
         self.package = self.handle_package()
-
         self.group = self.handle_group()
-
         self.handle_policy()
 
 if __name__ == "__main__":
