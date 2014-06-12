@@ -413,7 +413,7 @@ class JSSObjectFactory(object):
             else:
                 raise JSSMethodNotAllowedError(obj_class.__class__.__name__)
         # Retrieve individual objects
-        elif type(data) in [str, int]:
+        elif type(data) in [str, int, unicode]:
             if obj_class.can_get:
                 url = obj_class.get_url(data)
                 xmldata = self.jss.get(url)
@@ -460,14 +460,27 @@ class JSSObject(ElementTree.ElementTree):
 
         """
         self.jss = jss
+        self.get_editor()
         if not isinstance(data, ElementTree.Element):
             raise TypeError("JSSObjects data argument must be of type "
                             "xml.etree.ElemenTree.Element")
         super(JSSObject, self).__init__(element=data)
 
+    def get_editor(self):
+        """Set up a DataEditor.
+
+        Intended to be overriden by classes which need it.
+        """
+        self.editor = DataEditor(self)
+
     @classmethod
     def get_url(cls, data):
         """Return the URL for a get request based on data type."""
+        # Test for a string representation of an integer
+        try:
+            data = int(data)
+        except (ValueError, TypeError):
+            pass
         if isinstance(data, int):
             return '%s%s%s' % (cls._url, cls.id_url, data)
         elif data is None:
@@ -496,7 +509,7 @@ class JSSObject(ElementTree.ElementTree):
         """Delete this object from the JSS."""
         if not self.can_delete:
             raise JSSMethodNotAllowedError(self.__class__.__name__)
-        return self.jss.delete(self.get_object_url())
+        self.jss.delete(self.get_object_url())
 
     def update(self):
         """Update this object on the JSS.
@@ -508,7 +521,8 @@ class JSSObject(ElementTree.ElementTree):
             raise JSSMethodNotAllowedError(self.__class__.__name__)
 
         url = self.get_object_url()
-        return self.jss.put(url, self.getroot())
+        self.jss.put(url, self.getroot())
+        self._root = self.jss.get(url)
 
     def _indent(self, elem, level=0, more_sibs=False):
         """Indent an xml element object to prepare for pretty printing.
@@ -563,12 +577,32 @@ class JSSObject(ElementTree.ElementTree):
         """Return object ID or None."""
         # Most objects have ID nested in general. Groups don't.
         result = self.findtext('id') or self.findtext('general/id')
-        if result:
-            result = int(result)
+        # After much consideration, I will treat id's as strings.
+        #   We can't assign ID's, so there's no need to perform arithmetic on
+        #   them.
+        #   Having to convert to str all over the place is gross.
+        #   str equivalency still works.
         return result
 
 
-class JSSDeviceObject(JSSObject):
+class JSSContainerObject(JSSObject):
+    """Subclass for object types which can contain lists.
+
+    e.g. Computers, Policies.
+
+    """
+    list_type = 'JSSContainerObject'
+
+    def as_list_data(self):
+        element = ElementTree.Element(self.list_type)
+        id_ = ElementTree.SubElement(element, "id")
+        id_.text = self.id
+        name = ElementTree.SubElement(element, "name")
+        name.text = self.name
+        return element
+
+
+class JSSDeviceObject(JSSContainerObject):
     """Provides convenient accessors for properties of devices.
 
     This is helpful since Computers and MobileDevices allow us to query
@@ -601,7 +635,7 @@ class JSSFlatObject(JSSObject):
         return self.get_url(None)
 
 
-class Account(JSSObject):
+class Account(JSSContainerObject):
     _url = '/accounts'
     container = 'users'
     id_url = '/userid/'
@@ -609,7 +643,7 @@ class Account(JSSObject):
                     'name': '/username/'}
 
 
-class AccountGroup(JSSObject):
+class AccountGroup(JSSContainerObject):
     """Account groups are groups of users on the JSS. Within the API
     hierarchy they are actually part of accounts, but I seperated them.
 
@@ -628,23 +662,23 @@ class ActivationCode(JSSFlatObject):
     can_list = False
 
 
-class AdvancedComputerSearch(JSSObject):
+class AdvancedComputerSearch(JSSContainerObject):
     _url = '/advancedcomputersearches'
 
 
-class AdvancedMobileDeviceSearch(JSSObject):
+class AdvancedMobileDeviceSearch(JSSContainerObject):
     _url = '/advancedmobiledevicesearches'
 
 
-class Building(JSSObject):
+class Building(JSSContainerObject):
     _url = '/buildings'
 
 
-class Category(JSSObject):
+class Category(JSSContainerObject):
     _url = '/categories'
 
 
-class Class(JSSObject):
+class Class(JSSContainerObject):
     _url = '/classes'
 
 
@@ -653,6 +687,7 @@ class Computer(JSSDeviceObject):
     multiple properties.
 
     """
+    list_type = 'computer'
     _url = '/computers'
     search_types = {'name': '/name/', 'serial_number': '/serialnumber/',
                     'udid': '/udid/', 'macaddress': '/macadress/',
@@ -675,17 +710,17 @@ class ComputerCheckIn(JSSFlatObject):
     can_list = False
     can_post = False
 
-class ComputerCommand(JSSObject):
+class ComputerCommand(JSSContainerObject):
     _url = '/computercommands'
     can_delete = False
     can_put = False
 
 
-class ComputerExtensionAttribute(JSSObject):
+class ComputerExtensionAttribute(JSSContainerObject):
     _url = '/computerextensionattributes'
 
 
-class ComputerGroup(JSSObject):
+class ComputerGroup(JSSContainerObject):
     _url = '/computergroups'
 
 
@@ -696,40 +731,40 @@ class ComputerInventoryCollection(JSSFlatObject):
     can_delete = False
 
 
-class ComputerInvitation(JSSObject):
+class ComputerInvitation(JSSContainerObject):
     _url = '/computerinvitations'
     can_put = False
     search_types = {'name': '/name/', 'invitation': '/invitation/'}
 
 
-class ComputerReport(JSSObject):
+class ComputerReport(JSSContainerObject):
     _url = '/computerreports'
     can_put = False
     can_post = False
     can_delete = False
 
 
-class Department(JSSObject):
+class Department(JSSContainerObject):
     _url = '/departments'
 
 
-class DirectoryBinding(JSSObject):
+class DirectoryBinding(JSSContainerObject):
     _url = '/directorybindings'
 
 
-class DiskEncryptionConfiguration(JSSObject):
+class DiskEncryptionConfiguration(JSSContainerObject):
     _url = '/diskencryptionconfigurations'
 
 
-class DistributionPoint(JSSObject):
+class DistributionPoint(JSSContainerObject):
     _url = '/distributionpoints'
 
 
-class DockItem(JSSObject):
+class DockItem(JSSContainerObject):
     _url = '/dockitems'
 
 
-class EBook(JSSObject):
+class EBook(JSSContainerObject):
     _url = '/ebooks'
 
 
@@ -759,15 +794,15 @@ class JSSUser(JSSFlatObject):
     search_types = {}
 
 
-class LDAPServer(JSSObject):
+class LDAPServer(JSSContainerObject):
     _url = '/ldapservers'
 
 
-class LicensedSoftware(JSSObject):
+class LicensedSoftware(JSSContainerObject):
     _url = '/licensedsoftware'
 
 
-class ManagedPreferenceProfile(JSSObject):
+class ManagedPreferenceProfile(JSSContainerObject):
     _url = '/managedpreferenceprofiles'
 
 
@@ -791,11 +826,11 @@ class MobileDevice(JSSDeviceObject):
                 self.findtext('general/mac_address')
 
 
-class MobileDeviceApplication(JSSObject):
+class MobileDeviceApplication(JSSContainerObject):
     _url = '/mobiledeviceapplications'
 
 
-class MobileDeviceCommand(JSSObject):
+class MobileDeviceCommand(JSSContainerObject):
     _url = '/mobiledevicecommands'
     can_put = False
     can_delete = False
@@ -805,92 +840,92 @@ class MobileDeviceCommand(JSSObject):
     can_post = False
 
 
-class MobileDeviceConfigurationProfile(JSSObject):
+class MobileDeviceConfigurationProfile(JSSContainerObject):
     _url = '/mobiledeviceconfigurationprofiles'
 
 
-class MobileDeviceEnrollmentProfile(JSSObject):
+class MobileDeviceEnrollmentProfile(JSSContainerObject):
     _url = '/mobiledeviceenrollmentprofiles'
     search_types = {'name': '/name/', 'invitation': '/invitation/'}
 
 
-class MobileDeviceExtensionAttribute(JSSObject):
+class MobileDeviceExtensionAttribute(JSSContainerObject):
     _url = '/mobiledeviceextensionattributes'
 
 
-class MobileDeviceInvitation(JSSObject):
+class MobileDeviceInvitation(JSSContainerObject):
     _url = '/mobiledeviceinvitations'
     can_put = False
     search_types = {'invitation': '/invitation/'}
 
 
-class MobileDeviceGroup(JSSObject):
+class MobileDeviceGroup(JSSContainerObject):
     _url = '/mobiledevicegroups'
 
 
-class MobileDeviceProvisioningProfile(JSSObject):
+class MobileDeviceProvisioningProfile(JSSContainerObject):
     _url = '/mobiledeviceprovisioningprofiles'
     search_types = {'name': '/name/', 'uuid': '/uuid/'}
 
 
-class NetbootServer(JSSObject):
+class NetbootServer(JSSContainerObject):
     _url = '/netbootservers'
 
 
-class NetworkSegment(JSSObject):
+class NetworkSegment(JSSContainerObject):
     _url = '/networksegments'
 
 
-class OSXConfigurationProfile(JSSObject):
+class OSXConfigurationProfile(JSSContainerObject):
     _url = '/osxconfigurationprofiles'
 
 
-class Package(JSSObject):
+class Package(JSSContainerObject):
     _url = '/packages'
 
 
-class Peripheral(JSSObject):
+class Peripheral(JSSContainerObject):
     _url = '/peripherals'
     search_types = {}
 
 
-class PeripheralType(JSSObject):
+class PeripheralType(JSSContainerObject):
     _url = '/peripheraltypes'
     search_types = {}
 
 
-class Policy(JSSObject):
+class Policy(JSSContainerObject):
     _url = '/policies'
 
 
-class Printer(JSSObject):
+class Printer(JSSContainerObject):
     _url = '/printers'
 
 
-class RestrictedSoftware(JSSObject):
+class RestrictedSoftware(JSSContainerObject):
     _url = '/restrictedsoftware'
 
 
-class RemovableMACAddress(JSSObject):
+class RemovableMACAddress(JSSContainerObject):
     _url = '/removablemacaddresses'
 
 
-class SavedSearch(JSSObject):
+class SavedSearch(JSSContainerObject):
     _url = '/savedsearches'
     can_put = False
     can_post = False
     can_delete = False
 
 
-class Script(JSSObject):
+class Script(JSSContainerObject):
     _url = '/scripts'
 
 
-class Site(JSSObject):
+class Site(JSSContainerObject):
     _url = '/sites'
 
 
-class SoftwareUpdateServer(JSSObject):
+class SoftwareUpdateServer(JSSContainerObject):
     _url = '/softwareupdateservers'
 
 
@@ -902,11 +937,92 @@ class SMTPServer(JSSFlatObject):
     search_types = {}
 
 
+class DataEditor(object):
+    """DataEditor provides convenient wrappers for manipulating XML data in
+    JSSObjects and JSSObjectTemplates and their subclasses.
+
+    DataEditors can be subclassed to provide wrappers for these methods to
+    further enable context-class-specific behavior.
+
+    """
+    def __init__(self, context):
+        self.context = context
+
+    def search(self, tag):
+        """Return elements with tag using getiterator."""
+        return self.context.getiterator(tag)
+
+    def add_object_to_path(self, obj, location):
+        """Add an object of type JSSContainerObject to DataEditor's context
+        object at "path".
+
+        location can be an Element or a string path argument to find()
+
+        """
+        if isinstance(location, ElementTree.Element):
+            location.append(obj.as_list_data())
+        else:
+            parent = self.context.find(location)
+            if parent is not None:
+                parent.append(obj.as_list_data())
+            else:
+                raise ValueError("Invalid path!")
+
+    def remove_object_from_list(self, object, list_element):
+        """Remove an object from a list element.
+
+        object:     Accepts JSSObjects, id's, and names
+        list:   Accepts an element or a string path to that element
+
+        """
+        if not isinstance(list_element, ElementTree.Element):
+            element = self.context.find(list_element)
+            if element is None:
+                raise ValueError("Invalid path!")
+        else:
+            element = list_element
+
+        if isinstance(object, JSSObject):
+            results = [item for item in element.getchildren() if item.findtext("id") == object.id]
+        elif type(object) in [int, str, unicode]:
+            results = [item for item in element.getchildren() if item.findtext("id") == str(object) or item.findtext("name") == object]
+
+        if len(results) == 1 :
+            element.remove(results[0])
+        else:
+            raise ValueError("There is either more than one object, or no matches at that path!")
+
+    def clear_list(self, list_element):
+        """Clear all list items from path.
+
+        list_element can be a string argument to find(), or an element.
+
+        """
+        if not isinstance(list_element, ElementTree.Element):
+            element = self.context.find(list_element)
+            if element is None:
+                raise ValueError("Invalid path!")
+        else:
+            element = list_element
+
+        element.clear()
+
+
 class JSSObjectTemplate(ElementTree.ElementTree):
     """Base class for generating the skeleton XML required to post a new
     object.
 
     """
+    def __init__(self, **kwargs):
+        self.get_editor()
+        super(JSSObjectTemplate, self).__init__(**kwargs)
+
+    def get_editor(self):
+        """Set up a DataEditor.
+
+        Intended to be overriden by classes which need it.
+        """
+        self.editor = DataEditor(self)
 
     def _set_bool(self, element, value):
         """For an object at path, set the string representation of a boolean
@@ -1061,19 +1177,19 @@ class PolicyTemplate(JSSObjectTemplate):
         if isinstance(obj, Computer):
             computer = ElementTree.SubElement(self.computers, "computer")
             id_ = ElementTree.SubElement(computer, "id")
-            id_.text = str(obj.id)
+            id_.text = obj.id
         elif isinstance(obj, ComputerGroup):
             computer_group = ElementTree.SubElement(self.computer_groups, "computer_group")
             id_ = ElementTree.SubElement(computer_group, "id")
-            id_.text = str(obj.id)
+            id_.text = obj.id
         elif isinstance(obj, Building):
             building = ElementTree.SubElement(self.buildings, "building")
             id_ = ElementTree.SubElement(building, "id")
-            id_.text = str(obj.id)
+            id_.text = obj.id
         elif isinstance(obj, Department):
             department = ElementTree.SubElement(self.computers, "department")
             id_ = ElementTree.SubElement(department, "id")
-            id_.text = str(obj.id)
+            id_.text = obj.id
         else:
             raise TypeError
 
@@ -1081,7 +1197,7 @@ class PolicyTemplate(JSSObjectTemplate):
         if isinstance(pkg, Package):
             package = ElementTree.SubElement(self.pkgs, "package")
             id_ = ElementTree.SubElement(package, "id")
-            id_.text = str(pkg.id)
+            id_.text = pkg.id
             action = ElementTree.SubElement(package, "action")
             action.text = "Install"
 
