@@ -107,7 +107,7 @@ class JSSImporter(Processor):
             category_name = self.env.get(category_type)
             if not category_name == "*LEAVE_OUT*":
                 try:
-                    category = self.j.Category(str(category_name))
+                    category = self.j.Category(category_name)
                     self.output("Category type: %s-'%s' already exists according to JSS, moving on" % (category_type, category_name))
                 except jss.JSSGetError:
                     # Category doesn't exist
@@ -124,7 +124,7 @@ class JSSImporter(Processor):
 
     def handle_package(self):
         try:
-            package = self.j.Package(str(self.pkg_name))
+            package = self.j.Package(self.pkg_name)
             self.output("Pkg already exists according to JSS, moving on")
         except jss.JSSGetError:
             if self.category:
@@ -158,14 +158,14 @@ class JSSImporter(Processor):
             smart_group_name = self.env.get("smart_group")
             if not smart_group_name == "*LEAVE_OUT*":
                 try:
-                    group = self.j.ComputerGroup(str(smart_group_name))
+                    group = self.j.ComputerGroup(smart_group_name)
                     version_criteria_out_of_date = [crit for crit in group.findall("criteria/criterion") if crit.find("name") == "Application Version" and crit.find("value") != version]
                     if version_criteria_out_of_date:
                         version_criteria[0].find("value").text = version
                         group.update()
                         self.env["jss_smartgroup_updated"] = True
                 except jss.JSSGetError:
-                    group_template = jss.JSSComputerGroupTemplate(str(smart_group_name), True)
+                    group_template = jss.JSSComputerGroupTemplate(smart_group_name, True)
                     criterion1 = jss.SearchCriteria("Application Title", 0, 'and', 'is', prod_name)
                     criterion2 = jss.SearchCriteria("Application Version", 1, 'and', 'is not', version)
                     group_template.add_criterion(criterion1)
@@ -179,9 +179,9 @@ class JSSImporter(Processor):
             static_group_name = self.env.get("arb_group_name")
             if not static_group_name == "*LEAVE_OUT*":
                 try:
-                    group = self.j.ComputerGroup(str(static_group_name))
+                    group = self.j.ComputerGroup(static_group_name)
                 except:
-                    group_template = jss.ComputerGroupTemplate(str(static_group_name))
+                    group_template = jss.ComputerGroupTemplate(static_group_name)
                     group = self.j.ComputerGroup(group_template)
             else:
                 self.output("Static group check/creation not desired, moving on")
@@ -193,22 +193,22 @@ class JSSImporter(Processor):
             policy_name = self.env.get("selfserve_policy")
             if not policy_name == "*LEAVE_OUT*":
                 try:
-                    policy = self.j.Policy(str(policy_name))
-                    packages_out_of_date = [p for p in policy.findall('package_configuration/packages/package') if p.findtext('id') != str(self.package.id)]
-                    group_out_of_date = [g for g in policy.findall('scope/computer_groups/computer_group') if g.findtext('id') != str(self.group.id)]
+                    policy = self.j.Policy(policy_name)
+                    packages_out_of_date = [p for p in policy.findall('package_configuration/packages/package') if p.findtext('id') != self.package.id]
+                    group_out_of_date = [g for g in policy.findall('scope/computer_groups/computer_group') if g.findtext('id') != self.group.id]
                     if self.policy_category:
-                        if policy.findtext('general/category/id') != str(self.policy_category.id):
-                            policy.find('general/category/id').text = str(self.policy_category.id)
+                        if policy.findtext('general/category/id') != self.policy_category.id:
+                            policy.find('general/category/id').text = self.policy_category.id
                             policy.find('general/category/name').text = self.policy_category.name
                             policy.update()
                             self.env["jss_policy_updated"] = True
                     if packages_out_of_date:
-                        packages_out_of_date[0].find('id').text = str(self.package.id)
+                        packages_out_of_date[0].find('id').text = self.package.id
                         packages_out_of_date[0].find('name').text = self.package.name
                         policy.update()
                         self.env["jss_policy_updated"] = True
                     if group_out_of_date:
-                        group_out_of_date[0].find('id').text = str(self.group.id)
+                        group_out_of_date[0].find('id').text = self.group.id
                         group_out_of_date[0].find('name').text = self.group.name
                         policy.update()
                         self.env["jss_policy_updated"] = True
