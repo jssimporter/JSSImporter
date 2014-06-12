@@ -99,59 +99,37 @@ class JSSImporter(Processor):
     }
     description = __doc__
 
-
-    def main(self):
-        # pull jss recipe-specific args, prep api auth
-        repoUrl = self.env["JSS_URL"]
-        authUser = self.env["API_USERNAME"]
-        authPass = self.env["API_PASSWORD"]
-        j = jss.JSS(url=repoUrl, user=authUser, password=authPass)
-        pkg_name = os.path.basename(self.env["pkg_path"])
-        prod_name = self.env["prod_name"]
-        version = self.env["version"]
-        # pre-set 'changed/added/updated' output checks to False
-        self.env["jss_repo_changed"] = False
-        self.env["jss_category_added"] = False
-        self.env["jss_smartgroup_added"] = False
-        self.env["jss_smartgroup_updated"] = False
-        self.env["jss_staticgroup_added"] = False
-        self.env["jss_staticgroup_updated"] = False
-        self.env["jss_policy_added"] = False
-        self.env["jss_policy_updated"] = False
-        #
-        # check for category if var set
-        #
+    def handle_category(self):
         if self.env.get("category"):
             category_name = self.env.get("category")
             if not category_name == "*LEAVE_OUT*":
                 try:
-                    category = j.Category(category_name)
+                    category = self.j.Category(category_name)
                     self.output("Category already exists according to JSS, moving on")
                 except jss.JSSGetError:
                     # Category doesn't exist
                     category_template = jss.CategoryTemplate(category_name)
-                    category = j.Category(category_template)
+                    category = self.j.Category(category_template)
                     self.env["jss_category_added"] = True
             else:
                 self.output("Category creation for the pkg not desired, moving on")
                 category = None
-        #
-        # check for package by pkg_name for both API POST
-        #   and if exists at repo_path
-        #
+        return category
+
+    def handle_package(self):
         try:
-            package = j.Package(pkg_name)
+            package = self.j.Package(str(self.pkg_name))
             self.output("Pkg already exists according to JSS, moving on")
         except jss.JSSGetError:
-            if category:
-                package_template = jss.PackageTemplate("pkg_name", category.name)
+            if self.category:
+                package_template = jss.JSSPackageTemplate(self.pkg_name, self.category.name)
             else:
-                package_template = jss.PackageTemplate("pkg_name")
+                package_template = jss.JSSPackageTemplate(self.pkg_name)
 
-            package = j.Package(package_template)
+            package = self.j.Package(package_template)
 
         source_item = self.env["pkg_path"]
-        dest_item = (self.env["JSS_REPO"] + "/" + pkg_name)
+        dest_item = (self.env["JSS_REPO"] + "/" + self.pkg_name)
         if os.path.exists(dest_item):
             self.output("Pkg already exists at %s, moving on" % dest_item)
         else:
@@ -166,6 +144,9 @@ class JSSImporter(Processor):
             except BaseException, err:
                 raise ProcessorError(
                     "Can't copy %s to %s: %s" % (source_item, dest_item, err))
+        return package
+
+    def handle_group(self):
         #
         # check for smartGroup if var set
         #
@@ -173,7 +154,7 @@ class JSSImporter(Processor):
             smart_group_name = self.env.get("smart_group")
             if not smart_group_name == "*LEAVE_OUT*":
                 try:
-                    group = j.ComputerGroup(str(smart_group_name))
+                    group = self.j.ComputerGroup(str(smart_group_name))
                     version_criteria_out_of_date = [crit for crit in group.findall("criteria/criterion") if crit.find("name") == "Application Version" and crit.find("value") != version]
                     if version_criteria_out_of_date:
                         version_criteria[0].find("value").text = version
@@ -196,37 +177,65 @@ class JSSImporter(Processor):
             static_group_name = self.env.get("arb_group_name")
             if not static_group_name == "*LEAVE_OUT*":
                 try:
-                    group = j.ComputerGroup(str(static_group_name))
+                    group = self.j.ComputerGroup(str(static_group_name))
                 except:
                     group_template = jss.ComputerGroupTemplate(str(static_group_name))
-                    group = j.ComputerGroup(group_template)
+                    group = self.j.ComputerGroup(group_template)
             else:
                 self.output("Static group check/creation not desired, moving on")
-        #
-        # check for policy if var set
-        #
+
+        return group
+
+    def handle_policy(self):
         if self.env.get("selfserve_policy"):
             policy_name = self.env.get("selfserve_policy")
             if not policy_name == "*LEAVE_OUT*":
                 try:
-                    policy = j.Policy(str(policy_name))
-                    packages_out_of_date = [p for p in policy.findall('package_configuration/packages') if p.find('package/id').text != str(package.id)]
-                    group_out_of_date = [g for g in policy.findall('scope/computer_groups') if g.find('computer_group/id').text != str(group.id)]
+                    policy = self.j.Policy(str(policy_name))
+                    packages_out_of_date = [p for p in policy.findall('package_configuration/packages/package') if p.findtext('id') != str(self.package.id)]
+                    group_out_of_date = [g for g in policy.findall('scope/computer_groups/computer_group') if g.findtext('id') != str(self.group.id)]
                     if packages_out_of_date:
-                        packages_out_of_date[0].find('package/id').text = str(package.id)
-                        packages_out_of_date[0].find('package/name').text = package.name
+                        packages_out_of_date[0].find('id').text = str(self.package.id)
+                        packages_out_of_date[0].find('name').text = self.package.name
                         policy.update()
                     if group_out_of_date:
-                        group_out_of_date[0].find('computer_group/id').text = str(group.id)
-                        group_out_of_date[0].find('computer_group/name').text = group.name
+                        group_out_of_date[0].find('id').text = str(self.group.id)
+                        group_out_of_date[0].find('name').text = self.group.name
                         policy.update()
                 except jss.JSSGetError:
                     policy_template = jss.PolicyTemplate(policy_name)
-                    policy_template.add_pkg(package)
-                    policy_template.add_object_to_scope(group)
-                    policy = j.Policy(policy_template)
+                    policy_template.add_pkg(self.package)
+                    policy_template.add_object_to_scope(self.group)
+                    policy = self.j.Policy(policy_template)
             else:
                 self.output("Policy creation not desired, moving on")
+
+    def main(self):
+        # pull jss recipe-specific args, prep api auth
+        repoUrl = self.env["JSS_URL"]
+        authUser = self.env["API_USERNAME"]
+        authPass = self.env["API_PASSWORD"]
+        self.j = jss.JSS(url=repoUrl, user=authUser, password=authPass)
+        self.pkg_name = os.path.basename(self.env["pkg_path"])
+        self.prod_name = self.env["prod_name"]
+        self.version = self.env["version"]
+        # pre-set 'changed/added/updated' output checks to False
+        self.env["jss_repo_changed"] = False
+        self.env["jss_category_added"] = False
+        self.env["jss_smartgroup_added"] = False
+        self.env["jss_smartgroup_updated"] = False
+        self.env["jss_staticgroup_added"] = False
+        self.env["jss_staticgroup_updated"] = False
+        self.env["jss_policy_added"] = False
+        self.env["jss_policy_updated"] = False
+
+        self.category = self.handle_category()
+
+        self.package = self.handle_package()
+
+        self.group = self.handle_group()
+
+        self.handle_policy()
 
 if __name__ == "__main__":
     processor = JSSImporter()
