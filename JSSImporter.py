@@ -69,6 +69,10 @@ class JSSImporter(Processor):
             "required": False,
             "description": "Name of automatically activated self-service policy for offering software to test and older-version users. Will create if not present and update if data is not current or invalid",
         },
+        "policy_category": {
+            "required": False,
+            "description": "Name of category for policy. Will create if not present, and update if data is not current or invalid.",
+        },
     }
     output_variables = {
         "jss_category_added": {
@@ -95,17 +99,16 @@ class JSSImporter(Processor):
         "jss_policy_updated": {
             "description": "True if policy was updated."
         },
-
     }
     description = __doc__
 
-    def handle_category(self):
-        if self.env.get("category"):
-            category_name = self.env.get("category")
+    def handle_category(self, category_type):
+        if self.env.get(category_type):
+            category_name = self.env.get(category_type)
             if not category_name == "*LEAVE_OUT*":
                 try:
-                    category = self.j.Category(category_name)
-                    self.output("Category already exists according to JSS, moving on")
+                    category = self.j.Category(str(category_name))
+                    self.output("Category type: %s-'%s' already exists according to JSS, moving on" % (category_type, category_name))
                 except jss.JSSGetError:
                     # Category doesn't exist
                     category_template = jss.CategoryTemplate(category_name)
@@ -193,19 +196,33 @@ class JSSImporter(Processor):
                     policy = self.j.Policy(str(policy_name))
                     packages_out_of_date = [p for p in policy.findall('package_configuration/packages/package') if p.findtext('id') != str(self.package.id)]
                     group_out_of_date = [g for g in policy.findall('scope/computer_groups/computer_group') if g.findtext('id') != str(self.group.id)]
+                    if self.policy_category:
+                        if policy.findtext('general/category/id') != str(self.policy_category.id):
+                            policy.find('general/category/id').text = str(self.policy_category.id)
+                            policy.find('general/category/name').text = self.policy_category.name
+                            policy.update()
+                            self.env["jss_policy_updated"] = True
                     if packages_out_of_date:
                         packages_out_of_date[0].find('id').text = str(self.package.id)
                         packages_out_of_date[0].find('name').text = self.package.name
                         policy.update()
+                        self.env["jss_policy_updated"] = True
                     if group_out_of_date:
                         group_out_of_date[0].find('id').text = str(self.group.id)
                         group_out_of_date[0].find('name').text = self.group.name
                         policy.update()
+                        self.env["jss_policy_updated"] = True
+                    if not self.env["jss_policy_updated"]:
+                        self.output("Policy update not needed.")
                 except jss.JSSGetError:
-                    policy_template = jss.PolicyTemplate(policy_name)
+                    if self.policy_category:
+                        policy_template = jss.PolicyTemplate(policy_name, self.policy_category)
+                    else:
+                        policy_template = jss.PolicyTemplate(policy_name)
                     policy_template.add_pkg(self.package)
                     policy_template.add_object_to_scope(self.group)
                     policy = self.j.Policy(policy_template)
+                    self.env["jss_policy_added"] = True
             else:
                 self.output("Policy creation not desired, moving on")
 
@@ -228,7 +245,8 @@ class JSSImporter(Processor):
         self.env["jss_policy_added"] = False
         self.env["jss_policy_updated"] = False
 
-        self.category = self.handle_category()
+        self.category = self.handle_category("category")
+        self.policy_category = self.handle_category("policy_category")
         self.package = self.handle_package()
         self.group = self.handle_group()
         self.handle_policy()
