@@ -128,9 +128,9 @@ class JSSImporter(Processor):
             self.output("Pkg already exists according to JSS, moving on")
         except jss.JSSGetError:
             if self.category:
-                package_template = jss.JSSPackageTemplate(self.pkg_name, self.category.name)
+                package_template = jss.PackageTemplate(self.pkg_name, self.category.name)
             else:
-                package_template = jss.JSSPackageTemplate(self.pkg_name)
+                package_template = jss.PackageTemplate(self.pkg_name)
 
             package = self.j.Package(package_template)
 
@@ -165,7 +165,7 @@ class JSSImporter(Processor):
                         group.update()
                         self.env["jss_smartgroup_updated"] = True
                 except jss.JSSGetError:
-                    group_template = jss.JSSComputerGroupTemplate(smart_group_name, True)
+                    group_template = jss.ComputerGroupTemplate(smart_group_name, True)
                     criterion1 = jss.SearchCriteria("Application Title", 0, 'and', 'is', prod_name)
                     criterion2 = jss.SearchCriteria("Application Version", 1, 'and', 'is not', version)
                     group_template.add_criterion(criterion1)
@@ -196,20 +196,19 @@ class JSSImporter(Processor):
                     policy = self.j.Policy(policy_name)
                     packages_out_of_date = [p for p in policy.findall('package_configuration/packages/package') if p.findtext('id') != self.package.id]
                     group_out_of_date = [g for g in policy.findall('scope/computer_groups/computer_group') if g.findtext('id') != self.group.id]
-                    if self.policy_category:
+                    if self.policy_category is not None:
                         if policy.findtext('general/category/id') != self.policy_category.id:
-                            policy.find('general/category/id').text = self.policy_category.id
-                            policy.find('general/category/name').text = self.policy_category.name
+                            policy.set_category(self.policy_category)
                             policy.update()
                             self.env["jss_policy_updated"] = True
                     if packages_out_of_date:
-                        packages_out_of_date[0].find('id').text = self.package.id
-                        packages_out_of_date[0].find('name').text = self.package.name
+                        policy.clear_list("package_configuration/packages")
+                        policy.add_package(self.package)
                         policy.update()
                         self.env["jss_policy_updated"] = True
                     if group_out_of_date:
-                        group_out_of_date[0].find('id').text = self.group.id
-                        group_out_of_date[0].find('name').text = self.group.name
+                        policy.clear_scope()
+                        policy.add_object_to_scope(self.group)
                         policy.update()
                         self.env["jss_policy_updated"] = True
                     if not self.env["jss_policy_updated"]:
@@ -221,6 +220,8 @@ class JSSImporter(Processor):
                         policy_template = jss.PolicyTemplate(policy_name)
                     policy_template.add_pkg(self.package)
                     policy_template.add_object_to_scope(self.group)
+                    if self.policy_category is not None:
+                        policy_template.set_category(self.policy_category)
                     policy = self.j.Policy(policy_template)
                     self.env["jss_policy_added"] = True
             else:
