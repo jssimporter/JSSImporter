@@ -73,6 +73,10 @@ class JSSImporter(Processor):
             "required": False,
             "description": "Name of category for policy. Will create if not present, and update if data is not current or invalid.",
         },
+        "os_requirements": {
+            "required": False,
+            "description": "Comma-seperated list of OS version numbers to allow. Corresponds to the OS Requirements field for packages. The character 'x' may be used as a wildcard, as in '10.9.x'",
+        },
     }
     output_variables = {
         "jss_category_added": {
@@ -123,14 +127,23 @@ class JSSImporter(Processor):
         return category
 
     def handle_package(self):
+        os_requirements = self.env.get("os_requirements")
         try:
             package = self.j.Package(self.pkg_name)
-            self.output("Pkg already exists according to JSS, moving on")
+            if os_requirements and os_requirements != package.findtext("os_requirements"):
+                package.set_os_requirements(os_requirements)
+                package.update()
+                self.output("Pkg updated.")
+
+            else:
+                self.output("Pkg already exists according to JSS, moving on")
         except jss.JSSGetError:
             if self.category:
                 package_template = jss.PackageTemplate(self.pkg_name, self.category.name)
             else:
                 package_template = jss.PackageTemplate(self.pkg_name)
+
+            package_template.set_os_requirements(os_requirements)
 
             package = self.j.Package(package_template)
 
