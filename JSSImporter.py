@@ -214,10 +214,7 @@ class JSSImporter(Processor):
                     if not self.env["jss_policy_updated"]:
                         self.output("Policy update not needed.")
                 except jss.JSSGetError:
-                    if self.policy_category:
-                        policy_template = jss.PolicyTemplate(policy_name, self.policy_category)
-                    else:
-                        policy_template = jss.PolicyTemplate(policy_name)
+                    policy_template = jss.PolicyTemplate(policy_name)
                     policy_template.add_pkg(self.package)
                     policy_template.add_object_to_scope(self.group)
                     if self.policy_category is not None:
