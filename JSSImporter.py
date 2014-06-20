@@ -29,6 +29,10 @@ __all__ = ["JSSImporter"]
 class JSSImporter(Processor):
     """Imports a flat pkg to the JSS."""
     input_variables = {
+        "prod_name": {
+            "required": True,
+            "description": "Name of the product.",
+        },
         "pkg_path": {
             "required": True,
             "description": "Path to a pkg or dmg to import - provided by previous pkg recipe/processor.",
@@ -57,6 +61,10 @@ class JSSImporter(Processor):
             "required": False,
             "description": ("Category to create/associate imported app package with."),
         },
+        "os_requirements": {
+            "required": False,
+            "description": "Comma-seperated list of OS version numbers to allow. Corresponds to the OS Requirements field for packages. The character 'x' may be used as a wildcard, as in '10.9.x'",
+        },
         "smart_group": {
             "required": False,
             "description": "Name of scoping group to create with which to offer item to users that are not at the same version.",
@@ -65,17 +73,9 @@ class JSSImporter(Processor):
             "required": False,
             "description": "Name of static group to offer imported item to.",
         },
-        "selfserve_policy": {
+        "policy_template": {
             "required": False,
-            "description": "Name of automatically activated self-service policy for offering software to test and older-version users. Will create if not present and update if data is not current or invalid",
-        },
-        "policy_category": {
-            "required": False,
-            "description": "Name of category for policy. Will create if not present, and update if data is not current or invalid.",
-        },
-        "os_requirements": {
-            "required": False,
-            "description": "Comma-seperated list of OS version numbers to allow. Corresponds to the OS Requirements field for packages. The character 'x' may be used as a wildcard, as in '10.9.x'",
+            "description": "Filename of policy template file.",
         },
     }
     output_variables = {
@@ -105,6 +105,38 @@ class JSSImporter(Processor):
         },
     }
     description = __doc__
+
+    def build_replace_dict(self):
+        """Build a dictionary of replacement values based on available
+        input variables.
+
+        """
+        replace_dict = {}
+        replace_dict['%VERSION%'] = self.version
+        replace_dict['%PKG_NAME%'] = self.package.name
+        replace_dict['%PROD_NAME%'] = self.env.get('prod_name')
+        replace_dict['%GROUP%'] = self.group.name
+        if self.env.get("policy_category"):
+            replace_dict['%POLICY_CATEGORY%'] = self.env.get(
+                "policy_category")
+        if self.env.get("policy_name"):
+            replace_dict['%POLICY_NAME%'] = self.env.get("policy_name")
+        #if self.env.get("prod_name"):
+        #    replace_dict['%PROD_NAME%'] = self.env.get('prod_name')
+        return replace_dict
+
+    def replace_text(self, text, replace_dict):
+        """Substitute items in a text string.
+
+        text: A string with embedded %tags%.
+        replace_dict: A dict, where
+            key: Corresponds to the % delimited tag in text.
+            value: Text to swap in.
+
+        """
+        for key, value in replace_dict.iteritems():
+            text = text.replace(key, value)
+        return text
 
     def handle_category(self, category_type):
         if self.env.get(category_type):
@@ -202,37 +234,24 @@ class JSSImporter(Processor):
         return group
 
     def handle_policy(self):
-        if self.env.get("selfserve_policy"):
-            policy_name = self.env.get("selfserve_policy")
-            if not policy_name == "*LEAVE_OUT*":
+        if self.env.get("policy_template"):
+            template_filename = self.env.get("policy_template")
+
+            if not template_filename == "*LEAVE_OUT*":
+                with open(template_filename, 'r') as f:
+                    text = f.read()
+                replace_dict = self.build_replace_dict()
+                text = self.replace_text(text, replace_dict)
+                template = jss.TemplateFromString(text)
+                self.output(template)
                 try:
-                    policy = self.j.Policy(policy_name)
-                    packages_out_of_date = [p for p in policy.findall('package_configuration/packages/package') if p.findtext('id') != self.package.id]
-                    group_out_of_date = [g for g in policy.findall('scope/computer_groups/computer_group') if g.findtext('id') != self.group.id]
-                    if self.policy_category is not None:
-                        if policy.findtext('general/category/id') != self.policy_category.id:
-                            policy.set_category(self.policy_category)
-                            policy.update()
-                            self.env["jss_policy_updated"] = True
-                    if packages_out_of_date:
-                        policy.clear_list("package_configuration/packages")
-                        policy.add_package(self.package)
-                        policy.update()
-                        self.env["jss_policy_updated"] = True
-                    if group_out_of_date:
-                        policy.clear_scope()
-                        policy.add_object_to_scope(self.group)
-                        policy.update()
-                        self.env["jss_policy_updated"] = True
-                    if not self.env["jss_policy_updated"]:
-                        self.output("Policy update not needed.")
+                    policy = self.j.Policy(template.findtext('general/name'))
+                    policy.delete()
+                    policy = self.j.Policy(template)
+                    self.env["jss_policy_updated"] = True
                 except jss.JSSGetError:
-                    policy_template = jss.PolicyTemplate(policy_name)
-                    policy_template.add_pkg(self.package)
-                    policy_template.add_object_to_scope(self.group)
-                    if self.policy_category is not None:
-                        policy_template.set_category(self.policy_category)
-                    policy = self.j.Policy(policy_template)
+                    # Object doesn't exist yet.
+                    policy = self.j.Policy(template)
                     self.env["jss_policy_added"] = True
             else:
                 self.output("Policy creation not desired, moving on")
