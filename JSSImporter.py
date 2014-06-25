@@ -65,9 +65,13 @@ class JSSImporter(Processor):
             "required": False,
             "description": "Comma-seperated list of OS version numbers to allow. Corresponds to the OS Requirements field for packages. The character 'x' may be used as a wildcard, as in '10.9.x'",
         },
-        "smart_group": {
+        "groups": {
             "required": False,
-            "description": "Name of scoping group to create with which to offer item to users that are not at the same version.",
+            "description": "Array of group dictionaries. Wrap each group in a dictionary. " \
+            "Group keys include 'name' (Name of the group to use, required), " \
+            "'smart' (Boolean: static group=False, smart group=True, default is False, not required), "\
+            "and 'template_path' (string: path to template file to use for group, required for smart groups, "
+            "invalid for static groups)",
         },
         "arb_group_name": {
             "required": False,
@@ -115,7 +119,7 @@ class JSSImporter(Processor):
         replace_dict['%VERSION%'] = self.version
         replace_dict['%PKG_NAME%'] = self.package.name
         replace_dict['%PROD_NAME%'] = self.env.get('prod_name')
-        replace_dict['%GROUP%'] = self.group.name
+        #replace_dict['%GROUP%'] = self.group.name
         if self.env.get("policy_category"):
             replace_dict['%POLICY_CATEGORY%'] = self.env.get(
                 "policy_category")
@@ -195,41 +199,64 @@ class JSSImporter(Processor):
                     "Can't copy %s to %s: %s" % (source_item, dest_item, err))
         return package
 
-    def handle_group(self):
-        # check for smartGroup if var set
-        if self.env.get("smart_group"):
-            smart_group_name = self.env.get("smart_group")
-            if not smart_group_name == "*LEAVE_OUT*":
+    def handle_groups(self):
+        groups = self.env.get('groups')
+        computer_groups = []
+        if groups:
+            for group in groups:
+                smart = group.get('smart') or False
                 try:
-                    group = self.j.ComputerGroup(smart_group_name)
-                    version_criteria_out_of_date = [crit for crit in group.findall("criteria/criterion") if crit.find("name") == "Application Version" and crit.find("value") != version]
-                    if version_criteria_out_of_date:
-                        version_criteria[0].find("value").text = version
-                        group.update()
-                        self.env["jss_smartgroup_updated"] = True
+                    computer_group = self.j.ComputerGroup(group['name'])
+                    if smart:
+                        computer_group.delete()
+                        smart_group_template = group.get('template_path')
+                        group_template = jss.TemplateFromFile(smart_group_template)
+                        computer_group = self.j.ComputerGroup(group_template)
                 except jss.JSSGetError:
-                    group_template = jss.ComputerGroupTemplate(smart_group_name, True)
-                    criterion1 = jss.SearchCriteria("Application Title", 0, 'and', 'is', prod_name)
-                    criterion2 = jss.SearchCriteria("Application Version", 1, 'and', 'is not', version)
-                    group_template.add_criterion(criterion1)
-                    group_template.add_criterion(criterion2)
-                    group = j.ComputerGroup(group_template)
-                    self.env["jss_smartgroup_added"] = True
-            else:
-                self.output("Smart group creation not desired, moving on")
-        # check for arbitraryGroupID if var set
-        if self.env.get("arb_group_name"):
-            static_group_name = self.env.get("arb_group_name")
-            if not static_group_name == "*LEAVE_OUT*":
-                try:
-                    group = self.j.ComputerGroup(static_group_name)
-                except:
-                    group_template = jss.ComputerGroupTemplate(static_group_name)
-                    group = self.j.ComputerGroup(group_template)
-            else:
-                self.output("Static group check/creation not desired, moving on")
+                    if smart:
+                        smart_group_template = group.get('template_path')
+                        group_template = jss.TemplateFromFile(smart_group_template)
+                        self.output(group_template)
+                    else:
+                        group_template = jss.ComputerGroupTemplate(group['name'], smart)
 
-        return group
+                    computer_group = self.j.ComputerGroup(group_template)
+
+                computer_groups.append(computer_group)
+        # check for smartGroup if var set
+        #if self.env.get("smart_group"):
+        #    smart_group_name = self.env.get("smart_group")
+        #    if not smart_group_name == "*LEAVE_OUT*":
+        #        try:
+        #            group = self.j.ComputerGroup(smart_group_name)
+        #            version_criteria_out_of_date = [crit for crit in group.findall("criteria/criterion") if crit.find("name") == "Application Version" and crit.find("value") != version]
+        #            if version_criteria_out_of_date:
+        #                version_criteria[0].find("value").text = version
+        #                group.update()
+        #                self.env["jss_smartgroup_updated"] = True
+        #        except jss.JSSGetError:
+        #            group_template = jss.ComputerGroupTemplate(smart_group_name, True)
+        #            criterion1 = jss.SearchCriteria("Application Title", 0, 'and', 'is', prod_name)
+        #            criterion2 = jss.SearchCriteria("Application Version", 1, 'and', 'is not', version)
+        #            group_template.add_criterion(criterion1)
+        #            group_template.add_criterion(criterion2)
+        #            group = j.ComputerGroup(group_template)
+        #            self.env["jss_smartgroup_added"] = True
+        #    else:
+        #        self.output("Smart group creation not desired, moving on")
+        ## check for arbitraryGroupID if var set
+        #if self.env.get("arb_group_name"):
+        #    static_group_name = self.env.get("arb_group_name")
+        #    if not static_group_name == "*LEAVE_OUT*":
+        #        try:
+        #            group = self.j.ComputerGroup(static_group_name)
+        #        except:
+        #            group_template = jss.ComputerGroupTemplate(static_group_name)
+        #            group = self.j.ComputerGroup(group_template)
+        #    else:
+        #        self.output("Static group check/creation not desired, moving on")
+
+        return computer_groups
 
     def handle_policy(self):
         if self.env.get("policy_template"):
@@ -276,7 +303,7 @@ class JSSImporter(Processor):
         self.category = self.handle_category("category")
         self.policy_category = self.handle_category("policy_category")
         self.package = self.handle_package()
-        self.group = self.handle_group()
+        self.groups = self.handle_groups()
         self.handle_policy()
 
 if __name__ == "__main__":
