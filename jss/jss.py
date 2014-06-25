@@ -20,14 +20,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from xml.etree import ElementTree
+from xml.parsers.expat import ExpatError
 import os
 import re
 import copy
+import subprocess
 
-import requests
+from .contrib import requests
 try:
-    import FoundationPlist
-except ImportError:
+    from .contrib import FoundationPlist
+except ImportError as e:
+    if os.uname()[0] == 'Darwin':
+        print("Warning: Import of FoundationPlist failed: %s" % e)
+        print("See README for information on this issue.")
     import plistlib
 
 
@@ -79,7 +84,7 @@ class JSSPrefs(object):
 
         """
         if preferences_file is None:
-            preferences_file = '~/Library/Preferences/org.da.python-jss.plist'
+            preferences_file = '~/Library/Preferences/com.github.sheagcraig.python-jss.plist'
         preferences_file = os.path.expanduser(preferences_file)
         if os.path.exists(preferences_file):
             try:
@@ -87,7 +92,11 @@ class JSSPrefs(object):
             except NameError:
                 # Plist files are probably not binary on non-OS X machines, so
                 # this should be safe.
-                prefs = plistlib.readPlist(preferences_file)
+                try:
+                    prefs = plistlib.readPlist(preferences_file)
+                except ExpatError:
+                    subprocess.call(['plutil', '-convert', 'xml1', preferences_file])
+                    prefs = plistlib.readPlist(preferences_file)
             try:
                 self.user = prefs['jss_user']
                 self.password = prefs['jss_pass']
@@ -125,6 +134,11 @@ class JSS(object):
         self.ssl_verify = ssl_verify
         self.verbose = verbose
         self.factory = JSSObjectFactory(self)
+        self.session = requests.Session()
+        self.session.auth = (self.user, self.password)
+        self.session.verify = self.ssl_verify
+        headers = {"content-type": 'text/xml', 'Accept': 'application/xml'}
+        self.session.headers.update(headers)
 
     def _error_handler(self, exception_cls, response):
         """Generic error handler. Converts html responses to friendlier
@@ -149,9 +163,7 @@ class JSS(object):
         # For some objects the JSS tries to return JSON if we don't specify
         # that we want XML.
         url = '%s%s' % (self._url, url)
-        headers = {'Accept': 'application/xml'}
-        response = requests.get(url, auth=(self.user, self.password),
-                                verify=self.ssl_verify, headers=headers)
+        response = self.session.get(url)
 
         if response.status_code == 200:
             if self.verbose:
@@ -172,10 +184,7 @@ class JSS(object):
         # The JSS expects a post to ID 0 to create an object
         url = '%s%s' % (self._url, url)
         data = ElementTree.tostring(data)
-        headers = {"content-type": 'text/xml'}
-        response = requests.post(url, auth=(self.user, self.password),
-                                 data=data, verify=self.ssl_verify,
-                                 headers=headers)
+        response = self.session.post(url, data=data)
 
         if response.status_code == 201:
             if self.verbose:
@@ -193,10 +202,8 @@ class JSS(object):
         """Updates an object on the JSS."""
         url = '%s%s' % (self._url, url)
         data = ElementTree.tostring(data)
-        headers = {"content-type": 'text/xml'}
-        response = requests.put(url, auth=(self.user, self.password),
-                                verify=self.ssl_verify, data=data,
-                                headers=headers)
+        response = self.session.put(url, data)
+
         if response.status_code == 201:
             if self.verbose:
                 print("PUT: Success.")
@@ -206,8 +213,8 @@ class JSS(object):
     def delete(self, url):
         """Delete an object from the JSS."""
         url = '%s%s' % (self._url, url)
-        response = requests.delete(url, auth=(self.user, self.password),
-                                 verify=self.ssl_verify)
+        response = self.session.delete(url)
+
         if response.status_code == 200:
             if self.verbose:
                 print("DEL: Success.")
@@ -1520,13 +1527,8 @@ class JSSObjectList(list):
         """
         final_list = []
         for i in range(0, len(self)):
-            result = []
-            while result == []:
-                try:
-                    result = self.factory.get_object(self.obj_class,
-                                                     int(self[i]['id']))
-                except requests.exceptions.SSLError as e:
-                    print("SSL Exception: %s\nTrying again." % e)
-
+            result = self.factory.get_object(self.obj_class,
+                                             int(self[i]['id']))
             final_list.append(result)
+
         return final_list
