@@ -204,57 +204,29 @@ class JSSImporter(Processor):
         computer_groups = []
         if groups:
             for group in groups:
-                smart = group.get('smart') or False
+                is_smart = group.get('smart') or False
                 try:
                     computer_group = self.j.ComputerGroup(group['name'])
-                    if smart:
+                    if is_smart:
                         computer_group.delete()
                         smart_group_template = group.get('template_path')
                         group_template = jss.TemplateFromFile(smart_group_template)
                         computer_group = self.j.ComputerGroup(group_template)
+                        self.output("Computer Group: %s updated." % computer_group.name)
+                    else:
+                        self.output("Computer Group: %s already exists." % computer_group.name)
                 except jss.JSSGetError:
-                    if smart:
+                    if is_smart:
                         smart_group_template = group.get('template_path')
                         group_template = jss.TemplateFromFile(smart_group_template)
                         self.output(group_template)
                     else:
-                        group_template = jss.ComputerGroupTemplate(group['name'], smart)
+                        group_template = jss.ComputerGroupTemplate(group['name'], is_smart)
 
                     computer_group = self.j.ComputerGroup(group_template)
+                    self.output("Computer Group: %s created." % computer_group.name)
 
                 computer_groups.append(computer_group)
-        # check for smartGroup if var set
-        #if self.env.get("smart_group"):
-        #    smart_group_name = self.env.get("smart_group")
-        #    if not smart_group_name == "*LEAVE_OUT*":
-        #        try:
-        #            group = self.j.ComputerGroup(smart_group_name)
-        #            version_criteria_out_of_date = [crit for crit in group.findall("criteria/criterion") if crit.find("name") == "Application Version" and crit.find("value") != version]
-        #            if version_criteria_out_of_date:
-        #                version_criteria[0].find("value").text = version
-        #                group.update()
-        #                self.env["jss_smartgroup_updated"] = True
-        #        except jss.JSSGetError:
-        #            group_template = jss.ComputerGroupTemplate(smart_group_name, True)
-        #            criterion1 = jss.SearchCriteria("Application Title", 0, 'and', 'is', prod_name)
-        #            criterion2 = jss.SearchCriteria("Application Version", 1, 'and', 'is not', version)
-        #            group_template.add_criterion(criterion1)
-        #            group_template.add_criterion(criterion2)
-        #            group = j.ComputerGroup(group_template)
-        #            self.env["jss_smartgroup_added"] = True
-        #    else:
-        #        self.output("Smart group creation not desired, moving on")
-        ## check for arbitraryGroupID if var set
-        #if self.env.get("arb_group_name"):
-        #    static_group_name = self.env.get("arb_group_name")
-        #    if not static_group_name == "*LEAVE_OUT*":
-        #        try:
-        #            group = self.j.ComputerGroup(static_group_name)
-        #        except:
-        #            group_template = jss.ComputerGroupTemplate(static_group_name)
-        #            group = self.j.ComputerGroup(group_template)
-        #    else:
-        #        self.output("Static group check/creation not desired, moving on")
 
         return computer_groups
 
@@ -290,13 +262,14 @@ class JSSImporter(Processor):
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]
         self.version = self.env["version"]
+
         # pre-set 'changed/added/updated' output checks to False
         self.env["jss_repo_changed"] = False
         self.env["jss_category_added"] = False
-        self.env["jss_smartgroup_added"] = False
-        self.env["jss_smartgroup_updated"] = False
-        self.env["jss_staticgroup_added"] = False
-        self.env["jss_staticgroup_updated"] = False
+        #self.env["jss_smartgroup_added"] = False
+        #self.env["jss_smartgroup_updated"] = False
+        #self.env["jss_staticgroup_added"] = False
+        #self.env["jss_staticgroup_updated"] = False
         self.env["jss_policy_added"] = False
         self.env["jss_policy_updated"] = False
 
