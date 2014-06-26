@@ -182,7 +182,7 @@ class JSSImporter(Processor):
             package = self.j.Package(package_template)
 
         source_item = self.env["pkg_path"]
-        dest_item = (self.env["JSS_REPO"] + "/" + self.pkg_name)
+        dest_item = (self.env["JSS_REPO"] + "/Packages/" + self.pkg_name)
         if os.path.exists(dest_item):
             self.output("Pkg already exists at %s, moving on" % dest_item)
         else:
@@ -229,6 +229,40 @@ class JSSImporter(Processor):
                 computer_groups.append(computer_group)
 
         return computer_groups
+
+    def handle_scripts(self):
+        scripts = self.env.get('scripts')
+        results = []
+        if scripts:
+            for script in scripts:
+                try:
+                    script_object = self.j.Script(script['name'])
+                    script_object.delete()
+                    script_template_path = script.get('template_path')
+                    script_template = jss.TemplateFromFile(script_template_path)
+                    script_object = self.j.Script(script_template)
+                    self.output("Script: %s updated." % script_object.name)
+                except jss.JSSGetError:
+                    script_template_path = script.get('template_path')
+                    script_template = jss.TemplateFromFile(script_template_path)
+                    script_object = self.j.Script(script_template)
+                    self.output("Script: %s created." % script_object.name)
+
+                source_item = script['name']
+                dest_item = (self.env["JSS_REPO"] + "/Scripts/" + source_item)
+                if os.path.exists(dest_item):
+                    self.output("Script already exists at %s, moving on" % dest_item)
+                else:
+                    try:
+                        shutil.copyfile(source_item, dest_item)
+                        self.output("Copied %s to %s" % (source_item, dest_item))
+                        # set output variables
+                        self.env["jss_repo_changed"] = True
+                    except BaseException, err:
+                        raise ProcessorError(
+                            "Can't copy %s to %s: %s" % (source_item, dest_item, err))
+                results.append(script_object)
+        return results
 
     def handle_policy(self):
         if self.env.get("policy_template"):
@@ -277,6 +311,7 @@ class JSSImporter(Processor):
         self.policy_category = self.handle_category("policy_category")
         self.package = self.handle_package()
         self.groups = self.handle_groups()
+        self.scripts = self.handle_scripts()
         self.handle_policy()
 
 if __name__ == "__main__":
