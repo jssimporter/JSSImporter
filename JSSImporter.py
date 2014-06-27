@@ -280,32 +280,66 @@ class JSSImporter(Processor):
                     policy.delete()
                     policy = self.j.Policy(template)
                     self.env["jss_policy_updated"] = True
+                    self.output("Policy: %s updated." % policy.name)
                 except jss.JSSGetError:
                     # Object doesn't exist yet.
                     policy = self.j.Policy(template)
                     self.env["jss_policy_added"] = True
+                    self.output("Policy: %s created." % policy.name)
+                self.output(template)
             else:
                 self.output("Policy creation not desired, moving on")
 
     def add_scope_to_policy(self, policy_template):
-        # Ensure the structure is in place for adding groups
-        if not policy_template.find('scope/computer_groups'):
-            ElementTree.SubElement(policy_template.find('scope'), 'computer_groups')
-
+        computer_groups_element = self.ensure_XML_structure(policy_template, 'scope/computer_groups')
         for group in self.groups:
-            policy_template.add_object_to_path(group, 'scope/computer_groups')
+            policy_template.add_object_to_path(group, computer_groups_element)
 
     def add_scripts_to_policy(self, policy_template):
+        scripts_element = self.ensure_XML_structure(policy_template, 'scripts')
         for script in self.scripts:
-            script_element = policy_template.add_object_to_path(script, 'scripts')
+            script_element = policy_template.add_object_to_path(script, scripts_element)
             priority = ElementTree.SubElement(script_element, 'priority')
             priority.text = script.findtext('priority')
 
     def add_package_to_policy(self, policy_template):
+        packages_element = self.ensure_XML_structure(policy_template, 'package_configuration/packages')
         package_element = policy_template.add_object_to_path(self.package,
-                'package_configuration/packages')
+                                                             packages_element)
         action = ElementTree.SubElement(package_element, 'action')
         action.text = 'Install'
+
+    # Iterative
+    #def ensure_XML_structure(self, policy_template, path):
+    #    path_components = path.split('/')
+    #    current_element = policy_template
+    #    for component in path_components:
+    #        if current_element.find(component) is None:
+    #            current_element = ElementTree.SubElement(current_element, component)
+    #        else:
+    #            current_element = current_element.find(component)
+    #    return current_element
+
+    # First attempt at recursive
+    #def ensure_XML_structure(self, element, path):
+    #    search, slash, path = path.partition('/')
+    #    if search:
+    #        if element.find(search) is None:
+    #            element = ElementTree.SubElement(element, search)
+    #        else:
+    #            element = element.find(search)
+    #        return self.ensure_XML_structure(element, path)
+    #    else:
+    #        return element
+
+    # Second attempt at recursive
+    def ensure_XML_structure(self, element, path):
+        search, slash, path = path.partition('/')
+        if search:
+            if element.find(search) is None:
+                ElementTree.SubElement(element, search)
+            return self.ensure_XML_structure(element.find(search), path)
+        return element
 
     def main(self):
         # pull jss recipe-specific args, prep api auth
