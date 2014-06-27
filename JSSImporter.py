@@ -16,9 +16,8 @@
 
 
 import os
-#import urllib2
 import shutil
-#from xml.etree import ElementTree
+from xml.etree import ElementTree
 
 import jss
 from autopkglib import Processor, ProcessorError
@@ -73,10 +72,6 @@ class JSSImporter(Processor):
             "and 'template_path' (string: path to template file to use for group, required for smart groups, "
             "invalid for static groups)",
         },
-        "arb_group_name": {
-            "required": False,
-            "description": "Name of static group to offer imported item to.",
-        },
         "policy_template": {
             "required": False,
             "description": "Filename of policy template file.",
@@ -119,7 +114,6 @@ class JSSImporter(Processor):
         replace_dict['%VERSION%'] = self.version
         replace_dict['%PKG_NAME%'] = self.package.name
         replace_dict['%PROD_NAME%'] = self.env.get('prod_name')
-        #replace_dict['%GROUP%'] = self.group.name
         if self.env.get("policy_category"):
             replace_dict['%POLICY_CATEGORY%'] = self.env.get(
                 "policy_category")
@@ -213,18 +207,19 @@ class JSSImporter(Processor):
                         group_template = jss.TemplateFromFile(smart_group_template)
                         computer_group = self.j.ComputerGroup(group_template)
                         self.output("Computer Group: %s updated." % computer_group.name)
+                        self.env["jss_group_updated"] = True
                     else:
                         self.output("Computer Group: %s already exists." % computer_group.name)
                 except jss.JSSGetError:
                     if is_smart:
                         smart_group_template = group.get('template_path')
                         group_template = jss.TemplateFromFile(smart_group_template)
-                        self.output(group_template)
                     else:
                         group_template = jss.ComputerGroupTemplate(group['name'], is_smart)
 
                     computer_group = self.j.ComputerGroup(group_template)
                     self.output("Computer Group: %s created." % computer_group.name)
+                    self.env["jss_group_added"] = True
 
                 computer_groups.append(computer_group)
 
@@ -242,11 +237,13 @@ class JSSImporter(Processor):
                     script_template = jss.TemplateFromFile(script_template_path)
                     script_object = self.j.Script(script_template)
                     self.output("Script: %s updated." % script_object.name)
+                    self.env["jss_script_updated"] = True
                 except jss.JSSGetError:
                     script_template_path = script.get('template_path')
                     script_template = jss.TemplateFromFile(script_template_path)
                     script_object = self.j.Script(script_template)
                     self.output("Script: %s created." % script_object.name)
+                    self.env["jss_script_added"] = True
 
                 source_item = script['name']
                 dest_item = (self.env["JSS_REPO"] + "/Scripts/" + source_item)
@@ -274,7 +271,10 @@ class JSSImporter(Processor):
                 replace_dict = self.build_replace_dict()
                 text = self.replace_text(text, replace_dict)
                 template = jss.TemplateFromString(text)
-                self.output(template)
+
+                self.add_scope_to_policy(template)
+                self.add_scripts_to_policy(template)
+                self.add_package_to_policy(template)
                 try:
                     policy = self.j.Policy(template.findtext('general/name'))
                     policy.delete()
@@ -286,6 +286,26 @@ class JSSImporter(Processor):
                     self.env["jss_policy_added"] = True
             else:
                 self.output("Policy creation not desired, moving on")
+
+    def add_scope_to_policy(self, policy_template):
+        # Ensure the structure is in place for adding groups
+        if not policy_template.find('scope/computer_groups'):
+            ElementTree.SubElement(policy_template.find('scope'), 'computer_groups')
+
+        for group in self.groups:
+            policy_template.add_object_to_path(group, 'scope/computer_groups')
+
+    def add_scripts_to_policy(self, policy_template):
+        for script in self.scripts:
+            script_element = policy_template.add_object_to_path(script, 'scripts')
+            priority = ElementTree.SubElement(script_element, 'priority')
+            priority.text = script.findtext('priority')
+
+    def add_package_to_policy(self, policy_template):
+        package_element = policy_template.add_object_to_path(self.package,
+                'package_configuration/packages')
+        action = ElementTree.SubElement(package_element, 'action')
+        action.text = 'Install'
 
     def main(self):
         # pull jss recipe-specific args, prep api auth
@@ -300,10 +320,10 @@ class JSSImporter(Processor):
         # pre-set 'changed/added/updated' output checks to False
         self.env["jss_repo_changed"] = False
         self.env["jss_category_added"] = False
-        #self.env["jss_smartgroup_added"] = False
-        #self.env["jss_smartgroup_updated"] = False
-        #self.env["jss_staticgroup_added"] = False
-        #self.env["jss_staticgroup_updated"] = False
+        self.env["jss_group_added"] = False
+        self.env["jss_group_updated"] = False
+        self.env["jss_script_added"] = False
+        self.env["jss_script_updated"] = False
         self.env["jss_policy_added"] = False
         self.env["jss_policy_updated"] = False
 
@@ -313,6 +333,7 @@ class JSSImporter(Processor):
         self.groups = self.handle_groups()
         self.scripts = self.handle_scripts()
         self.handle_policy()
+
 
 if __name__ == "__main__":
     processor = JSSImporter()

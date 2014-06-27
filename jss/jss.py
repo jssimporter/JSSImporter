@@ -490,6 +490,9 @@ class XMLEditor(object):
         """
         location = self._handle_location(location)
         location.append(obj.as_list_data())
+        results = [item for item in location.getchildren() if
+                   item.findtext("id") == obj.id][0]
+        return results
 
     def remove_object_from_list(self, obj, list_element):
         """Remove an object from a list element.
@@ -500,7 +503,7 @@ class XMLEditor(object):
         """
         list_element = self._handle_location(list_element)
 
-        if isinstance(object, JSSObject):
+        if isinstance(obj, JSSObject):
             results = [item for item in list_element.getchildren() if
                        item.findtext("id") == obj.id]
         elif type(obj) in [int, str, unicode]:
@@ -627,19 +630,9 @@ class PolicyEditor(XMLEditor):
             raise TypeError
 
     def add_package(self, pkg):
-        """Add a jss.Package object to the policy with action=install.
-
-        obj should be an instance of Computer, ComputerGroup, Building,
-        or Department.
-
-        """
+        """Add a jss.Package object to the policy with action=install."""
         if isinstance(pkg, Package):
-            self.add_object_to_path(pkg, "package_configuration/packages")
-            package = ElementTree.Element("package")
-            id_ = ElementTree.SubElement(package, "id")
-            id_.text = pkg.id
-            name = ElementTree.SubElement(package, "name")
-            name.text = pkg.name
+            package = self.add_object_to_path(pkg, "package_configuration/packages")
             action = ElementTree.SubElement(package, "action")
             action.text = "Install"
 
@@ -1227,6 +1220,7 @@ class SavedSearch(XMLEditor, JSSContainerObject):
 
 class Script(XMLEditor, JSSContainerObject):
     _url = '/scripts'
+    list_type = 'script'
 
 
 class Site(XMLEditor, JSSContainerObject):
