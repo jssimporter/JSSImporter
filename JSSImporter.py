@@ -202,10 +202,9 @@ class JSSImporter(Processor):
                 try:
                     computer_group = self.j.ComputerGroup(group['name'])
                     if is_smart:
-                        computer_group.delete()
                         smart_group_template = group.get('template_path')
                         group_template = jss.TemplateFromFile(smart_group_template)
-                        computer_group = self.j.ComputerGroup(group_template)
+                        computer_group.update(group_template)
                         self.output("Computer Group: %s updated." % computer_group.name)
                         self.env["jss_group_updated"] = True
                     else:
@@ -232,10 +231,9 @@ class JSSImporter(Processor):
             for script in scripts:
                 try:
                     script_object = self.j.Script(script['name'])
-                    script_object.delete()
                     script_template_path = script.get('template_path')
                     script_template = jss.TemplateFromFile(script_template_path)
-                    script_object = self.j.Script(script_template)
+                    script_object.update(script_template)
                     self.output("Script: %s updated." % script_object.name)
                     self.env["jss_script_updated"] = True
                 except jss.JSSGetError:
@@ -277,8 +275,7 @@ class JSSImporter(Processor):
                 self.add_package_to_policy(template)
                 try:
                     policy = self.j.Policy(template.findtext('general/name'))
-                    policy.delete()
-                    policy = self.j.Policy(template)
+                    policy.update(template)
                     self.env["jss_policy_updated"] = True
                     self.output("Policy: %s updated." % policy.name)
                 except jss.JSSGetError:
