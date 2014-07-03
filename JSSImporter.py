@@ -34,43 +34,56 @@ class JSSImporter(Processor):
         },
         "pkg_path": {
             "required": True,
-            "description": "Path to a pkg or dmg to import - provided by previous pkg recipe/processor.",
+            "description": "Path to a pkg or dmg to import - provided by "
+            "previous pkg recipe/processor.",
         },
         "version": {
             "required": True,
-            "description": "Version number of software to import - provided by previous pkg recipe/processor.",
+            "description": "Version number of software to import - provided "
+            "by previous pkg recipe/processor.",
         },
         "JSS_REPO": {
             "required": True,
-            "description": "Path to a mounted or otherwise locally accessible JSS dist point/share, optionally set as a key in the com.github.autopkg preference file.",
+            "description": "Path to a mounted or otherwise locally accessible "
+            "JSS dist point/share, optionally set as a key in the "
+            "com.github.autopkg preference file.",
         },
         "JSS_URL": {
             "required": True,
-            "description": "URL to a JSS that api the user has write access to, optionally set as a key in the com.github.autopkg preference file.",
+            "description": "URL to a JSS that api the user has write access "
+            "to, optionally set as a key in the com.github.autopkg preference "
+            "file.",
         },
         "API_USERNAME": {
             "required": True,
-            "description": "Username of account with appropriate access to jss, optionally set as a key in the com.github.autopkg preference file.",
+            "description": "Username of account with appropriate access to "
+            "jss, optionally set as a key in the com.github.autopkg "
+            "preference file.",
         },
         "API_PASSWORD": {
             "required": True,
-            "description": "Password of api user, optionally set as a key in the com.github.autopkg preference file.",
+            "description": "Password of api user, optionally set as a key in "
+            "the com.github.autopkg preference file.",
         },
         "category": {
             "required": False,
-            "description": ("Category to create/associate imported app package with."),
+            "description": ("Category to create/associate imported app "
+                            "package with."),
         },
         "os_requirements": {
             "required": False,
-            "description": "Comma-seperated list of OS version numbers to allow. Corresponds to the OS Requirements field for packages. The character 'x' may be used as a wildcard, as in '10.9.x'",
+            "description": "Comma-seperated list of OS version numbers to "
+            "allow. Corresponds to the OS Requirements field for packages. "
+            "The character 'x' may be used as a wildcard, as in '10.9.x'",
         },
         "groups": {
             "required": False,
-            "description": "Array of group dictionaries. Wrap each group in a dictionary. " \
-            "Group keys include 'name' (Name of the group to use, required), " \
-            "'smart' (Boolean: static group=False, smart group=True, default is False, not required), "\
-            "and 'template_path' (string: path to template file to use for group, required for smart groups, "
-            "invalid for static groups)",
+            "description": "Array of group dictionaries. Wrap each group in a "
+            "dictionary. Group keys include 'name' (Name of the group to use, "
+            "required), 'smart' (Boolean: static group=False, "
+            "smart group=True, default is False, not required), and "
+            "'template_path' (string: path to template file to use for group, "
+            "required for smart groups, invalid for static groups)",
         },
         "policy_template": {
             "required": False,
@@ -140,14 +153,17 @@ class JSSImporter(Processor):
             if not category_name == "*LEAVE_OUT*":
                 try:
                     category = self.j.Category(category_name)
-                    self.output("Category type: %s-'%s' already exists according to JSS, moving on" % (category_type, category_name))
+                    self.output("Category type: %s-'%s' already exists "
+                                "according to JSS, moving on" %
+                                (category_type, category_name))
                 except jss.JSSGetError:
                     # Category doesn't exist
                     category = self.j.Category(self.j, category_name)
                     category.save()
                     self.env["jss_category_added"] = True
             else:
-                self.output("Category creation for the pkg not desired, moving on")
+                self.output("Category creation for the pkg not desired, "
+                            "moving on")
                 category = None
         else:
             category = None
@@ -158,7 +174,8 @@ class JSSImporter(Processor):
         os_requirements = self.env.get("os_requirements")
         try:
             package = self.j.Package(self.pkg_name)
-            if os_requirements and os_requirements != package.findtext("os_requirements"):
+            if os_requirements and os_requirements != package.findtext(
+                "os_requirements"):
                 package.set_os_requirements(os_requirements)
                 package.save()
                 self.output("Pkg updated.")
@@ -167,7 +184,8 @@ class JSSImporter(Processor):
                 self.output("Pkg already exists according to JSS, moving on")
         except jss.JSSGetError:
             if self.category:
-                package = jss.Package(self.j, self.pkg_name, self.category.name)
+                package = jss.Package(self.j, self.pkg_name,
+                                      self.category.name)
             else:
                 package = jss.Package(self.j, self.pkg_name)
 
@@ -205,18 +223,23 @@ class JSSImporter(Processor):
                         computer_group = jss.ComputerGroup.from_file(
                             self.j, group.get('template_path'))
                         computer_group.save()
-                        self.output("Computer Group: %s updated." % computer_group.name)
+                        self.output("Computer Group: %s updated." %
+                                    computer_group.name)
                         self.env["jss_group_updated"] = True
                     else:
-                        self.output("Computer Group: %s already exists." % computer_group.name)
+                        self.output("Computer Group: %s already exists." %
+                                    computer_group.name)
                 except jss.JSSGetError:
                     if is_smart:
-                        computer_group = jss.ComputerGroup(self.j, group['name'])
+                        computer_group = jss.ComputerGroup(
+                            self.j, group['name'])
                     else:
-                        computer_group = jss.ComputerGroup.from_file(self.j, group.get('template_path'))
+                        computer_group = jss.ComputerGroup.from_file(
+                            self.j, group.get('template_path'))
 
                     computer_group.save()
-                    self.output("Computer Group: %s created." % computer_group.name)
+                    self.output("Computer Group: %s created." %
+                                computer_group.name)
                     self.env["jss_group_added"] = True
 
                 computer_groups.append(computer_group)
@@ -246,16 +269,19 @@ class JSSImporter(Processor):
                 source_item = script['name']
                 dest_item = (self.env["JSS_REPO"] + "/Scripts/" + source_item)
                 if os.path.exists(dest_item):
-                    self.output("Script already exists at %s, moving on" % dest_item)
+                    self.output("Script already exists at %s, moving on" %
+                                dest_item)
                 else:
                     try:
                         shutil.copyfile(source_item, dest_item)
-                        self.output("Copied %s to %s" % (source_item, dest_item))
+                        self.output("Copied %s to %s" %
+                                    (source_item, dest_item))
                         # set output variables
                         self.env["jss_repo_changed"] = True
                     except BaseException, err:
                         raise ProcessorError(
-                            "Can't copy %s to %s: %s" % (source_item, dest_item, err))
+                            "Can't copy %s to %s: %s" %
+                            (source_item, dest_item, err))
                 results.append(script_object)
         return results
 
@@ -288,19 +314,22 @@ class JSSImporter(Processor):
                 self.output("Policy creation not desired, moving on")
 
     def add_scope_to_policy(self, policy_template):
-        computer_groups_element = self.ensure_XML_structure(policy_template, 'scope/computer_groups')
+        computer_groups_element = self.ensure_XML_structure(
+            policy_template,'scope/computer_groups')
         for group in self.groups:
             policy_template.add_object_to_path(group, computer_groups_element)
 
     def add_scripts_to_policy(self, policy_template):
         scripts_element = self.ensure_XML_structure(policy_template, 'scripts')
         for script in self.scripts:
-            script_element = policy_template.add_object_to_path(script, scripts_element)
+            script_element = policy_template.add_object_to_path(
+                script, scripts_element)
             priority = ElementTree.SubElement(script_element, 'priority')
             priority.text = script.findtext('priority')
 
     def add_package_to_policy(self, policy_template):
-        packages_element = self.ensure_XML_structure(policy_template, 'package_configuration/packages')
+        packages_element = self.ensure_XML_structure(
+            policy_template, 'package_configuration/packages')
         package_element = policy_template.add_object_to_path(self.package,
                                                              packages_element)
         action = ElementTree.SubElement(package_element, 'action')
@@ -312,7 +341,8 @@ class JSSImporter(Processor):
     #    current_element = policy_template
     #    for component in path_components:
     #        if current_element.find(component) is None:
-    #            current_element = ElementTree.SubElement(current_element, component)
+    #            current_element = ElementTree.SubElement(current_element,
+    #                                                     component)
     #        else:
     #            current_element = current_element.find(component)
     #    return current_element
