@@ -836,8 +836,11 @@ class JSSObject(ElementTree.Element):
             raise JSSMethodNotAllowedError(self.__class__.__name__)
         self.jss.delete(self.get_object_url())
 
-    def update(self):
+    def update(self, template=None):
         """Update this object on the JSS.
+
+        template:   If passed a template object, the update will replace the
+                    current data with the templated data.
 
         Data validation is up to the client.
 
@@ -846,8 +849,16 @@ class JSSObject(ElementTree.Element):
             raise JSSMethodNotAllowedError(self.__class__.__name__)
 
         url = self.get_object_url()
-        self.jss.put(url, self)
-        self._root = self.jss.get(url)
+        if template is not None:
+            self.jss.put(url, template)
+        else:
+            self.jss.put(url, self)
+
+        # Replace current instance's data with new, JSS-filled data.
+        self.clear()
+        updated_data = self.jss.get(url)
+        for child in updated_data.getchildren():
+            self._children.append(child)
 
     # Shared properties:
     # Almost all JSSObjects have at least name and id properties, so provide a
