@@ -143,8 +143,8 @@ class JSSImporter(Processor):
                     self.output("Category type: %s-'%s' already exists according to JSS, moving on" % (category_type, category_name))
                 except jss.JSSGetError:
                     # Category doesn't exist
-                    category_template = jss.CategoryTemplate(category_name)
-                    category = self.j.Category(category_template)
+                    category = self.j.Category(self.j, category_name)
+                    category.save()
                     self.env["jss_category_added"] = True
             else:
                 self.output("Category creation for the pkg not desired, moving on")
@@ -160,20 +160,19 @@ class JSSImporter(Processor):
             package = self.j.Package(self.pkg_name)
             if os_requirements and os_requirements != package.findtext("os_requirements"):
                 package.set_os_requirements(os_requirements)
-                package.update()
+                package.save()
                 self.output("Pkg updated.")
 
             else:
                 self.output("Pkg already exists according to JSS, moving on")
         except jss.JSSGetError:
             if self.category:
-                package_template = jss.PackageTemplate(self.pkg_name, self.category.name)
+                package = jss.Package(self.j, self.pkg_name, self.category.name)
             else:
-                package_template = jss.PackageTemplate(self.pkg_name)
+                package = jss.Package(self.j, self.pkg_name)
 
-            package_template.set_os_requirements(os_requirements)
-
-            package = self.j.Package(package_template)
+            package.set_os_requirements(os_requirements)
+            package.save()
 
         source_item = self.env["pkg_path"]
         dest_item = (self.env["JSS_REPO"] + "/Packages/" + self.pkg_name)
@@ -202,21 +201,21 @@ class JSSImporter(Processor):
                 try:
                     computer_group = self.j.ComputerGroup(group['name'])
                     if is_smart:
-                        smart_group_template = group.get('template_path')
-                        group_template = jss.TemplateFromFile(smart_group_template)
-                        computer_group.update(group_template)
+                        computer_group.delete()
+                        computer_group = jss.ComputerGroup.from_file(
+                            self.j, group.get('template_path'))
+                        computer_group.save()
                         self.output("Computer Group: %s updated." % computer_group.name)
                         self.env["jss_group_updated"] = True
                     else:
                         self.output("Computer Group: %s already exists." % computer_group.name)
                 except jss.JSSGetError:
                     if is_smart:
-                        smart_group_template = group.get('template_path')
-                        group_template = jss.TemplateFromFile(smart_group_template)
+                        computer_group = jss.ComputerGroup(self.j, group['name'])
                     else:
-                        group_template = jss.ComputerGroupTemplate(group['name'], is_smart)
+                        computer_group = jss.ComputerGroup.from_file(self.j, group.get('template_path'))
 
-                    computer_group = self.j.ComputerGroup(group_template)
+                    computer_group.save()
                     self.output("Computer Group: %s created." % computer_group.name)
                     self.env["jss_group_added"] = True
 
@@ -231,15 +230,16 @@ class JSSImporter(Processor):
             for script in scripts:
                 try:
                     script_object = self.j.Script(script['name'])
-                    script_template_path = script.get('template_path')
-                    script_template = jss.TemplateFromFile(script_template_path)
-                    script_object.update(script_template)
+                    script_object.delete()
+                    script_object = jss.Script.from_file(
+                        self.j, script['template_path'])
+                    script_object.save()
                     self.output("Script: %s updated." % script_object.name)
                     self.env["jss_script_updated"] = True
                 except jss.JSSGetError:
-                    script_template_path = script.get('template_path')
-                    script_template = jss.TemplateFromFile(script_template_path)
-                    script_object = self.j.Script(script_template)
+                    script_object = jss.Script.from_file(
+                        self.j, script['template_path'])
+                    script_object.save()
                     self.output("Script: %s created." % script_object.name)
                     self.env["jss_script_added"] = True
 
@@ -267,23 +267,23 @@ class JSSImporter(Processor):
                 with open(template_filename, 'r') as f:
                     text = f.read()
                 replace_dict = self.build_replace_dict()
-                text = self.replace_text(text, replace_dict)
-                template = jss.TemplateFromString(text)
+                template = self.replace_text(text, replace_dict)
+                temp_policy = jss.Policy.from_string(self.j, template)
 
-                self.add_scope_to_policy(template)
-                self.add_scripts_to_policy(template)
-                self.add_package_to_policy(template)
+                self.add_scope_to_policy(temp_policy)
+                self.add_scripts_to_policy(temp_policy)
+                self.add_package_to_policy(temp_policy)
                 try:
-                    policy = self.j.Policy(template.findtext('general/name'))
-                    policy.update(template)
+                    policy = self.j.Policy(temp_policy.name)
+                    policy.delete()
+                    temp_policy.save()
                     self.env["jss_policy_updated"] = True
-                    self.output("Policy: %s updated." % policy.name)
+                    self.output("Policy: %s updated." % temp_policy.name)
                 except jss.JSSGetError:
                     # Object doesn't exist yet.
-                    policy = self.j.Policy(template)
+                    temp_policy.save()
                     self.env["jss_policy_added"] = True
-                    self.output("Policy: %s created." % policy.name)
-                self.output(template)
+                    self.output("Policy: %s created." % temp_policy.name)
             else:
                 self.output("Policy creation not desired, moving on")
 

@@ -155,8 +155,10 @@ class JSS(object):
                 error.append(e.group(1))
 
         error = '\n'.join(error)
-        raise exception_cls('JSS ERROR. Response Code: %s\tResponse: %s' %
-                            (response.status_code, error))
+        exception = exception_cls('JSS Error. Response Code: %s\tResponse" %s' %
+                                  (response.status_code, error))
+        exception.status_code = response.status_code
+        raise exception
 
     def get(self, url):
         """Get a url, handle errors, and return an etree from the XML data."""
@@ -570,7 +572,11 @@ class JSSObject(ElementTree.Element):
             url = self.get_post_url()
             try:
                 updated_data = self.jss.post(self.__class__, url, self)
-            except JSSPostError:
+            except JSSPostError as e:
+                if e.status_code == 409:
+                    raise JSSPostError("Object Conflict! If trying to post a "
+                                       "new object, look for name conflict and "
+                                       "delete.")
                 # Object already exists
                 if not self.can_put:
                     raise JSSMethodNotAllowedError(self.__class__.__name__)
