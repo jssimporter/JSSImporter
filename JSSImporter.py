@@ -185,7 +185,7 @@ class JSSImporter(Processor):
         except jss.JSSGetError:
             if self.category:
                 package = jss.Package(self.j, self.pkg_name,
-                                      self.category.name)
+                                      cat_name=self.category.name)
             else:
                 package = jss.Package(self.j, self.pkg_name)
 
@@ -230,7 +230,7 @@ class JSSImporter(Processor):
                         self.output("Computer Group: %s already exists." %
                                     computer_group.name)
                 except jss.JSSGetError:
-                    if is_smart:
+                    if not is_smart:
                         computer_group = jss.ComputerGroup(
                             self.j, group['name'])
                     else:
