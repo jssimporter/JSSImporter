@@ -132,6 +132,9 @@ class JSSImporter(Processor):
                 "policy_category")
         if self.env.get("policy_name"):
             replace_dict['%POLICY_NAME%'] = self.env.get("policy_name")
+        if self.env.get("jss_inventory_name"):
+            replace_dict['%JSSINVENTORY_NAME%'] = self.env.get(
+                "jss_inventory_name")
         return replace_dict
 
     def replace_text(self, text, replace_dict):
