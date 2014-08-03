@@ -568,23 +568,25 @@ class JSSObject(ElementTree.Element):
 
         """
 
-        if self.can_post:
-            url = self.get_post_url()
+        # Try to update/put first...
+        if self.can_put:
+            url = self.get_object_url()
             try:
-                updated_data = self.jss.post(self.__class__, url, self)
-            except JSSPostError as e:
-                if e.status_code == 409:
-                    raise JSSPostError("Object Conflict! If trying to post a "
-                                       "new object, look for name conflict and "
-                                       "delete.")
-                # Object already exists
-                if not self.can_put:
-                    raise JSSMethodNotAllowedError(self.__class__.__name__)
-                url = self.get_object_url()
                 self.jss.put(url, self)
                 updated_data = self.jss.get(url)
-        else:
-            raise JSSMethodNotAllowedError(self.__class__.__name__)
+            except JSSPutError:
+                # Object doesn't exist, try creating a new one.
+                if self.can_post:
+                    url = self.get_post_url()
+                    try:
+                        updated_data = self.jss.post(self.__class__, url, self)
+                    except JSSPostError as e:
+                        if e.status_code == 409:
+                            raise JSSPostError("Object Conflict! If trying to post a "
+                                               "new object, look for name conflict and "
+                                               "delete.")
+                else:
+                    raise JSSMethodNotAllowedError(self.__class__.__name__)
         # Replace current instance's data with new, JSS-filled data.
         self.clear()
         for child in updated_data.getchildren():
