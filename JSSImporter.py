@@ -175,7 +175,8 @@ class JSSImporter(Processor):
         try:
             package = self.j.Package(self.pkg_name)
             if os_requirements and os_requirements != package.findtext(
-                "os_requirements"):
+                    "os_requirements"):
+
                 package.set_os_requirements(os_requirements)
                 package.save()
                 self.output("Pkg updated.")
@@ -216,35 +217,64 @@ class JSSImporter(Processor):
         if groups:
             for group in groups:
                 is_smart = group.get('smart') or False
-                try:
-                    computer_group = self.j.ComputerGroup(group['name'])
-                    if is_smart:
-                        computer_group.delete()
-                        computer_group = jss.ComputerGroup.from_file(
-                            self.j, group.get('template_path'))
-                        computer_group.save()
-                        self.output("Computer Group: %s updated." %
-                                    computer_group.name)
-                        self.env["jss_group_updated"] = True
-                    else:
-                        self.output("Computer Group: %s already exists." %
-                                    computer_group.name)
-                except jss.JSSGetError:
-                    if not is_smart:
-                        computer_group = jss.ComputerGroup(
-                            self.j, group['name'])
-                    else:
-                        computer_group = jss.ComputerGroup.from_file(
-                            self.j, group.get('template_path'))
-
-                    computer_group.save()
-                    self.output("Computer Group: %s created." %
-                                computer_group.name)
-                    self.env["jss_group_added"] = True
+                if is_smart:
+                    computer_group = self._add_or_update_smart_group(group)
+                else:
+                    computer_group = self._add_or_update_static_group(group)
 
                 computer_groups.append(computer_group)
 
         return computer_groups
+
+    def _add_or_update_static_group(self, group):
+        """Given a group, either add a new group or update existing group."""
+        # Check for pre-existing group first
+        try:
+            computer_group = self.j.ComputerGroup(group['name'])
+            self.output("Computer Group: %s already exists." %
+                        computer_group.name)
+        except jss.JSSGetError:
+            computer_group = jss.ComputerGroup(self.j, group['name'])
+            computer_group.save()
+            self.output("Computer Group: %s created." % computer_group.name)
+            self.env["jss_group_added"] = True
+
+        return computer_group
+
+    def _add_or_update_smart_group(self, group):
+        """Given a group, either add a new group or update existing group."""
+        # Check for pre-existing group first
+        try:
+            computer_group = self.j.ComputerGroup(group['name'])
+            update = True
+
+            # If a smart group already exists, we need to delete it and
+            # replace with the one specified as a template.
+            computer_group.delete()
+
+        except jss.JSSGetError:
+            # Group doesn't already exist, so we can just go ahead and create
+            # one.
+            update = False
+
+        template_filename = group["template_path"]
+        with open(template_filename, 'r') as f:
+            text = f.read()
+        replace_dict = self.build_replace_dict()
+        # Make the smart group's name available for template replacement.
+        replace_dict['%group_name%'] = group['name']
+        template = self.replace_text(text, replace_dict)
+        computer_group = jss.ComputerGroup.from_string(self.j, template)
+        computer_group.save()
+
+        if update:
+            self.output("Computer Group: %s updated." % computer_group.name)
+            self.env["jss_group_updated"] = True
+        else:
+            self.output("Computer Group: %s created." % computer_group.name)
+            self.env["jss_group_added"] = True
+
+        return computer_group
 
     def handle_scripts(self):
         scripts = self.env.get('scripts')
@@ -315,7 +345,7 @@ class JSSImporter(Processor):
 
     def add_scope_to_policy(self, policy_template):
         computer_groups_element = self.ensure_XML_structure(
-            policy_template,'scope/computer_groups')
+            policy_template, 'scope/computer_groups')
         for group in self.groups:
             policy_template.add_object_to_path(group, computer_groups_element)
 
@@ -335,31 +365,6 @@ class JSSImporter(Processor):
         action = ElementTree.SubElement(package_element, 'action')
         action.text = 'Install'
 
-    # Iterative
-    #def ensure_XML_structure(self, policy_template, path):
-    #    path_components = path.split('/')
-    #    current_element = policy_template
-    #    for component in path_components:
-    #        if current_element.find(component) is None:
-    #            current_element = ElementTree.SubElement(current_element,
-    #                                                     component)
-    #        else:
-    #            current_element = current_element.find(component)
-    #    return current_element
-
-    # First attempt at recursive
-    #def ensure_XML_structure(self, element, path):
-    #    search, slash, path = path.partition('/')
-    #    if search:
-    #        if element.find(search) is None:
-    #            element = ElementTree.SubElement(element, search)
-    #        else:
-    #            element = element.find(search)
-    #        return self.ensure_XML_structure(element, path)
-    #    else:
-    #        return element
-
-    # Second attempt at recursive
     def ensure_XML_structure(self, element, path):
         search, slash, path = path.partition('/')
         if search:
