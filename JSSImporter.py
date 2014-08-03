@@ -184,7 +184,7 @@ class JSSImporter(Processor):
             else:
                 self.output("Pkg already exists according to JSS, moving on")
         except jss.JSSGetError:
-            if self.category:
+            if self.category is not None:
                 package = jss.Package(self.j, self.pkg_name,
                                       cat_name=self.category.name)
             else:
