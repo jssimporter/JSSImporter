@@ -15,14 +15,18 @@
 # limitations under the License.
 
 
+from distutils.version import StrictVersion
 import os
 import shutil
+from sys import exit
 from xml.etree import ElementTree
 
 import jss
 from autopkglib import Processor, ProcessorError
 
+
 __all__ = ["JSSImporter"]
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.3.4')
 
 
 class JSSImporter(Processor):
@@ -385,6 +389,16 @@ class JSSImporter(Processor):
         return element
 
     def main(self):
+        # Ensure we have the right version of python-jss
+        if jss.__dict__.get("get_version"):
+            python_jss_version = StrictVersion(jss.get_version())
+        else:
+            python_jss_version = StrictVersion('0.0')
+        if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
+            self.output("Requires python-jss version: %s. Installed: %s" %
+                        (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
+            exit()
+
         # pull jss recipe-specific args, prep api auth
         repoUrl = self.env["JSS_URL"]
         authUser = self.env["API_USERNAME"]
