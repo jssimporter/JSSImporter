@@ -36,6 +36,13 @@ except ImportError as e:
     import plistlib
 
 
+VERSION = "0.3.4"
+
+
+def get_version():
+    return VERSION
+
+
 class JSSPrefsMissingFileError(Exception):
     pass
 
@@ -223,7 +230,7 @@ class JSS(object):
         elif response.status_code >= 400:
             self._error_handler(JSSDeleteError, response)
 
-    # Constructor methods for all JSSObject types #############################
+    # Factory methods for all JSSObject types #############################
 
     def Account(self, data=None):
         return self.factory.get_object(Account, data)
