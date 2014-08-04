@@ -132,9 +132,17 @@ class JSSImporter(Processor):
                 "policy_category")
         if self.env.get("policy_name"):
             replace_dict['%POLICY_NAME%'] = self.env.get("policy_name")
+        # Some applications may have a product name that differs from the name
+        # that the JSS uses for its "Application Title" inventory field. If so,
+        # you can set it with the jss_inventory_name input variable. If this
+        # variable is not specified, it will just append .app, which is how
+        # most apps work.
         if self.env.get("jss_inventory_name"):
             replace_dict['%JSSINVENTORY_NAME%'] = self.env.get(
                 "jss_inventory_name")
+        else:
+            replace_dict['%JSSINVENTORY_NAME%'] = '%s.app' \
+                % self.env.get('prod_name')
         return replace_dict
 
     def replace_text(self, text, replace_dict):
