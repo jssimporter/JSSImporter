@@ -51,7 +51,7 @@ Also, a group template and a policy template are included with the project files
 Note on Objects
 =================
 
-It is worth noting that most objects manipulated through the web interface will be overwritten with their templated values after the next AutoPkg run of relevent recipes. This is by design, but may be a surprise if you try to edit, say, a policy, by hand after the JSSImporter creates it.
+It is worth noting that some objects manipulated through the web interface will be overwritten with their templated values after the next AutoPkg run of relevent recipes. This is by design, but may be a surprise if you try to edit, say, a policy, by hand after the JSSImporter creates it.
 
 Specifically, objects that get deleted and recreated every run:
 Scripts
@@ -72,7 +72,7 @@ Categories are specified through the input variables ```category``` and ```polic
 Packages
 =================
 
-Not surprisingly, packages are forwarded on from ParentRecipes seamlessly. However, if you need to specify an ```os_requirement```, there's an input variable for that. The format follows that of the JSS: a comma-delimted list of acceptable versions, with 'x' as a wildcard, e.g. ```10.8.6, 10.9.x```
+Not surprisingly, packages are forwarded on from ParentRecipes seamlessly. However, if you need to specify an ```os_requirement```, there's an input variable for that. The format follows that of the JSS: a comma-delimeted list of acceptable versions, with 'x' as a wildcard, e.g. ```10.8.6, 10.9.x```
 
 Groups
 =================

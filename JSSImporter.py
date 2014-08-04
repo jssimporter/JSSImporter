@@ -36,6 +36,16 @@ class JSSImporter(Processor):
             "required": True,
             "description": "Name of the product.",
         },
+        "jss_inventory_name": {
+            "required": False,
+            "description": "Smart groups using the 'Application Title' "
+            "criteria need to specify the app's filename, as registered in "
+            "the JSS's inventory. If this variable is left out, it will "
+            "generate an 'Application Title' by adding '.app' to the "
+            "prod_name, e.g. prod_name='Google Chrome', calculated "
+            " jss_inventory_name='Google Chrome.app'. If you need to override "
+            "this behavior, specify the correct name with this variable.",
+        },
         "pkg_path": {
             "required": True,
             "description": "Path to a pkg or dmg to import - provided by "
@@ -71,8 +81,12 @@ class JSSImporter(Processor):
         },
         "category": {
             "required": False,
-            "description": ("Category to create/associate imported app "
-                            "package with."),
+            "description": "Category to create/associate imported app "
+                            "package with.",
+        },
+        "policy_category": {
+            "required": False,
+            "description": "Category to create/associate policy with.",
         },
         "os_requirements": {
             "required": False,
@@ -89,6 +103,13 @@ class JSSImporter(Processor):
             "'template_path' (string: path to template file to use for group, "
             "required for smart groups, invalid for static groups)",
         },
+        "scripts": {
+            "required": False,
+            "description": "Array of script dictionaries. Wrap each script in "
+            "a dictionary. Script keys include 'name' (Name of the script to "
+            "use, required), 'template_path' (string: path to template file to"
+            " use for script, " "required)",
+        },
         "policy_template": {
             "required": False,
             "description": "Filename of policy template file.",
@@ -101,17 +122,17 @@ class JSSImporter(Processor):
         "jss_repo_changed": {
             "description": "True if item was imported."
         },
-        "jss_smartgroup_added": {
-            "description": "True if smartgroup was added."
+        "jss_group_added": {
+            "description": "True if a group was added."
         },
-        "jss_smartgroup_updated": {
-            "description": "True if smartgroup was updated."
+        "jss_group_updated": {
+            "description": "True if a group was updated."
         },
-        "jss_staticgroup_added": {
-            "description": "True if staticgroup was added."
+        "jss_script_added": {
+            "description": "True if a script was added."
         },
-        "jss_staticgroup_updated": {
-            "description": "True if staticgroup was updated."
+        "jss_script_updated": {
+            "description": "True if a script was updated."
         },
         "jss_policy_added": {
             "description": "True if policy was added."
