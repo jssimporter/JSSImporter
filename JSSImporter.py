@@ -152,9 +152,9 @@ class JSSImporter(Processor):
         replace_dict['%VERSION%'] = self.version
         replace_dict['%PKG_NAME%'] = self.package.name
         replace_dict['%PROD_NAME%'] = self.env.get('prod_name')
-        if self.env.get("policy_category"):
-            replace_dict['%POLICY_CATEGORY%'] = self.env.get(
-                "policy_category")
+        # policy_category is not required, so set a default value if absent.
+        replace_dict['%POLICY_CATEGORY%'] = self.env.get(
+            "policy_category") or "Unknown"
         #if self.env.get("policy_name"):
         #    replace_dict['%POLICY_NAME%'] = self.env.get("policy_name")
         # Some applications may have a product name that differs from the name
@@ -220,6 +220,7 @@ class JSSImporter(Processor):
             else:
                 self.output("Pkg already exists according to JSS, moving on")
         except jss.JSSGetError:
+            # Package doesn't exist
             if self.category is not None:
                 package = jss.Package(self.j, self.pkg_name,
                                       cat_name=self.category.name)
@@ -326,6 +327,7 @@ class JSSImporter(Processor):
                     self.output("Script: %s updated." % script_object.name)
                     self.env["jss_script_updated"] = True
                 except jss.JSSGetError:
+                    # Script doesn't exist yet
                     script_object = jss.Script.from_file(
                         self.j, script['template_path'])
                     script_object.save()
@@ -402,6 +404,10 @@ class JSSImporter(Processor):
         action.text = 'Install'
 
     def ensure_XML_structure(self, element, path):
+        """Given an XML path and a starting element, ensure that all tiers of
+        the hierarchy exist.
+
+        """
         search, slash, path = path.partition('/')
         if search:
             if element.find(search) is None:
