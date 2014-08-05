@@ -60,6 +60,15 @@ Policy
 
 This way, you can ensure that what is specified in the recipe is what is on the JSS.
 
+Researching your JSS
+=================
+
+While setting this all up, you will probably want to see some valid XML straight from the horses' mouth. There are a few ways to look at the XML directly:
+1. The API documentation on your JSS includes a web interface for looking things up. Just add /api to your JSS's web address, i.e. https://yourcasperserver.org:8443/api
+2. The [jss_helper](https://github.com/sheagcraig/jss_helper) gives you a simple commandline utility for querying the relevant objects.
+3. [python-jss](https://github.com/sheagcraig/python-jss) is a python wrapper around the JSS API which will allow easy access to all objects on the JSS.
+
+
 Category & Policy Category
 =================
 
@@ -140,7 +149,7 @@ Policy
 
 Policies are generated on the fly by supplying the JSSImporter with a policy template. This is a simplified XML document-essentially an empty policy object from the API. The JSSImporter will handle substituting in the scope, category, and package information as specified in the other parts of the recipe. You may, if you wish, also include elements directly. Any groups mentioned in the input variables to the recipe, for example, would get added to the scoping groups hardcoded into the supplied policy template.
 
-Indeed, the only input variables for policies are ```policy_category```, discussed earlier, and ```policy_template```, which should be a path to a policy template, an example of which is included with this project. Again, you can experiment with values in the web interface, and then get the XML data from either an API lookup through the API documentation for your server, https://yourcasperserver:8443/api/, or if you're feeling spicy, through the python-jss wrapper.
+Indeed, the only input variables for policies are ```policy_category```, discussed earlier, and ```policy_template```, which should be a path to a policy template, an example of which is included with this project. Again, you can experiment with values in the web interface, and then get the XML data from either an API lookup through the API documentation for your server, https://yourcasperserver:8443/api/, or if you're feeling spicy, through [jss_helper](https://github.com/sheagcraig/jss_helper) or through the [python-jss](https://github.com/sheagcraig/python-jss) wrapper.
 
 See the "Template" section for a list of all of the string replacement variables.
 
@@ -151,7 +160,7 @@ Substitution variables available in templates include:
 - ```%VERSION%```: The AutoPkg version variable.
 - ```%PKG_NAME%```: The name of the package. Specifically, the display name that the JSS uses to represent that package. Usually the filename.
 - ```%PROD_NAME%```: The value of the input variable ```%prod_name%```. Note, ```%prod_name%``` is a required recipe input variable.
-- ```%POLICY_CATEGORY%```: The value of ```%policy_category%```, if specified.
+- ```%POLICY_CATEGORY%```: The value of ```%policy_category%```, if specified, or "Unknown", if not-this is what the JSS will assign anyway.
 - ```%JSSINVENTORY_NAME%```: If you want to override the default guessing of the "Application Title" for a smart group, use this along with an input variable of jss_inventory_name
 
 Known Issues
