@@ -42,11 +42,11 @@ Basic Usage
 
 To see a list of input variables, use ```autopkg processor-info JSSImporter```.
 
-Ultimately, the JSSImporter is about crafting policies, which is Casper's method for installing software. However, policies require a number of other pieces of information: what groups to scope the policy to, what category the policy should be managed under, the category of the package, any scripts to include, and potentially many other policy settings, like whether to run a recon or not.
+Ultimately, the JSSImporter is about crafting policies, which is Casper's method for installing software. However, policies require a number of other pieces of information: which groups to scope the policy to, what category the policy should be managed under, the category of the package, any scripts to include, and potentially many other policy settings, like whether to run a recon or not.
 
 Recipes may be somewhat confusing to put together at first. Have a look at [my JSS recipes](https://github.com/sheagcraig/jss-recipes) to see it all in action.
 
-Also, a group template and a policy template are included with the project files to give you something to edit from.
+Also, a group template and a policy template are included with the project files to give you a place to start.
 
 Note on Objects
 =================
@@ -142,8 +142,6 @@ Scripts
 
 Scripts work the same way as groups. The ```scripts``` input variable should contain an array of dictionaries. Each dictionary should contain a ```name``` key, which is the path to the script file itself. It should also have a ```template_path``` item which is a path to a script template. A script template is included with this project, although you'll probably only be interested in setting the priority ("After", or "Before")
 
-_NOTE_: No variable substitution is currently done in script templates! This means you have to hardcode the script filename into the script template. I'll be adding this in an upcoming release.
-
 Policy
 =================
 
@@ -166,11 +164,7 @@ Substitution variables available in templates include:
 Known Issues
 =================
 
-- As mentioned above, the scripts don't do variable substitution yet, so the templates have to specify the filename directly. I will fix this soon.
 - No extension attribute creation (yet)
-- Testing for differences in smart groups, scripts, and policies, would involve a lot of code, so we just delete and replace. There are two side effects:
-	- The ID numbers for these objects go up and up! This should never be a problem, however.
-	- Edits made through the web interface will be lost after the next AutoPkg run. As per above, this is by design.
 
 Comments/Questions/Ideas
 =================
