@@ -280,20 +280,7 @@ class JSSImporter(Processor):
 
     def _add_or_update_smart_group(self, group):
         """Given a group, either add a new group or update existing group."""
-        # Check for pre-existing group first
-        try:
-            computer_group = self.j.ComputerGroup(group['name'])
-            update = True
-
-            # If a smart group already exists, we need to delete it and
-            # replace with the one specified as a template.
-            computer_group.delete()
-
-        except jss.JSSGetError:
-            # Group doesn't already exist, so we can just go ahead and create
-            # one.
-            update = False
-
+        # Build the template group object
         template_filename = group["template_path"]
         with open(template_filename, 'r') as f:
             text = f.read()
@@ -302,12 +289,25 @@ class JSSImporter(Processor):
         replace_dict['%group_name%'] = group['name']
         template = self.replace_text(text, replace_dict)
         computer_group = jss.ComputerGroup.from_string(self.j, template)
-        computer_group.save()
 
-        if update:
+        existing_computer_group = None
+        # Check for pre-existing group
+        try:
+            existing_computer_group = self.j.ComputerGroup(group['name'])
+        except jss.JSSGetError:
+            # Group doesn't already exist, so we can just create one
+            pass
+
+        if existing_computer_group:
+            # Need to replace existing group with template XML
+            url = existing_computer_group.get_object_url()
+            self.j.put(url, computer_group)
+            # Retrieve the updated XML
+            computer_group = self.j.ComputerGroup(group['name'])
             self.output("Computer Group: %s updated." % computer_group.name)
             self.env["jss_group_updated"] = True
         else:
+            computer_group.save()
             self.output("Computer Group: %s created." % computer_group.name)
             self.env["jss_group_added"] = True
 
