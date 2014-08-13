@@ -281,47 +281,24 @@ class JSSImporter(Processor):
     def _add_or_update_smart_group(self, group):
         """Given a group, either add a new group or update existing group."""
         # Build the template group object
-        template_filename = group["template_path"]
-        with open(template_filename, 'r') as f:
-            text = f.read()
-        replace_dict = self.build_replace_dict()
-        # Make the smart group's name available for template replacement.
-        replace_dict['%group_name%'] = group['name']
-        template = self.replace_text(text, replace_dict)
-        computer_group = jss.ComputerGroup.from_string(self.j, template)
-
-        existing_computer_group = None
-        # Check for pre-existing group
-        try:
-            existing_computer_group = self.j.ComputerGroup(group['name'])
-        except jss.JSSGetError:
-            # Group doesn't already exist, so we can just create one
-            pass
-
-        if existing_computer_group is not None:
-            # Need to replace existing group with template XML
-            url = existing_computer_group.get_object_url()
-            self.j.put(url, computer_group)
-            # Retrieve the updated XML
-            computer_group = self.j.ComputerGroup(group['name'])
-            self.output("Computer Group: %s updated." % computer_group.name)
-            self.env["jss_group_updated"] = True
-        else:
-            computer_group.save()
-            self.output("Computer Group: %s created." % computer_group.name)
-            self.env["jss_group_added"] = True
+        self.replace_dict['%group_name%'] = group['name']
+        computer_group = self._update_or_create_new(
+            jss.ComputerGroup, group["template_path"],
+            update_env="jss_group_updated", added_env="jss_group_added")
 
         return computer_group
 
-    def _update_or_create_new(self, obj_cls, template_path, added_env='',
-                              update_env=''):
+    def _update_or_create_new(self, obj_cls, template_path, name='',
+                              added_env='', update_env=''):
         """Check for an existing object and update it, or create a new object.
 
         obj_cls:        The python-jss object class to work with.
         template_path:  The environment variable pointing to this objects
                         template.
+        name:           The name to use. Defaults to the "name" property of the
+                        templated object.
         added_env:      The environment var to update if an object is added.
-        update_env:    The environment var to update if an object is updated.
+        update_env:     The environment var to update if an object is updated.
 
         """
         # Create a new object from the template
@@ -336,10 +313,11 @@ class JSSImporter(Processor):
             self.add_scripts_to_policy(recipe_object)
             self.add_package_to_policy(recipe_object)
 
-        name = recipe_object.name
+        if not name:
+            name = recipe_object.name
 
         # Check for an existing object with this name.
-        existing__object = None
+        existing_object = None
         try:
             existing_object = self.j.factory.get_object(obj_cls, name)
         except jss.JSSGetError:
@@ -369,27 +347,10 @@ class JSSImporter(Processor):
         results = []
         if scripts:
             for script in scripts:
-                script_object = jss.Script.from_file(self.j,
-                                                     script['template_path'])
-                existing_script_object = None
-
-                try:
-                    existing_script_object = self.j.Script(script['name'])
-                except jss.JSSGetError:
-                    pass
-
-                if existing_script_object is not None:
-                    url = existing_script_object.get_object_url()
-                    self.j.put(url, script_object)
-                    # Retrieve the updated XML
-                    script_object = self.j.Script(script['name'])
-                    self.output("Script: %s updated." % script_object.name)
-                    self.env["jss_script_updated"] = True
-                else:
-                    # Script doesn't exist yet
-                    script_object.save()
-                    self.output("Script: %s created." % script_object.name)
-                    self.env["jss_script_added"] = True
+                script_object = self._update_or_create_new(
+                    jss.Script, script['template_path'], script['name'],
+                    added_env="jss_script_added",
+                    update_env="jss_script_updated")
 
                 # Copy the script to the repo.
                 source_item = script['name']
@@ -418,8 +379,9 @@ class JSSImporter(Processor):
             template_filename = self.env.get("policy_template")
             if not template_filename == "*LEAVE_OUT*":
                 policy = self._update_or_create_new(
-                    jss.Policy, template_filename, "jss_policy_added",
-                    "jss_policy_updated")
+                    jss.Policy, template_filename,
+                    update_env="jss_policy_added",
+                    added_env="jss_policy_updated")
             else:
                 self.output("Policy creation not desired, moving on")
 
