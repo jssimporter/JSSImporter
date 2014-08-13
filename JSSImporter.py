@@ -298,7 +298,7 @@ class JSSImporter(Processor):
             # Group doesn't already exist, so we can just create one
             pass
 
-        if existing_computer_group:
+        if existing_computer_group is not None:
             # Need to replace existing group with template XML
             url = existing_computer_group.get_object_url()
             self.j.put(url, computer_group)
@@ -313,30 +313,79 @@ class JSSImporter(Processor):
 
         return computer_group
 
+    def _update_or_create_new(self, obj_cls, env):
+        """Check for an existing object and update it, or create a new object.
+
+        obj_cls:    The python-jss object class to work with.
+        env:        The env dict containing 'name' and 'template_path' keys.
+
+        """
+        # Create a new object from the template
+        template_filename = env["template_path"]
+        with open(template_filename, 'r') as f:
+            text = f.read()
+        template = self.replace_text(text, self.replace_dict)
+        recipe_object = obj_cls.from_string(self.j, template)
+
+        # Check for an existing object with this name.
+        existing__object = None
+        try:
+            existing_object = self.j.factory.get_object(obj_cls, env['name'])
+        except jss.JSSGetError:
+            pass
+
+        if existing_object is not None:
+            # Update the existing object.
+            url = existing_object.get_object_url()
+            self.j.put(url, recipe_object)
+            # Retrieve the updated XML.
+            recipe_object = self.j.factory.get_object(obj_cls, env['name'])
+            self.output("%s: %s updated." % (obj_cls.__name__,
+                                             recipe_object.name))
+            self.env["jss_script_updated"] = True
+        else:
+            # Object doesn't exist yet.
+            recipe_object.save()
+            self.output("%s: %s created." % (obj_cls.__name__,
+                                             recipe_object.name))
+            self.env["jss_script_added"] = True
+
+        return recipe_object
+
+
     def handle_scripts(self):
         scripts = self.env.get('scripts')
         results = []
         if scripts:
             for script in scripts:
+                script_object = jss.Script.from_file(self.j,
+                                                     script['template_path'])
+                existing_script_object = None
+
                 try:
+                    existing_script_object = self.j.Script(script['name'])
+                except jss.JSSGetError:
+                    pass
+
+                if existing_script_object is not None:
+                    url = existing_script_object.get_object_url()
+                    self.j.put(url, script_object)
+                    # Retrieve the updated XML
                     script_object = self.j.Script(script['name'])
-                    script_object.delete()
-                    script_object = jss.Script.from_file(
-                        self.j, script['template_path'])
-                    script_object.save()
                     self.output("Script: %s updated." % script_object.name)
                     self.env["jss_script_updated"] = True
-                except jss.JSSGetError:
+                else:
                     # Script doesn't exist yet
-                    script_object = jss.Script.from_file(
-                        self.j, script['template_path'])
                     script_object.save()
                     self.output("Script: %s created." % script_object.name)
                     self.env["jss_script_added"] = True
 
+                # Copy the script to the repo.
                 source_item = script['name']
                 dest_item = (self.env["JSS_REPO"] + "/Scripts/" + source_item)
                 if os.path.exists(dest_item):
+                    # Does not replace an already existing script!
+                    # This may need to change.
                     self.output("Script already exists at %s, moving on" %
                                 dest_item)
                 else:
@@ -448,6 +497,8 @@ class JSSImporter(Processor):
         self.category = self.handle_category("category")
         self.policy_category = self.handle_category("policy_category")
         self.package = self.handle_package()
+        # Build our text replacement dictionary
+        self.replace_dict = self.build_replace_dict()
         self.groups = self.handle_groups()
         self.scripts = self.handle_scripts()
         self.handle_policy()
