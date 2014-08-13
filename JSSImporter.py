@@ -313,24 +313,35 @@ class JSSImporter(Processor):
 
         return computer_group
 
-    def _update_or_create_new(self, obj_cls, env):
+    def _update_or_create_new(self, obj_cls, template_path, added_env='',
+                              update_env=''):
         """Check for an existing object and update it, or create a new object.
 
-        obj_cls:    The python-jss object class to work with.
-        env:        The env dict containing 'name' and 'template_path' keys.
+        obj_cls:        The python-jss object class to work with.
+        template_path:  The environment variable pointing to this objects
+                        template.
+        added_env:      The environment var to update if an object is added.
+        update_env:    The environment var to update if an object is updated.
 
         """
         # Create a new object from the template
-        template_filename = env["template_path"]
-        with open(template_filename, 'r') as f:
+        with open(template_path, 'r') as f:
             text = f.read()
         template = self.replace_text(text, self.replace_dict)
         recipe_object = obj_cls.from_string(self.j, template)
 
+        # If object is a Policy, we need to inject scope, scripts, and package.
+        if obj_cls is jss.Policy:
+            self.add_scope_to_policy(recipe_object)
+            self.add_scripts_to_policy(recipe_object)
+            self.add_package_to_policy(recipe_object)
+
+        name = recipe_object.name
+
         # Check for an existing object with this name.
         existing__object = None
         try:
-            existing_object = self.j.factory.get_object(obj_cls, env['name'])
+            existing_object = self.j.factory.get_object(obj_cls, name)
         except jss.JSSGetError:
             pass
 
@@ -339,16 +350,16 @@ class JSSImporter(Processor):
             url = existing_object.get_object_url()
             self.j.put(url, recipe_object)
             # Retrieve the updated XML.
-            recipe_object = self.j.factory.get_object(obj_cls, env['name'])
-            self.output("%s: %s updated." % (obj_cls.__name__,
-                                             recipe_object.name))
-            self.env["jss_script_updated"] = True
+            recipe_object = self.j.factory.get_object(obj_cls, name)
+            self.output("%s: %s updated." % (obj_cls.__name__, name))
+            if update_env:
+                self.env[update_env] = True
         else:
             # Object doesn't exist yet.
             recipe_object.save()
-            self.output("%s: %s created." % (obj_cls.__name__,
-                                             recipe_object.name))
-            self.env["jss_script_added"] = True
+            self.output("%s: %s created." % (obj_cls.__name__, name))
+            if added_env:
+                self.env[added_env] = True
 
         return recipe_object
 
@@ -405,28 +416,10 @@ class JSSImporter(Processor):
     def handle_policy(self):
         if self.env.get("policy_template"):
             template_filename = self.env.get("policy_template")
-
             if not template_filename == "*LEAVE_OUT*":
-                with open(template_filename, 'r') as f:
-                    text = f.read()
-                replace_dict = self.build_replace_dict()
-                template = self.replace_text(text, replace_dict)
-                temp_policy = jss.Policy.from_string(self.j, template)
-
-                self.add_scope_to_policy(temp_policy)
-                self.add_scripts_to_policy(temp_policy)
-                self.add_package_to_policy(temp_policy)
-                try:
-                    policy = self.j.Policy(temp_policy.name)
-                    policy.delete()
-                    temp_policy.save()
-                    self.env["jss_policy_updated"] = True
-                    self.output("Policy: %s updated." % temp_policy.name)
-                except jss.JSSGetError:
-                    # Object doesn't exist yet.
-                    temp_policy.save()
-                    self.env["jss_policy_added"] = True
-                    self.output("Policy: %s created." % temp_policy.name)
+                policy = self._update_or_create_new(
+                    jss.Policy, template_filename, "jss_policy_added",
+                    "jss_policy_updated")
             else:
                 self.output("Policy creation not desired, moving on")
 
