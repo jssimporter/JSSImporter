@@ -194,7 +194,7 @@ class JSSImporter(Processor):
                                 (category_type, category_name))
                 except jss.JSSGetError:
                     # Category doesn't exist
-                    category = self.j.Category(self.j, category_name)
+                    category = jss.Category(self.j, category_name)
                     category.save()
                     self.env["jss_category_added"] = True
             else:
