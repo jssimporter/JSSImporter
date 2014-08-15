@@ -302,7 +302,7 @@ class JSSImporter(Processor):
 
         """
         # Create a new object from the template
-        with open(template_path, 'r') as f:
+        with open(os.path.expanduser(template_path), 'r') as f:
             text = f.read()
         template = self.replace_text(text, self.replace_dict)
         recipe_object = obj_cls.from_string(self.j, template)
