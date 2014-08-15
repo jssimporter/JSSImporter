@@ -6,11 +6,31 @@ This module adds the ability for autopkg to create groups, upload packages and s
 Installation and Setup
 =================
 
+The easiest method for installing is to download the latest package installer from the "releases" section. This will add the JSSImporter.py processor to your autopkglib, and the python-jss module to your system python, which is what AutoPkg should be using. Bonus points if you grab my [recipe](https://github.com/autopkg/sheagcraig-recipes) and just use AutoPkg to build your own installer...
+
+You will need to add some preferences to your AutoPkg preferences file.:
+
+	```
+	defaults write com.github.autopkg JSS_REPO /Volumes/JSS_Dist_Point
+	defaults write com.github.autopkg JSS_URL https://test.jss.private:8443
+	defaults write com.github.autopkg API_USERNAME apiUser
+	defaults write com.github.autopkg API_PASSWORD apiPassword
+	```
+
+Manual Installation and Setup
+=================
+
+However, if you're keen on manually installing, follow these directions:
+
 1. Make sure you've already installed the most current autopkg tools (AND RECIPES) FIRST! (Sorry to yell.) Then use the releases tab, to the right above, to download the code.
-2. Unzip the download somewhere and copy the ```JSSImporter.py``` plugin file to your autopkglib folder, typically located at ```/Library/AutoPkg/autopkglib```
+2. Unzip the download somewhere and copy or link the ```JSSImporter.py``` plugin file to your autopkglib folder, typically located at ```/Library/AutoPkg/autopkglib```
 	- i.e. 
 	```
 	sudo cp ~/Downloads/jss-autopkg-addon/JSSImporter.py /Library/AutoPkg/autopkglib
+	```
+	or
+	```
+	sudo ln -s ~/Downloads/jss-autopkg-addon/JSSImporter.py /Library/AutoPkg/autopkglib/JSSImporter.py
 	```
 2. You will need to add some preferences to your AutoPkg preferences file.:
 
