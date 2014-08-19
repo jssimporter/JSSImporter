@@ -22,6 +22,10 @@ from sys import exit
 from xml.etree import ElementTree
 
 import jss
+try:
+    from jss import __version__ as PYTHON_JSS_VERSION
+Except ImportError:
+    PYTHON_JSS_VERSION = '0.0.0'
 from autopkglib import Processor, ProcessorError
 
 
@@ -421,13 +425,10 @@ class JSSImporter(Processor):
 
     def main(self):
         # Ensure we have the right version of python-jss
-        if jss.__dict__.get("get_version"):
-            python_jss_version = StrictVersion(jss.get_version())
-        else:
-            python_jss_version = StrictVersion('0.0')
+        python_jss_version = StrictVersion(PYTHON_JSS_VERSION)
         if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
-            self.output("Requires python-jss version: %s. Installed: %s" %
-                        (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
+            print("Requires python-jss version: %s. Installed: %s" %
+                  (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
             exit()
 
         # pull jss recipe-specific args, prep api auth
