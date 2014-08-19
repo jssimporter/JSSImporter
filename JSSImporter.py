@@ -24,7 +24,7 @@ from xml.etree import ElementTree
 import jss
 try:
     from jss import __version__ as PYTHON_JSS_VERSION
-Except ImportError:
+except ImportError:
     PYTHON_JSS_VERSION = '0.0.0'
 from autopkglib import Processor, ProcessorError
 
@@ -113,6 +113,13 @@ class JSSImporter(Processor):
             "a dictionary. Script keys include 'name' (Name of the script to "
             "use, required), 'template_path' (string: path to template file to"
             " use for script, " "required)",
+        },
+        "extension_attributes": {
+            "required": False,
+            "description": "Array of extension attribute dictionaries. Wrap "
+            "each extension attribute in a dictionary. Script keys include "
+            "'name' (Name of the extension attribute to use, required), "
+            "'ext_attribute_path' (string: path to file to required)",
         },
         "policy_template": {
             "required": False,
@@ -378,6 +385,18 @@ class JSSImporter(Processor):
                 results.append(script_object)
         return results
 
+    def handle_extension_attributes(self):
+        extattrs = self.env.get('extension_attributes')
+        results = []
+        if extattrs:
+            for extattr in extattrs:
+                extattr_object = self._update_or_create_new(
+                    jss.ComputerExtensionAttribute,
+                    extattr['ext_attribute_path'], extattr['name'])
+
+                results.append(extattr_object)
+        return results
+
     def handle_policy(self):
         if self.env.get("policy_template"):
             template_filename = self.env.get("policy_template")
@@ -455,6 +474,7 @@ class JSSImporter(Processor):
         self.package = self.handle_package()
         # Build our text replacement dictionary
         self.replace_dict = self.build_replace_dict()
+        self.extattrs = self.handle_extension_attributes()
         self.groups = self.handle_groups()
         self.scripts = self.handle_scripts()
         self.handle_policy()
