@@ -66,14 +66,15 @@ Ultimately, the JSSImporter is about crafting policies, which is Casper's method
 
 Recipes may be somewhat confusing to put together at first. Have a look at [my JSS recipes](https://github.com/sheagcraig/jss-recipes) to see it all in action.
 
-Also, a group template and a policy template are included with the project files to give you a place to start.
+Also, a group template and a policy template are included with the project files to give you a place to start. (Note: These files are not included if you use the package installer!)
 
 Note on Objects
 =================
 
 It is worth noting that some objects manipulated through the web interface will be overwritten with their templated values after the next AutoPkg run of relevent recipes. This is by design, but may be a surprise if you try to edit, say, a policy, by hand after the JSSImporter creates it.
 
-Specifically, objects that get deleted and recreated every run:
+Specifically, objects that get recreated every run:
+Extension Attributes
 Scripts
 Smart Groups
 Policy
@@ -155,12 +156,20 @@ See the "Template" section for a list of all of the string replacement variables
 
 _NOTE_: Applications that don't install into ```/Applications``` will not be available for "Application Title" criteria. The best solution is to create an extension attribute that returns the version number of the app in question and use that value in your smart group criteria. If you look at the Adobe Flash Player, Silverlight, or Oracle Java 7 recipes in [my jss recipe repo](https://github.com/sheagcraig/jss-recipes), there are examples of how to solve this problem.
 
-python-jss has full support for extension attributes, so I will be adding the ability to include extension attributes in the recipe file, to further encapsulate this process.
-
 Scripts
 =================
 
 Scripts work the same way as groups. The ```scripts``` input variable should contain an array of dictionaries. Each dictionary should contain a ```name``` key, which is the path to the script file itself. It should also have a ```template_path``` item which is a path to a script template. A script template is included with this project, although you'll probably only be interested in setting the priority ("After", or "Before")
+
+Extension Attributes
+=================
+
+Extension attributes work just like scripts. You need a complete and valid XML file for the extension attribute (although it will do variable substitution). To experiment with XML for these, again, use the API page to look through the ones on your JSS. Included with this project there is a template for extension attributes as well, although you will need to edit it to add in your script. As the extension attribute is XML, you will need to properly  HTML encode reserved characters; e.g. '<' becomes '&lt;', '>' becomes '%gt;'. Since the extension attributes value needs to be <result>Your Result</result> sent to stdout, you will need to do this manually for every extension attribute.
+
+Solutions to handle this automatically are being considered, but at this moment, XML is not valid if there are < and > sitting around that aren't escaped.
+
+The ```extension_attributes``` input variable should contain an array of dictionaries. Each dictionary should contain a ```name``` key, which is the name of the extension attribute. It should also have a ```ext_attribute_path``` item which is a path to extension attribute file.
+
 
 Policy
 =================
@@ -180,11 +189,6 @@ Substitution variables available in templates include:
 - ```%PROD_NAME%```: The value of the input variable ```%prod_name%```. Note, ```%prod_name%``` is a required recipe input variable.
 - ```%POLICY_CATEGORY%```: The value of ```%policy_category%```, if specified, or "Unknown", if not-this is what the JSS will assign anyway.
 - ```%JSSINVENTORY_NAME%```: If you want to override the default guessing of the "Application Title" for a smart group, use this along with an input variable of jss_inventory_name
-
-Known Issues
-=================
-
-- No extension attribute creation (yet)
 
 Comments/Questions/Ideas
 =================
