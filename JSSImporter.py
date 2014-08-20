@@ -119,7 +119,7 @@ class JSSImporter(Processor):
             "description": "Array of extension attribute dictionaries. Wrap "
             "each extension attribute in a dictionary. Script keys include "
             "'name' (Name of the extension attribute to use, required), "
-            "'ext_attribute_path' (string: path to file to required)",
+            "'ext_attribute_path' (string: path to extension attribute file.)",
         },
         "policy_template": {
             "required": False,
@@ -144,6 +144,12 @@ class JSSImporter(Processor):
         },
         "jss_script_updated": {
             "description": "True if a script was updated."
+        },
+        "jss_extension_attribute_added": {
+            "description": "True if an extension attribute was added."
+        },
+        "jss_extension_attribute_updated": {
+            "description": "True if an extension attribute was updated."
         },
         "jss_policy_added": {
             "description": "True if policy was added."
@@ -392,7 +398,9 @@ class JSSImporter(Processor):
             for extattr in extattrs:
                 extattr_object = self._update_or_create_new(
                     jss.ComputerExtensionAttribute,
-                    extattr['ext_attribute_path'], extattr['name'])
+                    extattr['ext_attribute_path'], extattr['name'],
+                    update_env="jss_extension_attribute_added",
+                    added_env="jss_extension_attribute_updated")
 
                 results.append(extattr_object)
         return results
@@ -466,6 +474,8 @@ class JSSImporter(Processor):
         self.env["jss_group_updated"] = False
         self.env["jss_script_added"] = False
         self.env["jss_script_updated"] = False
+        self.env["jss_extension_attribute_added"] = False
+        self.env["jss_extension_attribute_updated"] = False
         self.env["jss_policy_added"] = False
         self.env["jss_policy_updated"] = False
 
