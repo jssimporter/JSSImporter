@@ -1,12 +1,14 @@
 jss-autopkg-addon
 =================
 
-This module adds the ability for autopkg to create groups, upload packages and scripts, and create policies for the Casper JSS. This project began from Allister Banks' original [jss-autopkg-addon project](https://github.com/arubdesu/jss-autopkg-addon), but has since diverged considerably to add greater customization options while maintaining the existing functionality.
+This processor adds the ability for AutoPkg to create groups, upload packages and scripts, add extension attributes, and create policies for the Casper JSS, allowing you to fully-automate your software testing workflow. 
+
+This project began from Allister Banks' original [jss-autopkg-addon project](https://github.com/arubdesu/jss-autopkg-addon), but has since diverged considerably to add greater customization options while maintaining the existing functionality.
 
 Installation and Setup
 =================
 
-The easiest method for installing is to download the latest package installer from the "releases" section. This will add the JSSImporter.py processor to your autopkglib, and the python-jss module to your system python, which is what AutoPkg should be using. Bonus points if you grab my [recipe](https://github.com/autopkg/sheagcraig-recipes) and just use AutoPkg to build your own installer...
+The easiest method for installing is to download the latest package installer from the "releases" section. This will add the JSSImporter.py processor to your autopkglib, and the python-jss module to your system python, which is what AutoPkg should be using. The various templates and this file will be added to ```/usr/share/jss-autopkg-addon```. Bonus points if you grab my [recipe](https://github.com/autopkg/sheagcraig-recipes) and just use AutoPkg to build your own installer...
 
 You will need to add some preferences to your AutoPkg preferences file.:
 
@@ -66,7 +68,7 @@ Ultimately, the JSSImporter is about crafting policies, which is Casper's method
 
 Recipes may be somewhat confusing to put together at first. Have a look at [my JSS recipes](https://github.com/sheagcraig/jss-recipes) to see it all in action.
 
-Also, a group template and a policy template are included with the project files to give you a place to start. (Note: These files are not included if you use the package installer!)
+Also, a group template and a policy template are included with the project files to give you a place to start. (Note: They're in ```/usr/share/jss-autopkg-addon```)
 
 Note on Objects
 =================
