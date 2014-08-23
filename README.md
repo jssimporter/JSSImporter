@@ -192,6 +192,15 @@ Substitution variables available in templates include:
 - ```%POLICY_CATEGORY%```: The value of ```%policy_category%```, if specified, or "Unknown", if not-this is what the JSS will assign anyway.
 - ```%JSSINVENTORY_NAME%```: If you want to override the default guessing of the "Application Title" for a smart group, use this along with an input variable of jss_inventory_name
 
+SSL
+===
+
+If you have issues with certificate validation (either a self-signed certificate on a JSS instance, or issues due to Python's weak SSL support in 2.x on OS X), there is an additional boolean preference you can set to disable SSL verification:
+
+    defaults write com.github.autopkg JSS_VERIFY_SSL -bool false
+
+This value defaults to true.
+
 Comments/Questions/Ideas
 =================
 

@@ -83,6 +83,11 @@ class JSSImporter(Processor):
             "description": "Password of api user, optionally set as a key in "
             "the com.github.autopkg preference file.",
         },
+        "JSS_VERIFY_SSL": {
+            "required": False,
+            "description": "If set to False, SSL verification in communication "
+            "with the JSS will be skipped. Defaults to True.",
+        },
         "category": {
             "required": False,
             "description": "Category to create/associate imported app "
@@ -462,7 +467,8 @@ class JSSImporter(Processor):
         repoUrl = self.env["JSS_URL"]
         authUser = self.env["API_USERNAME"]
         authPass = self.env["API_PASSWORD"]
-        self.j = jss.JSS(url=repoUrl, user=authUser, password=authPass)
+        sslVerify = self.env.get("JSS_VERIFY_SSL", True)
+        self.j = jss.JSS(url=repoUrl, user=authUser, password=authPass, ssl_verify=sslVerify)
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]
         self.version = self.env["version"]
