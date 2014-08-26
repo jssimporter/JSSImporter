@@ -36,13 +36,6 @@ except ImportError as e:
     import plistlib
 
 
-VERSION = "0.3.4"
-
-
-def get_version():
-    return VERSION
-
-
 class JSSPrefsMissingFileError(Exception):
     pass
 
@@ -72,6 +65,10 @@ class JSSMethodNotAllowedError(Exception):
 
 
 class JSSUnsupportedSearchMethodError(Exception):
+    pass
+
+
+class JSSFileUploadParameterError(Exception):
     pass
 
 
@@ -301,8 +298,8 @@ class JSS(object):
     def EBook(self, data=None):
         return self.factory.get_object(EBook, data)
 
-    # def FileUpload(self, data=None):
-    #    return self.factory.get_object(FileUpload, data)
+    # FileUploads' only function is to upload, so a method here is not
+    # provided.
 
     def GSXConnection(self, data=None):
         return self.factory.get_object(GSXConnection, data)
@@ -1013,16 +1010,106 @@ class EBook(JSSContainerObject):
     _url = '/ebooks'
 
 
-class FileUpload(JSSObject):
-    # Need to think about how to handle this.
-    def __init__(self):
-        raise NotImplementedError
+class FileUpload(object):
+    """FileUploads are a special case in the API. They allow you to add
+    file resources to a number of objects on the JSS.
 
-    # _url = '/fileuploads'
-    # can_put = False
-    # can_delete = False
-    # can_get = False
-    # can_list = False
+    To use, instantiate a new FileUpload object, then use the save() method to
+    upload.
+
+    Once the upload has been posted you may only interact with it through the
+    web interface. You cannot list/get it or delete it through the API.
+
+    However, you can reuse the FileUpload object if you wish, by changing the
+    parameters, and issuing another save().
+
+    """
+    _url = 'fileuploads'
+
+    def __init__(self, j, resource_type, id_type, _id, resource):
+        """Prepare a new FileUpload.
+
+        j:                  A JSS object to POST the upload to.
+
+        resource_type:      String. Acceptable Values:
+                            Attachments:
+                                computers
+                                mobiledevices
+                                enrollmentprofiles
+                                peripherals
+                            Icons:
+                                policies
+                                ebooks
+                                mobiledeviceapplicationsicon
+                            Mobile Device Application:
+                                mobiledeviceapplicationsipa
+                            Disk Encryption
+                                diskencryptionconfigurations
+        id_type:            String of desired ID type:
+                                id
+                                name
+
+        _id                 Int or String referencing the identity value of
+                            the resource to add the FileUpload to.
+
+        resource            String path to the file to upload.
+
+        """
+        resource_types = ['computers', 'mobiledevices', 'enrollmentprofiles',
+                          'peripherals', 'policies', 'ebooks',
+                          'mobiledeviceapplicationsicon',
+                          'mobiledeviceapplicationsipa',
+                          'diskencryptionconfigurations']
+        id_types = ['id', 'name']
+
+        self.jss = j
+
+        # Do some basic error checking on parameters.
+        if resource_type in resource_types:
+            self.resource_type = resource_type
+        else:
+            raise JSSFileUploadParameterError("resource_type must be one of: "
+                                              "%s" % resource_types)
+        if id_type in id_types:
+            self.id_type = id_type
+        else:
+            raise JSSFileUploadParameterError("id_type must be one of: "
+                                              "%s" % id_types)
+        self._id = str(_id)
+
+        self.resource = {'name': (resource, open(resource, 'rb'),
+                                  'multipart/form-data')}
+
+        self.set_upload_url()
+
+    def set_upload_url(self):
+        """Use to generate the full URL to POST to."""
+        self._upload_url = "/".join([self.jss._url, self._url,
+                                     self.resource_type, self.id_type,
+                                     str(self._id)])
+
+    def save(self):
+        """POST the object to the JSS."""
+        # Until I figure out how to do this using the already established
+        # session, I will just create a one-off post request directly.
+        try:
+            response = requests.post(self._upload_url,
+                                     auth=self.jss.session.auth,
+                                     files=self.resource)
+        except JSSPostError as e:
+            if e.status_code == 409:
+                raise JSSPostError("Object Conflict! If trying to post a "
+                                   "new object, look for name conflict and "
+                                   "delete.")
+            else:
+                raise JSSMethodNotAllowedError(self.__class__.__name__)
+
+        if response.status_code == 201:
+            if self.jss.verbose:
+                print("POST: Success")
+                print(response.text.encode('utf-8'))
+        elif response.status_code >= 400:
+            self.jss._error_handler(JSSPostError, response)
 
 
 class GSXConnection(JSSFlatObject):
