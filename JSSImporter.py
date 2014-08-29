@@ -30,7 +30,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.3.4')
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.3.7')
 
 
 class JSSImporter(Processor):
@@ -61,6 +61,12 @@ class JSSImporter(Processor):
             "by previous pkg recipe/processor.",
         },
         "JSS_REPO": {
+            "required": True,
+            "description": "Path to a mounted or otherwise locally accessible "
+            "JSS dist point/share, optionally set as a key in the "
+            "com.github.autopkg preference file.",
+        },
+        "JSS_REPOS": {
             "required": True,
             "description": "Path to a mounted or otherwise locally accessible "
             "JSS dist point/share, optionally set as a key in the "
@@ -253,10 +259,26 @@ class JSSImporter(Processor):
             package.set_os_requirements(os_requirements)
             package.save()
 
-        source_item = self.env["pkg_path"]
-        dest_item = (self.env["JSS_REPO"] + "/Packages/" + self.pkg_name)
+            # Copy the package to the distribution points.
+            # Use new method preferentially (can leave old JSS_REPO key in and
+            # it will only be used if JSS_REPOS is absent)
+            if self.env.get('JSS_REPOS'):
+                self._copy(self.env["pkg_path"])
+            elif self.env.get('JSS_REPO'):
+                self._copy_old(self.env["pkg_path"])
+
+        return package
+
+    def _copy_old(self, source_item):
+        """Copy a package or script using the old JSS_REPO preferences."""
+        if os.path.splitext(source_item)[1].upper() == '.PKG':
+            dest_item = (self.env["JSS_REPO"] + "/Packages/" + self.pkg_name)
+        else:
+            dest_item = (self.env["JSS_REPO"] + "/Scripts/" + self.pkg_name)
+
+        # Not sure this needs to be here
         if os.path.exists(dest_item):
-            self.output("Pkg already exists at %s, moving on" % dest_item)
+            self.output("File already exists at %s, moving on" % dest_item)
         else:
             try:
                 if os.path.isdir(source_item):
@@ -269,7 +291,15 @@ class JSSImporter(Processor):
             except BaseException, err:
                 raise ProcessorError(
                     "Can't copy %s to %s: %s" % (source_item, dest_item, err))
-        return package
+
+    def _copy(self, source_item):
+        """Copy a package or script using the new JSS_REPOS preference."""
+        #self.j.distribution_points.mount()
+        self.output("Copying %s to all distribution points." % source_item)
+        self.j.distribution_points.copy(source_item)
+        self.env["jss_repo_changed"] = True
+        self.output("Copied %s" % source_item)
+        self.j.distribution_points.umount()
 
     def handle_groups(self):
         groups = self.env.get('groups')
@@ -375,25 +405,14 @@ class JSSImporter(Processor):
                     added_env="jss_script_added",
                     update_env="jss_script_updated")
 
-                # Copy the script to the repo.
-                source_item = script['name']
-                dest_item = (self.env["JSS_REPO"] + "/Scripts/" + source_item)
-                if os.path.exists(dest_item):
-                    # Does not replace an already existing script!
-                    # This may need to change.
-                    self.output("Script already exists at %s, moving on" %
-                                dest_item)
-                else:
-                    try:
-                        shutil.copyfile(source_item, dest_item)
-                        self.output("Copied %s to %s" %
-                                    (source_item, dest_item))
-                        # set output variables
-                        self.env["jss_repo_changed"] = True
-                    except BaseException, err:
-                        raise ProcessorError(
-                            "Can't copy %s to %s: %s" %
-                            (source_item, dest_item, err))
+                # Copy the script to the distribution points.
+                # Use new method preferentially (can leave old JSS_REPO key in and
+                # it will only be used if JSS_REPOS is absent)
+                if self.env.get('JSS_REPOS'):
+                    self._copy(script['name'])
+                elif self.env.get('JSS_REPO'):
+                    self._copy_old(script['name'])
+
                 results.append(script_object)
         return results
 
@@ -469,7 +488,9 @@ class JSSImporter(Processor):
         authUser = self.env["API_USERNAME"]
         authPass = self.env["API_PASSWORD"]
         sslVerify = self.env.get("JSS_VERIFY_SSL")
-        self.j = jss.JSS(url=repoUrl, user=authUser, password=authPass, ssl_verify=sslVerify)
+        repos = self.env["JSS_REPOS"]
+        self.j = jss.JSS(url=repoUrl, user=authUser, password=authPass,
+                         ssl_verify=sslVerify, repo_prefs=repos)
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]
         self.version = self.env["version"]
