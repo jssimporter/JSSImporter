@@ -30,7 +30,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.3.7')
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.3.8')
 
 
 class JSSImporter(Processor):
@@ -61,16 +61,19 @@ class JSSImporter(Processor):
             "by previous pkg recipe/processor.",
         },
         "JSS_REPO": {
-            "required": True,
+            "required": False,
             "description": "Path to a mounted or otherwise locally accessible "
             "JSS dist point/share, optionally set as a key in the "
-            "com.github.autopkg preference file.",
+            "com.github.autopkg preference file. Will only use if JSS_REPOS is"
+            " not defined, and will be deprecated in a future release.",
         },
         "JSS_REPOS": {
-            "required": True,
+            "required": False,
             "description": "Path to a mounted or otherwise locally accessible "
             "JSS dist point/share, optionally set as a key in the "
-            "com.github.autopkg preference file.",
+            "com.github.autopkg preference file. Used in preference to "
+            "deprecated JSS_REPO.",
+            "default": [],
         },
         "JSS_URL": {
             "required": True,
@@ -259,22 +262,28 @@ class JSSImporter(Processor):
             package.set_os_requirements(os_requirements)
             package.save()
 
-            # Copy the package to the distribution points.
-            # Use new method preferentially (can leave old JSS_REPO key in and
-            # it will only be used if JSS_REPOS is absent)
-            if self.env.get('JSS_REPOS'):
+        # Ensure packages are on distribution point(s)
+
+        # Use new method preferentially (can leave old JSS_REPO key in and
+        # it will only be used if JSS_REPOS is absent)
+        if self.env.get('JSS_REPOS'):
+            self.j.distribution_points.mount()
+            if not self.j.distribution_points.exists(
+                os.path.basename(self.env["pkg_path"])):
                 self._copy(self.env["pkg_path"])
-            elif self.env.get('JSS_REPO'):
-                self._copy_old(self.env["pkg_path"])
+        elif self.env.get('JSS_REPO'):
+            self._copy_old(self.env["pkg_path"])
 
         return package
 
     def _copy_old(self, source_item):
         """Copy a package or script using the old JSS_REPO preferences."""
         if os.path.splitext(source_item)[1].upper() == '.PKG':
-            dest_item = (self.env["JSS_REPO"] + "/Packages/" + self.pkg_name)
+            dest_item = os.path.join(self.env["JSS_REPO"], "Packages",
+                                     self.pkg_name)
         else:
-            dest_item = (self.env["JSS_REPO"] + "/Scripts/" + self.pkg_name)
+            dest_item = os.path.join(self.env["JSS_REPO"], "Scripts",
+                                     self.pkg_name)
 
         # Not sure this needs to be here
         if os.path.exists(dest_item):
@@ -488,7 +497,7 @@ class JSSImporter(Processor):
         authUser = self.env["API_USERNAME"]
         authPass = self.env["API_PASSWORD"]
         sslVerify = self.env.get("JSS_VERIFY_SSL")
-        repos = self.env["JSS_REPOS"]
+        repos = self.env.get("JSS_REPOS")
         self.j = jss.JSS(url=repoUrl, user=authUser, password=authPass,
                          ssl_verify=sslVerify, repo_prefs=repos)
         self.pkg_name = os.path.basename(self.env["pkg_path"])
