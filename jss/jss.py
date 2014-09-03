@@ -26,6 +26,7 @@ import re
 import copy
 import subprocess
 
+from . import distribution_points
 from .contrib import requests
 try:
     from .contrib import FoundationPlist
@@ -85,6 +86,13 @@ class JSSPrefs(object):
                             (JSS() handles the appending of /JSSResource)
             jss_user:       API username to use.
             jss_password:   API password.
+            repos:          (Optional) An array of file repositories dicts to
+                            connect.
+
+        repos Data (See distribution_points package for more info):
+            name:           String name of the distribution point. Must match
+                            the value on the JSS.
+            password:       For types requiring authentication.
 
         """
         if preferences_file is None:
@@ -106,8 +114,12 @@ class JSSPrefs(object):
                 self.password = prefs['jss_pass']
                 self.url = prefs['jss_url']
             except KeyError:
-                raise JSSPrefsMissingKeyError("Please provide all required"
-                                              " preferences!")
+                raise JSSPrefsMissingKeyError("Please provide all required "
+                                              "preferences!")
+            # Optional file repository array. Defaults to empty list.
+            self.repos = []
+            for repo in prefs.get('repos', []):
+                self.repos.append(dict(repo))
         else:
             raise JSSPrefsMissingFileError("Preferences file not found!")
 
@@ -115,7 +127,7 @@ class JSSPrefs(object):
 class JSS(object):
     """Connect to a JSS and handle API requests."""
     def __init__(self, jss_prefs=None, url=None, user=None, password=None,
-                 ssl_verify=True, verbose=False):
+                 repo_prefs=[], ssl_verify=True, verbose=False):
         """Provide either a JSSPrefs object OR specify url, user, and password
         to init.
 
@@ -123,26 +135,35 @@ class JSS(object):
         url:        Path with port to a JSS. See JSSPrefs.__doc__
         user:       API Username.
         password:   API Password.
+        repo_prefs: A list of dicts with repository names and passwords. See
+                    JSSPrefs.
         ssl_verify: Boolean indicating whether to verify SSL certificates.
                     Defaults to True.
+        verbose:    Boolean indicating the level of logging. (Doesn't do much.)
 
         """
         if jss_prefs is not None:
             url = jss_prefs.url
             user = jss_prefs.user
             password = jss_prefs.password
+            repo_prefs = jss_prefs.repos
 
         self._url = '%s/JSSResource' % url
         self.user = user
         self.password = password
+        self.repo_prefs = repo_prefs
         self.ssl_verify = ssl_verify
         self.verbose = verbose
-        self.factory = JSSObjectFactory(self)
         self.session = requests.Session()
         self.session.auth = (self.user, self.password)
         self.session.verify = self.ssl_verify
         headers = {"content-type": 'text/xml', 'Accept': 'application/xml'}
         self.session.headers.update(headers)
+        self.factory = JSSObjectFactory(self)
+        # If JSS created with arguments, and no repos provided, don't try to
+        # create them.
+        if self.repo_prefs:
+            self.distribution_points = distribution_points.DistributionPoints(self)
 
     def _error_handler(self, exception_cls, response):
         """Generic error handler. Converts html responses to friendlier
@@ -521,8 +542,7 @@ class JSSObject(ElementTree.Element):
         """Return an Element."""
         # We use ElementTree.SubElement() a lot. Unfortunately, it relies on a
         # super() call to its __class__.makeelement(), which will fail due to
-        # the method resolution order / multiple inheritance of our objects
-        # (they have an editor AND a template or JSSObject parent class).
+        # the class NOT being Element.
         # This handles that issue.
         return ElementTree.Element(tag, attrib)
 

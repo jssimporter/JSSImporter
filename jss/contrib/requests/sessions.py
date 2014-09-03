@@ -91,9 +91,16 @@ class SessionRedirectMixin(object):
         """Receives a Response. Returns a generator of Responses."""
 
         i = 0
+        hist = [] # keep track of history
 
         while resp.is_redirect:
             prepared_request = req.copy()
+
+            if i > 0:
+                # Update history and keep track of redirects.
+                hist.append(resp)
+                new_hist = list(hist)
+                resp.history = new_hist
 
             try:
                 resp.content  # Consume socket so it can be released
@@ -428,36 +435,16 @@ class Session(SessionRedirectMixin):
 
         proxies = proxies or {}
 
-        # Gather clues from the surrounding environment.
-        if self.trust_env:
-            # Set environment's proxies.
-            env_proxies = get_environ_proxies(url) or {}
-            for (k, v) in env_proxies.items():
-                proxies.setdefault(k, v)
-
-            # Look for configuration.
-            if not verify and verify is not False:
-                verify = os.environ.get('REQUESTS_CA_BUNDLE')
-
-            # Curl compatibility.
-            if not verify and verify is not False:
-                verify = os.environ.get('CURL_CA_BUNDLE')
-
-        # Merge all the kwargs.
-        proxies = merge_setting(proxies, self.proxies)
-        stream = merge_setting(stream, self.stream)
-        verify = merge_setting(verify, self.verify)
-        cert = merge_setting(cert, self.cert)
+        settings = self.merge_environment_settings(
+            prep.url, proxies, stream, verify, cert
+        )
 
         # Send the request.
         send_kwargs = {
-            'stream': stream,
             'timeout': timeout,
-            'verify': verify,
-            'cert': cert,
-            'proxies': proxies,
             'allow_redirects': allow_redirects,
         }
+        send_kwargs.update(settings)
         resp = self.send(prep, **send_kwargs)
 
         return resp
@@ -604,6 +591,30 @@ class Session(SessionRedirectMixin):
             r.content
 
         return r
+
+    def merge_environment_settings(self, url, proxies, stream, verify, cert):
+        """Check the environment and merge it with some settings."""
+        # Gather clues from the surrounding environment.
+        if self.trust_env:
+            # Set environment's proxies.
+            env_proxies = get_environ_proxies(url) or {}
+            for (k, v) in env_proxies.items():
+                proxies.setdefault(k, v)
+
+            # Look for requests environment configuration and be compatible
+            # with cURL.
+            if verify is True or verify is None:
+                verify = (os.environ.get('REQUESTS_CA_BUNDLE') or
+                          os.environ.get('CURL_CA_BUNDLE'))
+
+        # Merge all the kwargs.
+        proxies = merge_setting(proxies, self.proxies)
+        stream = merge_setting(stream, self.stream)
+        verify = merge_setting(verify, self.verify)
+        cert = merge_setting(cert, self.cert)
+
+        return {'verify': verify, 'proxies': proxies, 'stream': stream,
+                'cert': cert}
 
     def get_adapter(self, url):
         """Returns the appropriate connnection adapter for the given URL."""
