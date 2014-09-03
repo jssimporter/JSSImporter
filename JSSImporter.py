@@ -87,6 +87,7 @@ class JSSImporter(Processor):
             "required": False,
             "description": "If set to False, SSL verification in communication "
             "with the JSS will be skipped. Defaults to True.",
+            "default": True,
         },
         "category": {
             "required": False,
@@ -467,7 +468,7 @@ class JSSImporter(Processor):
         repoUrl = self.env["JSS_URL"]
         authUser = self.env["API_USERNAME"]
         authPass = self.env["API_PASSWORD"]
-        sslVerify = self.env.get("JSS_VERIFY_SSL", True)
+        sslVerify = self.env.get("JSS_VERIFY_SSL")
         self.j = jss.JSS(url=repoUrl, user=authUser, password=authPass, ssl_verify=sslVerify)
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]
