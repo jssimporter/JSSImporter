@@ -140,6 +140,22 @@ class JSSImporter(Processor):
             "required": False,
             "description": "Filename of policy template file.",
         },
+        "self_service_description": {
+            "required": False,
+            "description": "Use to populate the %SELF_SERVICE_DESCRIPTION% "
+            "variable for use in templates. Primary use is for filling the "
+            "info button text in Self Service, but could be used elsewhere.",
+            "default": '',
+        },
+        "self_service_icon": {
+            "required": False,
+            "description": "Path to an icon file. Use to add an icon to a "
+            "self-service enabled policy. Because of the way Casper handles "
+            "this, the JSSImporter will only upload if the icon's filename is "
+            "different than the one set on the policy (if it even exists). "
+            "Please see the README for more information.",
+            "default": '',
+        },
     }
     output_variables = {
         "jss_category_added": {
@@ -172,6 +188,9 @@ class JSSImporter(Processor):
         "jss_policy_updated": {
             "description": "True if policy was updated."
         },
+        "jss_icon_uploaded": {
+            "description": "True if an icon was uploaded."
+        },
     }
     description = __doc__
 
@@ -184,6 +203,10 @@ class JSSImporter(Processor):
         replace_dict['%VERSION%'] = self.version
         replace_dict['%PKG_NAME%'] = self.package.name
         replace_dict['%PROD_NAME%'] = self.env.get('prod_name')
+        replace_dict['%SELF_SERVICE_DESCRIPTION%'] = self.env.get(
+            'self_service_description')
+        replace_dict['%SELF_SERVICE_ICON%'] = self.env.get(
+            'self_service_icon')
         # policy_category is not required, so set a default value if absent.
         replace_dict['%POLICY_CATEGORY%'] = self.env.get(
             "policy_category") or "Unknown"
@@ -369,12 +392,6 @@ class JSSImporter(Processor):
         template = self.replace_text(text, self.replace_dict)
         recipe_object = obj_cls.from_string(self.j, template)
 
-        # If object is a Policy, we need to inject scope, scripts, and package.
-        if obj_cls is jss.Policy:
-            self.add_scope_to_policy(recipe_object)
-            self.add_scripts_to_policy(recipe_object)
-            self.add_package_to_policy(recipe_object)
-
         if not name:
             name = recipe_object.name
 
@@ -384,6 +401,17 @@ class JSSImporter(Processor):
             existing_object = self.j.factory.get_object(obj_cls, name)
         except jss.JSSGetError:
             pass
+
+        # If object is a Policy, we need to inject scope, scripts, and package.
+        if obj_cls is jss.Policy:
+            if existing_object:
+                icon_xml = existing_object.find(
+                    'self_service/self_service_icon')
+                self.add_icon_to_policy(recipe_object, icon_xml)
+            self.add_scope_to_policy(recipe_object)
+            self.add_scripts_to_policy(recipe_object)
+            self.add_package_to_policy(recipe_object)
+
 
         if existing_object is not None:
             # Update the existing object.
@@ -439,6 +467,18 @@ class JSSImporter(Processor):
                 results.append(extattr_object)
         return results
 
+    def handle_icon(self):
+        if self.env.get("self_service_icon"):
+            # Compare the filename in the policy to the one provided by the
+            # recipe.
+            policy_filename = self.policy.findtext(
+                'self_service/self_service_icon/filename')
+            icon_filename = os.path.basename(self.env.get("self_service_icon"))
+            if not policy_filename == icon_filename:
+                icon = jss.FileUpload(self.j, 'policies', 'id', self.policy.id,
+                                      icon_filename)
+                icon.save()
+
     def handle_policy(self):
         if self.env.get("policy_template"):
             template_filename = self.env.get("policy_template")
@@ -447,6 +487,7 @@ class JSSImporter(Processor):
                     jss.Policy, template_filename,
                     update_env="jss_policy_added",
                     added_env="jss_policy_updated")
+                return policy
             else:
                 self.output("Policy creation not desired, moving on")
 
@@ -471,6 +512,12 @@ class JSSImporter(Processor):
                                                              packages_element)
         action = ElementTree.SubElement(package_element, 'action')
         action.text = 'Install'
+
+    def add_icon_to_policy(self, policy_template, icon_xml):
+        self_service_icon_element = self.ensure_XML_structure(
+            policy_template, 'self_service')
+        self_service = policy_template.find('self_service')
+        self_service.append(icon_xml)
 
     def ensure_XML_structure(self, element, path):
         """Given an XML path and a starting element, ensure that all tiers of
@@ -515,6 +562,7 @@ class JSSImporter(Processor):
         self.env["jss_extension_attribute_updated"] = False
         self.env["jss_policy_added"] = False
         self.env["jss_policy_updated"] = False
+        self.env["jss_icon_uploaded"] = False
 
         self.category = self.handle_category("category")
         self.policy_category = self.handle_category("policy_category")
@@ -524,7 +572,8 @@ class JSSImporter(Processor):
         self.extattrs = self.handle_extension_attributes()
         self.groups = self.handle_groups()
         self.scripts = self.handle_scripts()
-        self.handle_policy()
+        self.policy = self.handle_policy()
+        self.handle_icon()
 
 
 if __name__ == "__main__":
