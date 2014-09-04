@@ -95,17 +95,20 @@ class JSSImporter(Processor):
         "JSS_VERIFY_SSL": {
             "required": False,
             "description": "If set to False, SSL verification in communication "
-            "with the JSS will be skipped. Defaults to True.",
+            "with the JSS will be skipped. Defaults to 'True'.",
             "default": True,
         },
         "category": {
             "required": False,
             "description": "Category to create/associate imported app "
-                            "package with.",
+                            "package with. Defaults to 'Unknown'.",
+            "default": 'Unknown',
         },
         "policy_category": {
             "required": False,
-            "description": "Category to create/associate policy with.",
+            "description": "Category to create/associate policy with. Defaults"
+            " to 'Unknown'.",
+            "default": 'Unknown',
         },
         "os_requirements": {
             "required": False,
@@ -253,11 +256,9 @@ class JSSImporter(Processor):
                     category.save()
                     self.env["jss_category_added"] = True
             else:
-                self.output("Category creation for the pkg not desired, "
-                            "moving on")
+                self.output("Category creation for '%s'not desired, "
+                            "moving on" % category_type)
                 category = None
-        else:
-            category = None
 
         return category
 
@@ -489,7 +490,7 @@ class JSSImporter(Processor):
                     added_env="jss_policy_updated")
                 return policy
             else:
-                self.output("Policy creation not desired, moving on")
+                self.output("Policy creation not desired, moving on.")
 
     def add_scope_to_policy(self, policy_template):
         computer_groups_element = self.ensure_XML_structure(
@@ -535,7 +536,7 @@ class JSSImporter(Processor):
         # Ensure we have the right version of python-jss
         python_jss_version = StrictVersion(PYTHON_JSS_VERSION)
         if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
-            print("Requires python-jss version: %s. Installed: %s" %
+            self.output("Requires python-jss version: %s. Installed: %s" %
                   (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
             exit()
 
