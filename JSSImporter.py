@@ -479,6 +479,10 @@ class JSSImporter(Processor):
                 icon = jss.FileUpload(self.j, 'policies', 'id', self.policy.id,
                                       icon_filename)
                 icon.save()
+                self.env["jss_icon_uploaded"] = True
+                self.output("Icon uploaded to JSS.")
+            else:
+                self.output("Icon matches existing icon, moving on..")
 
     def handle_policy(self):
         if self.env.get("policy_template"):
