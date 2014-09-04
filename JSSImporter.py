@@ -221,10 +221,10 @@ class JSSImporter(Processor):
         # variable is not specified, it will just append .app, which is how
         # most apps work.
         if self.env.get("jss_inventory_name"):
-            replace_dict['%JSSINVENTORY_NAME%'] = self.env.get(
+            replace_dict['%JSS_INVENTORY_NAME%'] = self.env.get(
                 "jss_inventory_name")
         else:
-            replace_dict['%JSSINVENTORY_NAME%'] = '%s.app' \
+            replace_dict['%JSS_INVENTORY_NAME%'] = '%s.app' \
                 % self.env.get('prod_name')
         return replace_dict
 
