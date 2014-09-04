@@ -1,4 +1,4 @@
-### 0.2.0 (August 29, 2014) Popsicle Mayonnaise
+### 0.2.0 (September 4, 2014) Popsicle Mayonnaise
 
 ADDITIONS:
 
