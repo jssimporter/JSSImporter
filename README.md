@@ -5,19 +5,95 @@ This processor adds the ability for AutoPkg to create groups, upload packages an
 
 This project began from Allister Banks' original [jss-autopkg-addon project](https://github.com/arubdesu/jss-autopkg-addon), but has since diverged considerably to add greater customization options while maintaining the existing functionality.
 
-Installation and Setup
+Getting Started
 =================
 
-The easiest method for installing is to download the latest package installer from the "releases" section. This will add the JSSImporter.py processor to your autopkglib, and the python-jss module to your system python, which is what AutoPkg should be using. The various templates and this file will be added to ```/usr/share/jss-autopkg-addon```. Bonus points if you grab my [recipe](https://github.com/autopkg/sheagcraig-recipes) and just use AutoPkg to build your own installer...
+### Installation
+To install, download the latest package installer from the "releases" section. This will add the JSSImporter.py processor to your autopkglib folder, and the python-jss package to your system python's site-packages. This allows you to start using JSSImporter right away. Of course, you can also use the new (as of AutoPkg 0.4.0) shared processor system to include the JSSImporter in the same folder as your recipes, but you'll still need python-jss available to the system python.
 
-You will need to add some preferences to your AutoPkg preferences file.:
+### Setup
+Prior to using the JSSImporter, You will need to add some preferences to your AutoPkg preferences file:
+- The URL to your jss
+- The username and password of an API privileged user.
+	- It is recommended to create a user named something like "AutoPkg". It will need Create, Read, and Update privileges on:
+		- Categories
+		- Computer Groups
+		- Distribution Points (only needs "Read")
+		- Extension Attributes
+		- Packages
+		- Policies
+		- Scripts
+	- This all goes down at "System Settings => JSS User Accounts & Groups"
+- Your distribution points.
 
-	```
-	defaults write com.github.autopkg JSS_REPO /Volumes/JSS_Dist_Point
-	defaults write com.github.autopkg JSS_URL https://test.jss.private:8443
-	defaults write com.github.autopkg API_USERNAME apiUser
-	defaults write com.github.autopkg API_PASSWORD apiPassword
-	```
+### Example: Adding basic preferences.
+```
+defaults write com.github.autopkg JSS_URL https://test.jss.private:8443
+defaults write com.github.autopkg API_USERNAME apiUser
+defaults write com.github.autopkg API_PASSWORD apiPassword
+```
+
+### Example: Adding distribution points.
+You will need to specify your distribution points in the preferences as well. The JSSImporter will copy packages and scripts to all configured distribution points using the ```JSS_REPOS``` key. The value of this key is an array of dictionaries, which means you have to switch tools and use PlistBuddy. Each distribution point is represented by a simple dictionary, with two keys: ```name```, and ```password```. The rest of the information is pulled automatically from the JSS. (As soon as the ```jamf mount ... -passhash``` makes sense, this may become unnecessary).
+
+- ```name``` is the name of your Distribution Point as specified in the JSS' "Computer Management => File Share Distribution Points" page.
+- ```password``` is the password for the user specified for the "Read/Write" account for this distribution point at "Computer Management => File Share Distribution Points => File Sharing => Read/Write Account => Password", NOT the API user's password (They are different, right?)
+
+```
+# Create our key and array
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS array" ~/Library/Preferences/com.github.autopkg
+
+# For each distribution point, add a dict. This is the first array element, so it is index 0.
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0 dict" ~/Library/Preferences/com.github.autopkg
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:name string USRepository" ~/Library/Preferences/com.github.autopkg
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:password string abc123" ~/Library/Preferences/com.github.autopkg
+
+# Second distribution point... (Notice the incremented array index.
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:1 dict" ~/Library/Preferences/com.github.autopkg
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:1:name string MSRepository" ~/Library/Preferences/com.github.autopkg
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:1:password string abc123" ~/Library/Preferences/com.github.autopkg
+
+# and so on...
+```
+So that section of your AutoPkg preferences should look roughly like this:
+```
+plutil -convert xml1 -o - ~/Library/Preferences/com.github.autopkg.plist
+#...Relevent snippet...
+	<key>API_PASSWORD</key>
+	<string>xyzzy</string>
+	<key>API_USERNAME</key>
+	<string>apiUser</string>
+	<key>JSS_REPOS</key>
+	<array>
+		<dict>
+			<key>name</key>
+			<string>USRepository</string>
+			<key>password</key>
+			<string>abc123</string>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>MSRepository</string>
+			<key>password</key>
+			<string>abc123</string>
+		</dict>
+	</array>
+	<key>JSS_URL</key>
+	<string>https://test.jss.private:8443</string>
+#...
+```
+
+Of course, if you want to go all punk rock and edit this by hand like a savage, go for it. At least use vim.
+
+
+### Historical Note
+
+The JSSImporter used to use the key ```JSS_REPO``` (singular) to point to a _mounted_ distribution point. This is still supported, but JSSImporter will use ```JSS_REPOS``` exclusively if found. ```JSS_REPO``` must be manually mounted (```JSS_REPOS``` are auto-mounted), and packages and scripts will only be copied to one distribution point, requiring a subsequent Casper Admin "Replicate" command.
+
+So if you really want it...
+```
+defaults write com.github.autopkg JSS_REPO /Volumes/JSS_Dist_Point
+```
 
 Manual Installation and Setup
 =================
@@ -101,10 +177,12 @@ Categories are specified through the input variables ```category``` and ```polic
 
 ```policy_category``` corresponds to the category assigned to the policy, as found in the Policy->General->Category dropdown.
 
+If you don't specify a category when adding a package or a policy, the JSS will assign it the category of "Unknown", which therefore is JSSImporter's behavior as well.
+
 Packages
 =================
 
-Not surprisingly, packages are forwarded on from ParentRecipes seamlessly. However, if you need to specify an ```os_requirement```, there's an input variable for that. The format follows that of the JSS: a comma-delimeted list of acceptable versions, with 'x' as a wildcard, e.g. ```10.8.6, 10.9.x```
+Not surprisingly, packages are forwarded on from ParentRecipes seamlessly. However, if you need to specify an ```os_requirement```, there's an input variable for that. The format follows that of the JSS: a comma-delimeted list of acceptable versions, with 'x' as a wildcard, e.g. ```10.8.6, 10.9.x```.
 
 Groups
 =================
@@ -182,6 +260,15 @@ Indeed, the only input variables for policies are ```policy_category```, discuss
 
 See the "Template" section for a list of all of the string replacement variables.
 
+Self Service Icons
+=================
+
+Having icons is nice. That being said, they are kind of tricky to implement. There is no way to query the JSS for a list of available icons through the API. You can view them in the web interface, but this doesn't expose the ID number or name properties. Through the API, you can only upload and attach an icon to a specific policy. For more information, take a look at the source!
+
+So, if you want to include icons in your recipes, first off, you'll need the icon files. I imagine most icons are copyrighted material, so distributing them with recipes is not okay (otherwise, JAMF would just include them with Casper...) For information on grabbing and saving these icons, see: [Icon file to use in Self Service app?](https://jamfnation.jamfsoftware.com/discussion.html?id=873) and [Icon Formats](https://jamfnation.jamfsoftware.com/article.html?id=106) for help on grabbing these files.
+
+Then, to include in a recipe, use the ```self_service_icon``` key, with a string value of the path to the icon file.
+
 Template
 =================
 
@@ -190,6 +277,7 @@ Substitution variables available in templates include:
 - ```%PKG_NAME%```: The name of the package. Specifically, the display name that the JSS uses to represent that package. Usually the filename.
 - ```%PROD_NAME%```: The value of the input variable ```%prod_name%```. Note, ```%prod_name%``` is a required recipe input variable.
 - ```%POLICY_CATEGORY%```: The value of ```%policy_category%```, if specified, or "Unknown", if not-this is what the JSS will assign anyway.
+- ```%SELF_SERVICE_DESCRIPTION%```: Used to specify the contents of the description field for self service items. Use this input variable in concert with ensuring that it is added to the policy template.
 - ```%JSSINVENTORY_NAME%```: If you want to override the default guessing of the "Application Title" for a smart group, use this along with an input variable of jss_inventory_name
 
 SSL
@@ -200,6 +288,34 @@ If you have issues with certificate validation (either a self-signed certificate
     defaults write com.github.autopkg JSS_VERIFY_SSL -bool false
 
 This value defaults to true.
+
+JSSImporter uses "python-jss", which embeds "requests". Requests is in the process of integrating changes to urllib3 to support Server
+Name Indication ('SNI') for python 2.x versions. If you are requesting SSL
+verification (which is on by default), _and_ your JSS uses SNI,
+you will probably get Tracebacks that look like this:
+
+```
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "requests/api.py", line 55, in get
+    return request('get', url, **kwargs)
+  File "requests/api.py", line 44, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "requests/sessions.py", line 461, in request
+    resp = self.send(prep, **send_kwargs)
+  File "requests/sessions.py", line 567, in send
+    r = adapter.send(request, **kwargs)
+  File "requests/adapters.py", line 399, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: hostname 'testssl-expire.disig.sk' doesn't match 'testssl-valid.disig.sk'
+```
+
+Installing and/or upgrading the following packages should solve the problem:
+- pyOpenSSL
+- ndg-httpsclient
+- pyasn1
+
+Hopefully this is temporary, although requests' changelog does claim to have "Fix(ed) previously broken SNI support." at version 2.1.0 (Current included version is 2.4.0).
 
 Comments/Questions/Ideas
 =================

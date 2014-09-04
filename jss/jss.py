@@ -1097,8 +1097,8 @@ class FileUpload(object):
                                               "%s" % id_types)
         self._id = str(_id)
 
-        self.resource = {'name': (resource, open(resource, 'rb'),
-                                  'multipart/form-data')}
+        self.resource = {'name': (os.path.basename(resource),
+                                  open(resource, 'rb'), 'multipart/form-data')}
 
         self.set_upload_url()
 
