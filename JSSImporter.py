@@ -402,16 +402,20 @@ class JSSImporter(Processor):
         except jss.JSSGetError:
             pass
 
-        # If object is a Policy, we need to inject scope, scripts, and package.
+        # If object is a Policy, we need to inject scope, scripts, package, and
+        # an icon.
         if obj_cls is jss.Policy:
-            if existing_object:
+            if existing_object is not None:
+                # If this policy already exists, and it has an icon set, copy
+                # its icon section to our template, as we have no other way of
+                # getting this information.
                 icon_xml = existing_object.find(
                     'self_service/self_service_icon')
-                self.add_icon_to_policy(recipe_object, icon_xml)
+                if icon_xml is not None:
+                    self.add_icon_to_policy(recipe_object, icon_xml)
             self.add_scope_to_policy(recipe_object)
             self.add_scripts_to_policy(recipe_object)
             self.add_package_to_policy(recipe_object)
-
 
         if existing_object is not None:
             # Update the existing object.
@@ -468,6 +472,16 @@ class JSSImporter(Processor):
         return results
 
     def handle_icon(self):
+        # Icons are tricky. The only way to add new ones is to use FileUploads.
+        # If you manually upload them, you can add them to a policy to get
+        # their ID, but there is no way to query the JSS to see what icons are
+        # available. Thus, icon handling involves several cooperating methods.
+        # If we just add an icon every time we run a recipe, however, we end up
+        # with a ton of redundent icons, and short of actually deleting them in
+        # the sql database, there's no way to delete icons. So when we run, we
+        # first check for an existing policy, and if it exists, copy its icon
+        # XML, which is then added to the templated Policy. If there is no icon
+        # information, but the recipe specifies one, then FileUpload it up.
         if self.env.get("self_service_icon"):
             # Compare the filename in the policy to the one provided by the
             # recipe.
