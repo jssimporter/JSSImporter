@@ -12,3 +12,4 @@ CHANGES:
 
 - Deprecated ```JSS_REPO``` key. It will still work, but the processor prioritizes ```JSS_REPOS``` over it.
 - Update PolicyTemplate.xml to demonstrate further Self Service customization.
+- Categories default to "Unknown", which is the JSS' behavior anyway.
