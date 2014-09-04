@@ -242,23 +242,22 @@ class JSSImporter(Processor):
         return text
 
     def handle_category(self, category_type):
-        if self.env.get(category_type):
-            category_name = self.env.get(category_type)
-            if not category_name == "*LEAVE_OUT*":
-                try:
-                    category = self.j.Category(category_name)
-                    self.output("Category type: %s-'%s' already exists "
-                                "according to JSS, moving on" %
-                                (category_type, category_name))
-                except jss.JSSGetError:
-                    # Category doesn't exist
-                    category = jss.Category(self.j, category_name)
-                    category.save()
-                    self.env["jss_category_added"] = True
-            else:
-                self.output("Category creation for '%s'not desired, "
-                            "moving on" % category_type)
-                category = None
+        category_name = self.env.get(category_type)
+        if not category_name == "*LEAVE_OUT*":
+            try:
+                category = self.j.Category(category_name)
+                self.output("Category type: %s-'%s' already exists "
+                            "according to JSS, moving on" %
+                            (category_type, category_name))
+            except jss.JSSGetError:
+                # Category doesn't exist
+                category = jss.Category(self.j, category_name)
+                category.save()
+                self.env["jss_category_added"] = True
+        else:
+            self.output("Category creation for '%s'not desired, "
+                        "moving on" % category_type)
+            category = None
 
         return category
 
@@ -574,6 +573,7 @@ class JSSImporter(Processor):
         self.package = self.handle_package()
         # Build our text replacement dictionary
         self.replace_dict = self.build_replace_dict()
+
         self.extattrs = self.handle_extension_attributes()
         self.groups = self.handle_groups()
         self.scripts = self.handle_scripts()
