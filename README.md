@@ -152,10 +152,10 @@ Note on Objects
 It is worth noting that some objects manipulated through the web interface will be overwritten with their templated values after the next AutoPkg run of relevent recipes. This is by design, but may be a surprise if you try to edit, say, a policy, by hand after the JSSImporter creates it.
 
 Specifically, objects that get recreated every run:
-Extension Attributes
-Scripts
-Smart Groups
-Policy
+- Extension Attributes
+- Scripts
+- Smart Groups
+- Policy
 
 This way, you can ensure that what is specified in the recipe is what is on the JSS.
 
