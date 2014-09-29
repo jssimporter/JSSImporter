@@ -162,7 +162,7 @@ This way, you can ensure that what is specified in the recipe is what is on the 
 Researching your JSS
 =================
 
-While setting this all up, you will probably want to see some valid XML straight from the horses' mouth. There are a few ways to look at the XML directly:
+While setting this all up, you will probably want to see some valid XML straight from the horse's mouth. There are a few ways to look at the XML directly:
 1. The API documentation on your JSS includes a web interface for looking things up. Just add /api to your JSS's web address, i.e. https://yourcasperserver.org:8443/api
 2. The [jss_helper](https://github.com/sheagcraig/jss_helper) gives you a simple commandline utility for querying the relevant objects.
 3. [python-jss](https://github.com/sheagcraig/python-jss) is a python wrapper around the JSS API which will allow easy access to all objects on the JSS.
