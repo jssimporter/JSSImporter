@@ -41,17 +41,17 @@ You will need to specify your distribution points in the preferences as well. Th
 
 ```
 # Create our key and array
-/usr/libexec/PlistBuddy -c "Add :JSS_REPOS array" ~/Library/Preferences/com.github.autopkg
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS array" ~/Library/Preferences/com.github.autopkg.plist
 
 # For each distribution point, add a dict. This is the first array element, so it is index 0.
-/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0 dict" ~/Library/Preferences/com.github.autopkg
-/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:name string USRepository" ~/Library/Preferences/com.github.autopkg
-/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:password string abc123" ~/Library/Preferences/com.github.autopkg
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0 dict" ~/Library/Preferences/com.github.autopkg.plist
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:name string USRepository" ~/Library/Preferences/com.github.autopkg.plist
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:password string abc123" ~/Library/Preferences/com.github.autopkg.plist
 
 # Second distribution point... (Notice the incremented array index.
-/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:1 dict" ~/Library/Preferences/com.github.autopkg
-/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:1:name string MSRepository" ~/Library/Preferences/com.github.autopkg
-/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:1:password string abc123" ~/Library/Preferences/com.github.autopkg
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:1 dict" ~/Library/Preferences/com.github.autopkg.plist
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:1:name string MSRepository" ~/Library/Preferences/com.github.autopkg.plist
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:1:password string abc123" ~/Library/Preferences/com.github.autopkg.plist
 
 # and so on...
 ```
@@ -152,17 +152,18 @@ Note on Objects
 It is worth noting that some objects manipulated through the web interface will be overwritten with their templated values after the next AutoPkg run of relevent recipes. This is by design, but may be a surprise if you try to edit, say, a policy, by hand after the JSSImporter creates it.
 
 Specifically, objects that get recreated every run:
-Extension Attributes
-Scripts
-Smart Groups
-Policy
+- Extension Attributes
+- Scripts
+- Smart Groups
+- Policy
 
 This way, you can ensure that what is specified in the recipe is what is on the JSS.
 
 Researching your JSS
 =================
 
-While setting this all up, you will probably want to see some valid XML straight from the horses' mouth. There are a few ways to look at the XML directly:
+While setting this all up, you will probably want to see some valid XML straight from the horse's mouth. There are a few ways to look at the XML directly:
+
 1. The API documentation on your JSS includes a web interface for looking things up. Just add /api to your JSS's web address, i.e. https://yourcasperserver.org:8443/api
 2. The [jss_helper](https://github.com/sheagcraig/jss_helper) gives you a simple commandline utility for querying the relevant objects.
 3. [python-jss](https://github.com/sheagcraig/python-jss) is a python wrapper around the JSS API which will allow easy access to all objects on the JSS.
