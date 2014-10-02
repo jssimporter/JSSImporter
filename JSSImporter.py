@@ -483,14 +483,16 @@ class JSSImporter(Processor):
         # XML, which is then added to the templated Policy. If there is no icon
         # information, but the recipe specifies one, then FileUpload it up.
         if self.env.get("self_service_icon"):
+            icon_path = self.env.get("self_service_icon")
+            icon_filename = os.path.basename(icon_path)
+
             # Compare the filename in the policy to the one provided by the
-            # recipe.
+            # recipe. If they don't match, we need to upload a new icon.
             policy_filename = self.policy.findtext(
                 'self_service/self_service_icon/filename')
-            icon_filename = os.path.basename(self.env.get("self_service_icon"))
             if not policy_filename == icon_filename:
                 icon = jss.FileUpload(self.j, 'policies', 'id', self.policy.id,
-                                      icon_filename)
+                                      icon_path)
                 icon.save()
                 self.env["jss_icon_uploaded"] = True
                 self.output("Icon uploaded to JSS.")

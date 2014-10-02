@@ -1,3 +1,9 @@
+### 0.2.1 (October 2, 2014) Sardine Taco Sauce
+
+FIXES:
+
+- Fixed icon handling code dropping path from filename. (Thanks Elliot Jordan for the spot!)
+
 ### 0.2.0 (September 4, 2014) Popsicle Mayonnaise
 
 ADDITIONS:
