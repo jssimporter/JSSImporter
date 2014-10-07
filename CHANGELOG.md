@@ -1,3 +1,9 @@
+### 0.2.2 (October 7, 2014) Trotter Jelly
+
+CHANGES:
+
+- python-jss is now a git submodule. If you clone this repo to develop on it, please remember to ```git submodule init; git submodule update``` if you need the python-jss code included with jss-autopkg-addon. This will make updating and tracking python-jss a lot easier for me.
+
 ### 0.2.1 (October 2, 2014) Sardine Taco Sauce
 
 FIXES:

@@ -1,0 +1,3 @@
+[submodule "jss"]
+	path = jss
+	url = https://github.com/sheagcraig/python-jss.git
