@@ -251,7 +251,6 @@ Solutions to handle this automatically are being considered, but at this moment,
 
 The ```extension_attributes``` input variable should contain an array of dictionaries. Each dictionary should contain a ```name``` key, which is the name of the extension attribute. It should also have a ```ext_attribute_path``` item which is a path to extension attribute file.
 
-
 Policy
 =================
 
@@ -280,6 +279,10 @@ Substitution variables available in templates include:
 - ```%POLICY_CATEGORY%```: The value of ```%policy_category%```, if specified, or "Unknown", if not-this is what the JSS will assign anyway.
 - ```%SELF_SERVICE_DESCRIPTION%```: Used to specify the contents of the description field for self service items. Use this input variable in concert with ensuring that it is added to the policy template.
 - ```%JSSINVENTORY_NAME%```: If you want to override the default guessing of the "Application Title" for a smart group, use this along with an input variable of jss_inventory_name
+
+Using Overrides
+=================
+All of my recipes are designed to allow you to use overrides to change the major input variables. However, if you *do* use overrides, you may experience unexpected difficulties. Since the override recipe lives in your ```~/Library/AutoPkg/RecipeOverrides/``` folder, the %RECIPE_DIR% substitution in those recipes now points to the RecipeOverrides folder rather than the base jss.recipe. You will probably need to copy all of the recipe's needed support files: templates, scripts, and icons, to the override directory. Hopefully some time soon AutoPkg can add a %PARENT_RECIPE_DIR% variable for overrides to use.
 
 SSL
 ===
@@ -322,3 +325,5 @@ Comments/Questions/Ideas
 =================
 
 Please send me feature requests or issues through the Github page.
+
+I'm working on a series of blog posts covering software testing best practices with Casper, and how to configure jss-autopkg-addon, and write recipes for it, on my blog: (http://www.sheacraig.com/)

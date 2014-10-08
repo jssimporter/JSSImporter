@@ -22,6 +22,7 @@ from sys import exit
 from xml.etree import ElementTree
 
 import jss
+# Ensure that python-jss dependency is at minimum version
 try:
     from jss import __version__ as PYTHON_JSS_VERSION
 except ImportError:
@@ -30,6 +31,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
+__version__ = '0.2.2'
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.3.8')
 
 
