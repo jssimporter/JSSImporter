@@ -2,7 +2,7 @@
 
 CHANGES:
 
-- python-jss is now a git submodule. If you clone this repo to develop on it, please remember to ```git submodule init; git submodule update``` if you need the python-jss code included with jss-autopkg-addon. This will make updating and tracking python-jss a lot easier for me.
+- python-jss has been removed from this project to facilitate easier updating for me. See the README for information on obtaining it for development purposes.
 - Added version number to ```JSSImporter.py``` to make it easier for developers to know what they have.
 - Added instructions for overrides to README.
 

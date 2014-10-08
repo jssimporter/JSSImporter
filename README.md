@@ -9,7 +9,7 @@ Getting Started
 =================
 
 ### Installation
-To install, download the latest package installer from the "releases" section. This will add the JSSImporter.py processor to your autopkglib folder, and the python-jss package to your system python's site-packages. This allows you to start using JSSImporter right away. Of course, you can also use the new (as of AutoPkg 0.4.0) shared processor system to include the JSSImporter in the same folder as your recipes, but you'll still need python-jss available to the system python.
+To install, download the latest package installer from the "releases" section. This will add the JSSImporter.py processor to your autopkglib folder, and the proper python-jss package to your system python's site-packages. This allows you to start using JSSImporter right away. Of course, you can also use the new (as of AutoPkg 0.4.0) shared processor system to include the JSSImporter in the same folder as your recipes, but you'll still need python-jss available to the system python.
 
 ### Setup
 Prior to using the JSSImporter, You will need to add some preferences to your AutoPkg preferences file:
@@ -95,10 +95,11 @@ So if you really want it...
 defaults write com.github.autopkg JSS_REPO /Volumes/JSS_Dist_Point
 ```
 
-Manual Installation and Setup
+Manual Installation and Setup, and Developer Access
 =================
+Developers should just fork and clone the project. The python-jss project will be required, and should be located wherever your python of choice can find it.
 
-However, if you're keen on manually installing, follow these directions:
+If you're keen on manually installing for normal usage, follow these directions:
 
 1. Make sure you've already installed the most current autopkg tools (AND RECIPES) FIRST! (Sorry to yell.) Then use the releases tab, to the right above, to download the code.
 2. Unzip the download somewhere and copy or link the ```JSSImporter.py``` plugin file to your autopkglib folder, typically located at ```/Library/AutoPkg/autopkglib```
