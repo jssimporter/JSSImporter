@@ -249,7 +249,7 @@ class JSSImporter(Processor):
             try:
                 category = self.j.Category(category_name)
                 self.output("Category type: %s-'%s' already exists "
-                            "according to JSS, moving on" %
+                            "according to JSS, moving on..." %
                             (category_type, category_name))
             except jss.JSSGetError:
                 # Category doesn't exist
@@ -258,7 +258,7 @@ class JSSImporter(Processor):
                 self.env["jss_category_added"] = True
         else:
             self.output("Category creation for '%s'not desired, "
-                        "moving on" % category_type)
+                        "moving on..." % category_type)
             category = None
 
         return category
@@ -275,7 +275,7 @@ class JSSImporter(Processor):
                 self.output("Pkg updated.")
 
             else:
-                self.output("Pkg already exists according to JSS, moving on")
+                self.output("Pkg already exists according to JSS, moving on...")
         except jss.JSSGetError:
             # Package doesn't exist
             if self.category is not None:
@@ -312,7 +312,7 @@ class JSSImporter(Processor):
 
         # Not sure this needs to be here
         if os.path.exists(dest_item):
-            self.output("File already exists at %s, moving on" % dest_item)
+            self.output("File already exists at %s, moving on..." % dest_item)
         else:
             try:
                 if os.path.isdir(source_item):
@@ -499,7 +499,7 @@ class JSSImporter(Processor):
                 self.env["jss_icon_uploaded"] = True
                 self.output("Icon uploaded to JSS.")
             else:
-                self.output("Icon matches existing icon, moving on..")
+                self.output("Icon matches existing icon, moving on...")
 
     def handle_policy(self):
         if self.env.get("policy_template"):
@@ -511,7 +511,7 @@ class JSSImporter(Processor):
                     added_env="jss_policy_updated")
                 return policy
             else:
-                self.output("Policy creation not desired, moving on.")
+                self.output("Policy creation not desired, moving on...")
 
     def add_scope_to_policy(self, policy_template):
         computer_groups_element = self.ensure_XML_structure(
