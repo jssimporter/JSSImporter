@@ -264,6 +264,7 @@ class JSSImporter(Processor):
         return category
 
     def handle_package(self):
+        new_package_object_created = False
         os_requirements = self.env.get("os_requirements")
         try:
             package = self.j.Package(self.pkg_name)
@@ -286,17 +287,32 @@ class JSSImporter(Processor):
 
             package.set_os_requirements(os_requirements)
             package.save()
+            new_package_object_created = True
 
         # Ensure packages are on distribution point(s)
 
         # Use new method preferentially (can leave old JSS_REPO key in and
         # it will only be used if JSS_REPOS is absent)
         if self.env.get('JSS_REPOS'):
-            self.j.distribution_points.mount()
-            if not self.j.distribution_points.exists(
+            # If we had to make a new package object, we know we need to copy
+            # the package file, regardless of DP type. This solves the issue
+            # regarding the JDS.exists() method: See python-jss docs for info.
+            # The problem with this method is that if you cancel an AutoPkg run
+            # and the package object has been created, but not uploaded, you
+            # will need to delete the package object from the JSS before
+            # running a recipe again or it won't upload the package file.
+            #
+            # Passes the id of the newly created package object so JDS' will
+            # upload to the correct package object. Ignored by AFP/SMB.
+            if new_package_object_created:
+                self._copy(self.env["pkg_path"], id_=package.id)
+            # For AFP/SMB shares, we still want to see if the package exists.
+            # If it's missing, copy it!
+            elif not self.j.distribution_points.exists(
                 os.path.basename(self.env["pkg_path"])):
                 self._copy(self.env["pkg_path"])
         elif self.env.get('JSS_REPO'):
+            self.output("JSS_REPO is deprecated, Please switch to JSS_REPOS.")
             self._copy_old(self.env["pkg_path"])
 
         return package
@@ -326,14 +342,13 @@ class JSSImporter(Processor):
                 raise ProcessorError(
                     "Can't copy %s to %s: %s" % (source_item, dest_item, err))
 
-    def _copy(self, source_item):
+    def _copy(self, source_item, id_=-1):
         """Copy a package or script using the new JSS_REPOS preference."""
         #self.j.distribution_points.mount()
         self.output("Copying %s to all distribution points." % source_item)
-        self.j.distribution_points.copy(source_item)
+        self.j.distribution_points.copy(source_item, id_=id_)
         self.env["jss_repo_changed"] = True
         self.output("Copied %s" % source_item)
-        self.j.distribution_points.umount()
 
     def handle_groups(self):
         groups = self.env.get('groups')
@@ -452,8 +467,19 @@ class JSSImporter(Processor):
                 # Use new method preferentially (can leave old JSS_REPO key in and
                 # it will only be used if JSS_REPOS is absent)
                 if self.env.get('JSS_REPOS'):
-                    self._copy(script['name'])
+                    # JDS' don't work with scripts yet. Need to test for them
+                    # and warn the user.
+                    for repo in self.env['JSS_REPOS']:
+                        if isinstance(repo, jss.distribution_points.JDS):
+                            self.output('JDS distribution type does not '
+                                        'currently support scripts. Please '
+                                        'remove scripts from recipe and '
+                                        'retry.')
+                            exit()
+                    self._copy(script['name'], id_=script_object.id)
                 elif self.env.get('JSS_REPO'):
+                    self.output('JSS_REPO is deprecated. '
+                                'Please use JSS_REPOS.')
                     self._copy_old(script['name'])
 
                 results.append(script_object)
@@ -588,6 +614,8 @@ class JSSImporter(Processor):
 
         self.category = self.handle_category("category")
         self.policy_category = self.handle_category("policy_category")
+        # Get our DPs read for copying.
+        self.j.distribution_points.mount()
         self.package = self.handle_package()
         # Build our text replacement dictionary
         self.replace_dict = self.build_replace_dict()
@@ -597,6 +625,8 @@ class JSSImporter(Processor):
         self.scripts = self.handle_scripts()
         self.policy = self.handle_policy()
         self.handle_icon()
+        # Done with DPs, unmount them.
+        self.j.distribution_points.umount()
 
 
 if __name__ == "__main__":
