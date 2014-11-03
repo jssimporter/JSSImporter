@@ -278,11 +278,13 @@ class JSSImporter(Processor):
                     "os_requirements"):
 
                 package.set_os_requirements(os_requirements)
+                package.find('category').text = self.category.name
                 package.save()
                 self.output("Pkg updated.")
 
             else:
-                self.output("Pkg already exists according to JSS, moving on...")
+                self.output("Pkg-object already exists according to JSS, "
+                            "moving on...")
         except jss.JSSGetError:
             # Package doesn't exist
             if self.category is not None:
