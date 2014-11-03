@@ -143,7 +143,9 @@ class JSSImporter(Processor):
         },
         "policy_template": {
             "required": False,
-            "description": "Filename of policy template file.",
+            "description": "Filename of policy template file. If key is "
+            "missing or value is blank, policy creation will be skipped.",
+            "default": '',
         },
         "self_service_description": {
             "required": False,
@@ -514,7 +516,9 @@ class JSSImporter(Processor):
         # first check for an existing policy, and if it exists, copy its icon
         # XML, which is then added to the templated Policy. If there is no icon
         # information, but the recipe specifies one, then FileUpload it up.
-        if self.env.get("self_service_icon"):
+
+        # If no policy handling is desired, we can't upload an icon.
+        if self.env.get("self_service_icon") and self.policy:
             icon_path = self.env.get("self_service_icon")
             icon_filename = os.path.basename(icon_path)
 
@@ -534,14 +538,14 @@ class JSSImporter(Processor):
     def handle_policy(self):
         if self.env.get("policy_template"):
             template_filename = self.env.get("policy_template")
-            if not template_filename == "*LEAVE_OUT*":
-                policy = self._update_or_create_new(
-                    jss.Policy, template_filename,
-                    update_env="jss_policy_added",
-                    added_env="jss_policy_updated")
-                return policy
-            else:
-                self.output("Policy creation not desired, moving on...")
+            policy = self._update_or_create_new(jss.Policy, template_filename,
+                                                update_env="jss_policy_added",
+                                                added_env="jss_policy_updated")
+        else:
+            self.output("Policy creation not desired, moving on...")
+            policy = None
+
+        return policy
 
     def add_scope_to_policy(self, policy_template):
         computer_groups_element = self.ensure_XML_structure(
