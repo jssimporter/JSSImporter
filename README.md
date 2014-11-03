@@ -265,18 +265,18 @@ _NOTE_: Applications that don't install into ```/Applications``` will not be ava
 Scripts
 =================
 
-Scripts work the same way as groups. The ```scripts``` input variable should contain an array of dictionaries. Each dictionary should contain a ```name``` key, which is the path to the script file itself. It should also have a ```template_path``` item which is a path to a script template. A script template is included with this project, although you'll probably only be interested in setting the priority ("After", or "Before")
+Scripts work the same way as groups. The ```scripts``` input variable should contain an array of one dictionary for each script. You can skip the ```scripts``` key entirely if you don't need any scripts. Each dictionary should contain a ```name``` key, which is the path to the script file itself. It should also have a ```template_path``` item which is a path to a script template. A script template is included with this project, although you'll probably only be interested in setting the priority ("After", or "Before")
 
 Just a reminder: at this time, recipes with scripts will not run when a JDS is configured (See the section on configuring distribution points, above).
 
 Extension Attributes
 =================
 
-Extension attributes work just like scripts. You need a complete and valid XML file for the extension attribute (although it will do variable substitution). To experiment with XML for these, again, use the API page to look through the ones on your JSS. Included with this project there is a template for extension attributes as well, although you will need to edit it to add in your script. As the extension attribute is XML, you will need to properly  HTML encode reserved characters; e.g. '<' becomes '&lt;', '>' becomes '%gt;'. Since the extension attributes value needs to be <result>Your Result</result> sent to stdout, you will need to do this manually for every extension attribute.
+Extension attributes work just like scripts. You need a complete and valid XML file for the extension attribute (although it will do variable substitution). To experiment with XML for these, again, use the API page to look through the ones on your JSS. Included with this project there is a template for extension attributes as well, although you will need to edit it to add in your script. As the extension attribute is XML, you will need to properly HTML encode reserved characters; e.g. '<' becomes '&lt;', '>' becomes '%gt;'. Since the extension attributes value needs to be <result>Your Result</result> sent to stdout, you will need to do this manually for every extension attribute.
 
 Solutions to handle this automatically are being considered, but at this moment, XML is not valid if there are < and > sitting around that aren't escaped.
 
-The ```extension_attributes``` input variable should contain an array of dictionaries. Each dictionary should contain a ```name``` key, which is the name of the extension attribute. It should also have a ```ext_attribute_path``` item which is a path to the extension attribute file.
+The ```extension_attributes``` input variable should contain an array of dictionaries. Each dictionary should contain a ```name``` key, which is the name of the extension attribute. It should also have a ```ext_attribute_path``` item which is a path to the extension attribute file. You may also skip this key entirely if you don't need extension attributes for your recipe.
 
 Policy
 =================
@@ -287,6 +287,12 @@ Indeed, the only input variables for policies are ```policy_category```, discuss
 
 See the "Template" section for a list of all of the string replacement variables.
 
+You can skip policy creation by leaving out the ```policy_template``` key, or specifying an empty value for the ```policy_template```. I.e.:
+```
+<key>policy_template</key>
+<string></string>
+```
+
 Self Service Icons
 =================
 
@@ -295,6 +301,8 @@ Having icons is nice. That being said, they are kind of tricky to implement. The
 So, if you want to include icons in your recipes, first off, you'll need the icon files. I imagine most icons are copyrighted material, so distributing them with recipes is not okay (otherwise, JAMF would just include them with Casper...) For information on grabbing and saving these icons, see: [Icon file to use in Self Service app?](https://jamfnation.jamfsoftware.com/discussion.html?id=873) and [Icon Formats](https://jamfnation.jamfsoftware.com/article.html?id=106) for help on grabbing these files.
 
 Then, to include in a recipe, use the ```self_service_icon``` key, with a string value of the path to the icon file.
+
+If you don't want to worry about icons, just leave out the ```self_service_icon``` key and JSSImporter will skip it.
 
 Template
 =================
