@@ -247,7 +247,7 @@ class JSSImporter(Processor):
 
     def handle_category(self, category_type):
         # Just in case someone gives a category a blank value...
-        category_name = self.env.get(category_type, 'Unknown')
+        category_name = self.env.get(category_type) or 'Unknown'
 
         try:
             category = self.j.Category(category_name)
