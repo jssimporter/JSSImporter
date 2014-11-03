@@ -33,12 +33,15 @@ defaults write com.github.autopkg API_USERNAME apiUser
 defaults write com.github.autopkg API_PASSWORD apiPassword
 ```
 
-### Example: Adding distribution points.
-You will need to specify your distribution points in the preferences as well. The JSSImporter will copy packages and scripts to all configured distribution points using the ```JSS_REPOS``` key. The value of this key is an array of dictionaries, which means you have to switch tools and use PlistBuddy. Each distribution point is represented by a simple dictionary, with two keys: ```name```, and ```password```. The rest of the information is pulled automatically from the JSS. (As soon as the ```jamf mount ... -passhash``` makes sense, this may become unnecessary).
+### Adding distribution points.
+You will need to specify your distribution points in the preferences as well. The JSSImporter will copy packages and scripts to all configured distribution points using the ```JSS_REPOS``` key. The value of this key is an array of dictionaries, which means you have to switch tools and use PlistBuddy. Of course, if you want to go all punk rock and edit this by hand like a savage, go for it. At least use vim.
 
+#### AFP/SMB Distribution Points
+AFP and SMB distribution points are easy to configure. Each distribution point is represented by a simple dictionary, with two keys: ```name```, and ```password```. The rest of the information is pulled automatically from the JSS.
 - ```name``` is the name of your Distribution Point as specified in the JSS' "Computer Management => File Share Distribution Points" page.
 - ```password``` is the password for the user specified for the "Read/Write" account for this distribution point at "Computer Management => File Share Distribution Points => File Sharing => Read/Write Account => Password", NOT the API user's password (They are different, right?)
 
+### Example:
 ```
 # Create our key and array
 /usr/libexec/PlistBuddy -c "Add :JSS_REPOS array" ~/Library/Preferences/com.github.autopkg.plist
@@ -83,17 +86,38 @@ plutil -convert xml1 -o - ~/Library/Preferences/com.github.autopkg.plist
 #...
 ```
 
-Of course, if you want to go all punk rock and edit this by hand like a savage, go for it. At least use vim.
+If you really want to, you can explicitly configure the required connection information. Here are the required keys (all values should be of type string):
+- AFP
+	- name (optional)
+	- URL
+	- type='AFP'
+	- port (optional)
+	- share_name
+	- username (rw user)
+	- password
+- SMB
+	- name (optional)
+	- URL
+	- domain
+	- type='SMB'
+	- port (optional)
+	- share_name
+	- username (rw user)
+	- password
 
+#### JDS: Jamf Distribution Servers
+Configuring a JDS is pretty easy too. There's no automatic configuration for JDS', but there isn't nearly as much required to work with one.
 
-### Historical Note
+There are some caveats to using a JDS. At this time, there is no officially documented way to upload files, or check for their existence on the JDS. python-jss works around this as best it can, but there is a possibility that a package object can be created, with no package file uploaded (for example, by CTRL-C'ing out of an AutoPkg run while an upload is happening). If things get crazy, or packages seem to be missing, just delete the package object with the web interface and run again.
 
-The JSSImporter used to use the key ```JSS_REPO``` (singular) to point to a _mounted_ distribution point. This is still supported, but JSSImporter will use ```JSS_REPOS``` exclusively if found. ```JSS_REPO``` must be manually mounted (```JSS_REPOS``` are auto-mounted), and packages and scripts will only be copied to one distribution point, requiring a subsequent Casper Admin "Replicate" command.
+At this time, script uploading doesn't quite work, so it is disabled. Any recipes that require scripts will exit. I hope to solve this soon.
 
-So if you really want it...
-```
-defaults write com.github.autopkg JSS_REPO /Volumes/JSS_Dist_Point
-```
+Required keys:
+- JDS
+	- URL
+	- type='JDS'
+	- username (rw user)
+	- password
 
 Manual Installation and Setup, and Developer Access
 =================
@@ -243,6 +267,8 @@ Scripts
 
 Scripts work the same way as groups. The ```scripts``` input variable should contain an array of dictionaries. Each dictionary should contain a ```name``` key, which is the path to the script file itself. It should also have a ```template_path``` item which is a path to a script template. A script template is included with this project, although you'll probably only be interested in setting the priority ("After", or "Before")
 
+Just a reminder: at this time, recipes with scripts will not run when a JDS is configured (See the section on configuring distribution points, above).
+
 Extension Attributes
 =================
 
@@ -250,7 +276,7 @@ Extension attributes work just like scripts. You need a complete and valid XML f
 
 Solutions to handle this automatically are being considered, but at this moment, XML is not valid if there are < and > sitting around that aren't escaped.
 
-The ```extension_attributes``` input variable should contain an array of dictionaries. Each dictionary should contain a ```name``` key, which is the name of the extension attribute. It should also have a ```ext_attribute_path``` item which is a path to extension attribute file.
+The ```extension_attributes``` input variable should contain an array of dictionaries. Each dictionary should contain a ```name``` key, which is the name of the extension attribute. It should also have a ```ext_attribute_path``` item which is a path to the extension attribute file.
 
 Policy
 =================
@@ -315,7 +341,7 @@ Traceback (most recent call last):
 requests.exceptions.SSLError: hostname 'testssl-expire.disig.sk' doesn't match 'testssl-valid.disig.sk'
 ```
 
-Installing and/or upgrading the following packages should solve the problem:
+Installing and/or upgrading the following packages may solve the problem:
 - pyOpenSSL
 - ndg-httpsclient
 - pyasn1

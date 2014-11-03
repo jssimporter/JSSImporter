@@ -31,8 +31,8 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = '0.2.2'
-REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.3.11')
+__version__ = '0.3.0'
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.4.0')
 
 
 class JSSImporter(Processor):
@@ -64,17 +64,17 @@ class JSSImporter(Processor):
         },
         "JSS_REPO": {
             "required": False,
-            "description": "Path to a mounted or otherwise locally accessible "
-            "JSS dist point/share, optionally set as a key in the "
-            "com.github.autopkg preference file. Will only use if JSS_REPOS is"
-            " not defined, and will be deprecated in a future release.",
+            "description": "DEPRECATED: Path to a mounted or otherwise locally"
+            " accessible JSS dist point/share, optionally set as a key in the "
+            "com.github.autopkg preference file. Will only use if JSS_REPOS "
+            "is not defined.",
         },
         "JSS_REPOS": {
             "required": False,
-            "description": "Path to a mounted or otherwise locally accessible "
-            "JSS dist point/share, optionally set as a key in the "
-            "com.github.autopkg preference file. Used in preference to "
-            "deprecated JSS_REPO.",
+            "description": "Array of dicts for each intended distribution "
+            "point. Each distribution point type requires slightly different "
+            "configuration keys and data. Please consult the documentation. "
+            "Used in preference to deprecated JSS_REPO.",
             "default": [],
         },
         "JSS_URL": {
