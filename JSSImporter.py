@@ -270,7 +270,19 @@ class JSSImporter(Processor):
         return category
 
     def handle_package(self):
-        new_package_object_created = False
+        """Creates or updates a package object on the jss, then uploads a
+        package file to the configured distribution points.
+
+        This will only upload a package if a file with the same name does not
+        already exist on a DP. If you need to force a re-upload, you must
+        delete the package on the DP first.
+
+        Further, if you are using a JDS, it will only upload a package if a
+        package object with a filename matching the AutoPkg filename does not
+        exist. If you need to force a re-upload to a JDS, please delete the
+        package object through the web interface first.
+
+        """
         os_requirements = self.env.get("os_requirements")
         try:
             package = self.j.Package(self.pkg_name)
@@ -306,7 +318,6 @@ class JSSImporter(Processor):
 
             package.set_os_requirements(os_requirements)
             package.save()
-            new_package_object_created = True
             self.env["jss_package_added"] = True
 
         # Ensure packages are on distribution point(s)
@@ -324,7 +335,7 @@ class JSSImporter(Processor):
             #
             # Passes the id of the newly created package object so JDS' will
             # upload to the correct package object. Ignored by AFP/SMB.
-            if new_package_object_created:
+            if self.env["jss_package_added"]:
                 self._copy(self.env["pkg_path"], id_=package.id)
             # For AFP/SMB shares, we still want to see if the package exists.
             # If it's missing, copy it!
