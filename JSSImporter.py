@@ -246,26 +246,19 @@ class JSSImporter(Processor):
         return text
 
     def handle_category(self, category_type):
-        category_name = self.env.get(category_type)
-        # If a category isn't specified, the package or policy will have
-        # "Unknown" as its category, so there's really no reason to skip it.
-        # Right now, the default value is "Unknown", but you could override
-        # with a value of ''.
-        if not category_name:
-            self.output("Category creation for '%s'not desired, "
-                        "moving on..." % category_type)
-            category = None
-        else:
-            try:
-                category = self.j.Category(category_name)
-                self.output("Category type: %s-'%s' already exists "
-                            "according to JSS, moving on..." %
-                            (category_type, category_name))
-            except jss.JSSGetError:
-                # Category doesn't exist
-                category = jss.Category(self.j, category_name)
-                category.save()
-                self.env["jss_category_added"] = True
+        # Just in case someone gives a category a blank value...
+        category_name = self.env.get(category_type, 'Unknown')
+
+        try:
+            category = self.j.Category(category_name)
+            self.output("Category type: %s-'%s' already exists "
+                        "according to JSS, moving on..." %
+                        (category_type, category_name))
+        except jss.JSSGetError:
+            # Category doesn't exist
+            category = jss.Category(self.j, category_name)
+            category.save()
+            self.env["jss_category_added"] = True
 
         return category
 
