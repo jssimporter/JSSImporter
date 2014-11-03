@@ -210,6 +210,11 @@ Packages
 
 Not surprisingly, packages are forwarded on from ParentRecipes seamlessly. However, if you need to specify an ```os_requirement```, there's an input variable for that. The format follows that of the JSS: a comma-delimeted list of acceptable versions, with 'x' as a wildcard, e.g. ```10.8.6, 10.9.x```.
 
+To save on time spent uploading, the JSSImporter processor only uploads a package to the distribution points when it think it is needed. Specifically, on AFP/SMB DP's, it compares the filename of the package just created with those on the DP, and uploads if it is missing. On a JDS, it only uploads a package if a new package-object was created.
+
+This means that if your package recipe changes, but the output package filename stays the same, AFP/SMB DP's will not get the new package uploaded to them: please manually delete the package from the file shares and re-run your recipe.
+For JDS DP's, packages are only uploaded if a package-object was created. To re-trigger uploading for the next run, delete the package from the JSS web interface in the Computer Management->Packages section.
+
 Groups
 =================
 
@@ -266,6 +271,8 @@ Scripts
 =================
 
 Scripts work the same way as groups. The ```scripts``` input variable should contain an array of one dictionary for each script. You can skip the ```scripts``` key entirely if you don't need any scripts. Each dictionary should contain a ```name``` key, which is the path to the script file itself. It should also have a ```template_path``` item which is a path to a script template. A script template is included with this project, although you'll probably only be interested in setting the priority ("After", or "Before")
+
+Unlike packages, scripts are uploaded every run, as presumably, they are signicantly smaller than even modestly-sized packages.
 
 Just a reminder: at this time, recipes with scripts will not run when a JDS is configured (See the section on configuring distribution points, above).
 
