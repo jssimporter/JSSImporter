@@ -103,14 +103,12 @@ class JSSImporter(Processor):
         "category": {
             "required": False,
             "description": "Category to create/associate imported app "
-            "package with. Defaults to 'Unknown'.",
-            "default": 'Unknown',
+            "package with. Defaults to 'No category assigned'.",
         },
         "policy_category": {
             "required": False,
             "description": "Category to create/associate policy with. Defaults"
-            " to 'Unknown'.",
-            "default": 'Unknown',
+            " to 'No category assigned'.",
         },
         "os_requirements": {
             "required": False,
@@ -168,7 +166,13 @@ class JSSImporter(Processor):
         "jss_category_added": {
             "description": "True if category was created."
         },
-        "jss_repo_changed": {
+        "jss_package_added": {
+            "description": "True if package was created."
+        },
+        "jss_package_updated": {
+            "description": "True if package was updated."
+        },
+        "jss_repo_updated": {
             "description": "True if item was imported."
         },
         "jss_group_added": {
@@ -246,19 +250,22 @@ class JSSImporter(Processor):
         return text
 
     def handle_category(self, category_type):
-        # Just in case someone gives a category a blank value...
-        category_name = self.env.get(category_type) or 'Unknown'
-
-        try:
-            category = self.j.Category(category_name)
-            self.output("Category type: %s-'%s' already exists "
-                        "according to JSS, moving on..." %
-                        (category_type, category_name))
-        except jss.JSSGetError:
-            # Category doesn't exist
-            category = jss.Category(self.j, category_name)
-            category.save()
-            self.env["jss_category_added"] = True
+        if self.env.get(category_type):
+            category_name = self.env.get(category_type)
+            try:
+                category = self.j.Category(category_name)
+                self.output("Category type: %s-'%s' already exists "
+                            "according to JSS, moving on..." %
+                            (category_type, category_name))
+            except jss.JSSGetError:
+                # Category doesn't exist
+                category = jss.Category(self.j, category_name)
+                category.save()
+                self.output("Category type: %s-'%s' created." % (category_type,
+                                                                category_name))
+                self.env["jss_category_added"] = True
+        else:
+            category = None
 
         return category
 
@@ -267,17 +274,28 @@ class JSSImporter(Processor):
         os_requirements = self.env.get("os_requirements")
         try:
             package = self.j.Package(self.pkg_name)
+            self.output("Pkg-object already exists according to JSS, "
+                        "moving on...")
+
+            # Set os_requirements if they don't match.
             if os_requirements and os_requirements != package.findtext(
                     "os_requirements"):
-
                 package.set_os_requirements(os_requirements)
-                package.find('category').text = self.category.name
                 package.save()
-                self.output("Pkg updated.")
+                self.output("Package os_requirements updated.")
+                self.env["jss_package_updated"] = True
 
+            # Update category if necessary.
+            if self.category is not None:
+                recipe_name = self.category.name
             else:
-                self.output("Pkg-object already exists according to JSS, "
-                            "moving on...")
+                recipe_name = 'Unknown'
+            if package.find('category').text != recipe_name:
+                package.find('category').text = recipe_name
+                package.save()
+                self.output("Package category updated.")
+                self.env["jss_package_updated"] = True
+
         except jss.JSSGetError:
             # Package doesn't exist
             if self.category is not None:
@@ -289,6 +307,7 @@ class JSSImporter(Processor):
             package.set_os_requirements(os_requirements)
             package.save()
             new_package_object_created = True
+            self.env["jss_package_added"] = True
 
         # Ensure packages are on distribution point(s)
 
@@ -338,7 +357,7 @@ class JSSImporter(Processor):
                     shutil.copyfile(source_item, dest_item)
                 self.output("Copied %s to %s" % (source_item, dest_item))
                 # set output variables
-                self.env["jss_repo_changed"] = True
+                self.env["jss_repo_updated"] = True
             except BaseException, err:
                 raise ProcessorError(
                     "Can't copy %s to %s: %s" % (source_item, dest_item, err))
@@ -348,7 +367,7 @@ class JSSImporter(Processor):
         #self.j.distribution_points.mount()
         self.output("Copying %s to all distribution points." % source_item)
         self.j.distribution_points.copy(source_item, id_=id_)
-        self.env["jss_repo_changed"] = True
+        self.env["jss_repo_updated"] = True
         self.output("Copied %s" % source_item)
 
     def handle_groups(self):
@@ -513,7 +532,7 @@ class JSSImporter(Processor):
         # information, but the recipe specifies one, then FileUpload it up.
 
         # If no policy handling is desired, we can't upload an icon.
-        if self.env.get("self_service_icon") and self.policy:
+        if self.env.get("self_service_icon") and self.policy is not None:
             icon_path = self.env.get("self_service_icon")
             icon_filename = os.path.basename(icon_path)
 
@@ -602,9 +621,11 @@ class JSSImporter(Processor):
         self.prod_name = self.env["prod_name"]
         self.version = self.env["version"]
 
-        # pre-set 'changed/added/updated' output checks to False
-        self.env["jss_repo_changed"] = False
+        # pre-set 'added/updated' output checks to False
+        self.env["jss_repo_updated"] = False
         self.env["jss_category_added"] = False
+        self.env["jss_package_added"] = False
+        self.env["jss_package_updated"] = False
         self.env["jss_group_added"] = False
         self.env["jss_group_updated"] = False
         self.env["jss_script_added"] = False
