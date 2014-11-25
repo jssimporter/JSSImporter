@@ -1,8 +1,24 @@
-### 0.2.3 (UNRELEASED) The Thing You've All Been Waiting For
+### 0.3.0 (UNRELEASED) The Thing You've All Been Waiting For
 
 FIXES:
 
 - Example template SmartGroupTemplate.xml had a mistake with the %JSS_INVENTORY_NAME% variable.
+- Fixed incorrect documentation for ```JSS_REPOS``` input variable
+
+CHANGES:
+
+- Marked ```JSS_REPO``` input variable as deprecated.
+- Requires python-jss 0.4.2
+	- This adds support for JDS distribution points.
+- Added several output variables.
+- Input variable help mentions the change from categories of "Unknown" to "No Category Assigned".
+- Removed all use of the value "*LEAVE_OUT*" from processor. (Previously used to skip a section).
+	- See README for information on individual elements of the processor. In general, leaving a key out entirely, or providing a blank value will skip that section.
+- Reorganized package handling to manage JDS distribution points.
+
+KNOWN ISSUES:
+
+- python-jss now supports JDS distribution points. However, packages and scripts are corrupted on upload, and thus, you really should only use this for testing. We are working hard to solve this problem as soon as possible. Please see python-jss Issue [https://github.com/sheagcraig/python-jss/issues/5] for more information.
 
 ### 0.2.2 (October 8, 2014) Trotter Jelly
 

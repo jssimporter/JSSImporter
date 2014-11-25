@@ -32,7 +32,7 @@ from autopkglib import Processor, ProcessorError
 
 __all__ = ["JSSImporter"]
 __version__ = '0.3.0'
-REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.4.0')
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.4.2')
 
 
 class JSSImporter(Processor):
@@ -335,6 +335,11 @@ class JSSImporter(Processor):
             #
             # Passes the id of the newly created package object so JDS' will
             # upload to the correct package object. Ignored by AFP/SMB.
+            for repo in self.env['JSS_REPOS']:
+                if isinstance(repo, jss.distribution_points.JDS):
+                    self.output('JDS distribution type does not '
+                                'currently support packages.')
+                    exit()
             if self.env["jss_package_added"]:
                 self._copy(self.env["pkg_path"], id_=package.id)
             # For AFP/SMB shares, we still want to see if the package exists.
@@ -375,7 +380,6 @@ class JSSImporter(Processor):
 
     def _copy(self, source_item, id_=-1):
         """Copy a package or script using the new JSS_REPOS preference."""
-        #self.j.distribution_points.mount()
         self.output("Copying %s to all distribution points." % source_item)
         self.j.distribution_points.copy(source_item, id_=id_)
         self.env["jss_repo_updated"] = True
