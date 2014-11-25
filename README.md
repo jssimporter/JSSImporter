@@ -11,6 +11,8 @@ Getting Started
 ### Installation
 To install, download the latest package installer from the "releases" section. This will add the JSSImporter.py processor to your autopkglib folder, and the proper python-jss package to your system python's site-packages. This allows you to start using JSSImporter right away. Of course, you can also use the new (as of AutoPkg 0.4.0) shared processor system to include the JSSImporter in the same folder as your recipes, but you'll still need python-jss available to the system python.
 
+python-jss is pulled from pypi.org using easy_install, so please ensure you have an active internet connection.
+
 ### Setup
 Prior to using the JSSImporter, You will need to add some preferences to your AutoPkg preferences file:
 - The URL to your jss
