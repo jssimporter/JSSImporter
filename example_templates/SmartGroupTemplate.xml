@@ -7,7 +7,7 @@
             <priority>0</priority>
             <and_or>and</and_or>
             <search_type>is</search_type>
-            <value>%JSSINVENTORY_NAME%</value>
+            <value>%JSS_INVENTORY_NAME%</value>
         </criterion>
         <criterion>
             <name>Application Version</name>

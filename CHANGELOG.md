@@ -1,3 +1,9 @@
+### 0.2.3 (UNRELEASED) The Thing You've All Been Waiting For
+
+FIXES:
+
+- Example template SmartGroupTemplate.xml had a mistake with the %JSS_INVENTORY_NAME% variable.
+
 ### 0.2.2 (October 8, 2014) Trotter Jelly
 
 CHANGES:
