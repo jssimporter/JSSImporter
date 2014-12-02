@@ -62,19 +62,11 @@ class JSSImporter(Processor):
             "description": "Version number of software to import - provided "
             "by previous pkg recipe/processor.",
         },
-        "JSS_REPO": {
-            "required": False,
-            "description": "DEPRECATED: Path to a mounted or otherwise locally"
-            " accessible JSS dist point/share, optionally set as a key in the "
-            "com.github.autopkg preference file. Will only use if JSS_REPOS "
-            "is not defined.",
-        },
         "JSS_REPOS": {
             "required": False,
             "description": "Array of dicts for each intended distribution "
             "point. Each distribution point type requires slightly different "
-            "configuration keys and data. Please consult the documentation. "
-            "Used in preference to deprecated JSS_REPO.",
+            "configuration keys and data. Please consult the documentation. ",
             "default": [],
         },
         "JSS_URL": {
@@ -322,8 +314,6 @@ class JSSImporter(Processor):
 
         # Ensure packages are on distribution point(s)
 
-        # Use new method preferentially (can leave old JSS_REPO key in and
-        # it will only be used if JSS_REPOS is absent)
         if self.env.get('JSS_REPOS'):
             # If we had to make a new package object, we know we need to copy
             # the package file, regardless of DP type. This solves the issue
@@ -342,39 +332,11 @@ class JSSImporter(Processor):
             elif not self.j.distribution_points.exists(
                 os.path.basename(self.env["pkg_path"])):
                 self._copy(self.env["pkg_path"])
-        elif self.env.get('JSS_REPO'):
-            self.output("JSS_REPO is deprecated, Please switch to JSS_REPOS.")
-            self._copy_old(self.env["pkg_path"])
 
         return package
 
-    def _copy_old(self, source_item):
-        """Copy a package or script using the old JSS_REPO preferences."""
-        if os.path.splitext(source_item)[1].upper() == '.PKG':
-            dest_item = os.path.join(self.env["JSS_REPO"], "Packages",
-                                     self.pkg_name)
-        else:
-            dest_item = os.path.join(self.env["JSS_REPO"], "Scripts",
-                                     self.pkg_name)
-
-        # Not sure this needs to be here
-        if os.path.exists(dest_item):
-            self.output("File already exists at %s, moving on..." % dest_item)
-        else:
-            try:
-                if os.path.isdir(source_item):
-                    shutil.copytree(source_item, dest_item)
-                else:
-                    shutil.copyfile(source_item, dest_item)
-                self.output("Copied %s to %s" % (source_item, dest_item))
-                # set output variables
-                self.env["jss_repo_updated"] = True
-            except BaseException, err:
-                raise ProcessorError(
-                    "Can't copy %s to %s: %s" % (source_item, dest_item, err))
-
     def _copy(self, source_item, id_=-1):
-        """Copy a package or script using the new JSS_REPOS preference."""
+        """Copy a package or script using the JSS_REPOS preference."""
         self.output("Copying %s to all distribution points." % source_item)
         self.j.distribution_points.copy(source_item, id_=id_)
         self.env["jss_repo_updated"] = True
@@ -494,14 +456,8 @@ class JSSImporter(Processor):
                     update_env="jss_script_updated")
 
                 # Copy the script to the distribution points.
-                # Use new method preferentially (can leave old JSS_REPO key in and
-                # it will only be used if JSS_REPOS is absent)
                 if self.env.get('JSS_REPOS'):
                     self._copy(script['name'], id_=script_object.id)
-                elif self.env.get('JSS_REPO'):
-                    self.output('JSS_REPO is deprecated. '
-                                'Please use JSS_REPOS.')
-                    self._copy_old(script['name'])
 
                 results.append(script_object)
         return results
