@@ -112,8 +112,6 @@ Configuring a JDS is pretty easy too. There's no automatic configuration for JDS
 
 There are some caveats to using a JDS. At this time, there is no officially documented way to upload files, or check for their existence on the JDS. python-jss works around this as best it can, but there is a possibility that a package object can be created, with no package file uploaded (for example, by CTRL-C'ing out of an AutoPkg run while an upload is happening). If things get crazy, or packages seem to be missing, just delete the package object with the web interface and run again.
 
-At this time, script and package uploading doesn't quite work. This of course makes this unusable on those systems. I hope to solve this soon.
-
 Required keys:
 - JDS
 	- URL
