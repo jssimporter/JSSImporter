@@ -1,4 +1,4 @@
-### 0.3.0 (UNRELEASED) The Thing You've All Been Waiting For
+### 0.3.0 (November 25, 2014) The Thing You've All Been Waiting For
 
 FIXES:
 
