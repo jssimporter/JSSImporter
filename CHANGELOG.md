@@ -5,6 +5,10 @@ FIXES:
 - Thanks to @beckf for sorting out the JDS upload issues. JDS restrictions have been removed from jss-autopkg-addon. Go for it!
 - Requires python-jss 0.4.3
 
+CHANGES:
+
+- Deprecated ```JSS_REPO``` key has been removed (Don't worry: ```JSS_REPOS``` still in!) All code referencing it has been removed.
+
 ### 0.3.0 (November 25, 2014) The Thing You've All Been Waiting For
 
 FIXES:
