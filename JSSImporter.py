@@ -335,11 +335,6 @@ class JSSImporter(Processor):
             #
             # Passes the id of the newly created package object so JDS' will
             # upload to the correct package object. Ignored by AFP/SMB.
-            for repo in self.env['JSS_REPOS']:
-                if isinstance(repo, jss.distribution_points.JDS):
-                    self.output('JDS distribution type does not '
-                                'currently support packages.')
-                    exit()
             if self.env["jss_package_added"]:
                 self._copy(self.env["pkg_path"], id_=package.id)
             # For AFP/SMB shares, we still want to see if the package exists.
@@ -502,15 +497,6 @@ class JSSImporter(Processor):
                 # Use new method preferentially (can leave old JSS_REPO key in and
                 # it will only be used if JSS_REPOS is absent)
                 if self.env.get('JSS_REPOS'):
-                    # JDS' don't work with scripts yet. Need to test for them
-                    # and warn the user.
-                    for repo in self.env['JSS_REPOS']:
-                        if isinstance(repo, jss.distribution_points.JDS):
-                            self.output('JDS distribution type does not '
-                                        'currently support scripts. Please '
-                                        'remove scripts from recipe and '
-                                        'retry.')
-                            exit()
                     self._copy(script['name'], id_=script_object.id)
                 elif self.env.get('JSS_REPO'):
                     self.output('JSS_REPO is deprecated. '
