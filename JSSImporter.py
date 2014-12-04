@@ -452,7 +452,8 @@ class JSSImporter(Processor):
         if scripts:
             for script in scripts:
                 script_object = self._update_or_create_new(
-                    jss.Script, script['template_path'], script['name'],
+                    jss.Script, script['template_path'],
+                    os.path.basename(script['name']),
                     added_env="jss_script_added",
                     update_env="jss_script_updated")
 
