@@ -32,7 +32,7 @@ from autopkglib import Processor, ProcessorError
 
 __all__ = ["JSSImporter"]
 __version__ = '0.3.2'
-REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.4.4')
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.5.1')
 
 
 class JSSImporter(Processor):
@@ -314,24 +314,25 @@ class JSSImporter(Processor):
 
         # Ensure packages are on distribution point(s)
 
-        if self.env.get('JSS_REPOS'):
-            # If we had to make a new package object, we know we need to copy
-            # the package file, regardless of DP type. This solves the issue
-            # regarding the JDS.exists() method: See python-jss docs for info.
-            # The problem with this method is that if you cancel an AutoPkg run
-            # and the package object has been created, but not uploaded, you
-            # will need to delete the package object from the JSS before
-            # running a recipe again or it won't upload the package file.
-            #
-            # Passes the id of the newly created package object so JDS' will
-            # upload to the correct package object. Ignored by AFP/SMB.
-            if self.env["jss_package_added"]:
-                self._copy(self.env["pkg_path"], id_=package.id)
-            # For AFP/SMB shares, we still want to see if the package exists.
-            # If it's missing, copy it!
-            elif not self.j.distribution_points.exists(
-                os.path.basename(self.env["pkg_path"])):
-                self._copy(self.env["pkg_path"])
+        # If we had to make a new package object, we know we need to copy
+        # the package file, regardless of DP type. This solves the issue
+        # regarding the JDS.exists() method: See python-jss docs for info.
+        # The problem with this method is that if you cancel an AutoPkg run
+        # and the package object has been created, but not uploaded, you
+        # will need to delete the package object from the JSS before
+        # running a recipe again or it won't upload the package file.
+        #
+        # Passes the id of the newly created package object so JDS' will
+        # upload to the correct package object. Ignored by AFP/SMB.
+        if self.env["jss_package_added"]:
+            self._copy(self.env["pkg_path"], id_=package.id)
+        # For AFP/SMB shares, we still want to see if the package exists.
+        # If it's missing, copy it!
+        elif not self.j.distribution_points.exists(
+            os.path.basename(self.env["pkg_path"])):
+            self._copy(self.env["pkg_path"])
+        else:
+            self.output("Package upload not needed.")
 
         return package
 
@@ -451,13 +452,13 @@ class JSSImporter(Processor):
         if scripts:
             for script in scripts:
                 script_object = self._update_or_create_new(
-                    jss.Script, script['template_path'], script['name'],
+                    jss.Script, script['template_path'],
+                    os.path.basename(script['name']),
                     added_env="jss_script_added",
                     update_env="jss_script_updated")
 
                 # Copy the script to the distribution points.
-                if self.env.get('JSS_REPOS'):
-                    self._copy(script['name'], id_=script_object.id)
+                self._copy(script['name'], id_=script_object.id)
 
                 results.append(script_object)
         return results
