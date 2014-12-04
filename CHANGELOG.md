@@ -6,6 +6,11 @@ CHANGES:
 - JDS repos now need only a single key: type=JDS.
 - JSSImporter will let you know if a package was *not* uploaded.
 
+FIXES:
+
+- Scripts ```name``` in the recipe should be the basename for ```exists``` purposes.
+- Scripts could not be uploaded a second time due to name error. Closely related to above.
+
 ### 0.3.1 (December 2, 2014) All of Your JDS are Belong to Us
 
 FIXES:

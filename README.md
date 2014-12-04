@@ -108,16 +108,23 @@ If you really want to, you can explicitly configure the required connection info
 	- password
 
 #### JDS: Jamf Distribution Servers
-Configuring a JDS is pretty easy too. There's no automatic configuration for JDS', but there isn't nearly as much required to work with one.
+Configuring a JDS is pretty easy too.
 
 There are some caveats to using a JDS. At this time, there is no officially documented way to upload files, or check for their existence on the JDS. python-jss works around this as best it can, but there is a possibility that a package object can be created, with no package file uploaded (for example, by CTRL-C'ing out of an AutoPkg run while an upload is happening). If things get crazy, or packages seem to be missing, just delete the package object with the web interface and run again.
 
 Required keys:
-- JDS
-	- URL
-	- type='JDS'
-	- username (rw user)
-	- password
+- type='JDS'
+
+Your ```JSS_REPOS``` section should then simply look like this:
+```
+	<key>JSS_REPOS</key>
+	<array>
+		<dict>
+			<key>type</key>
+			<string>JDS</string>
+		</dict>
+	</array>
+```
 
 Manual Installation and Setup, and Developer Access
 =================
@@ -361,7 +368,7 @@ Installing and/or upgrading the following packages may solve the problem:
 - ndg-httpsclient
 - pyasn1
 
-Hopefully this is temporary, although requests' changelog does claim to have "Fix(ed) previously broken SNI support." at version 2.1.0 (Current included version is 2.4.0).
+Hopefully this is temporary, although requests' changelog does claim to have "Fix(ed) previously broken SNI support." at version 2.1.0 (Current included version is 2.5.0).
 
 Comments/Questions/Ideas
 =================
