@@ -1,3 +1,11 @@
+### 0.3.2 (December 4, 2014) Pickles
+
+CHANGES:
+
+- Updates to python-jss 0.5.1
+- JDS repos now need only a single key: type=JDS.
+- JSSImporter will let you know if a package was *not* uploaded.
+
 ### 0.3.1 (December 2, 2014) All of Your JDS are Belong to Us
 
 FIXES:
