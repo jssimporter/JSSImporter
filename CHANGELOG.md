@@ -1,3 +1,13 @@
+### 0.3.4 (December 5, 2014) Walrus Odor
+
+CHANGES:
+
+- Updates to python-jss 0.5.2
+
+FIXES:
+
+- JDS operations use the same session as "regular" API calls. This should honor the JSS_VERIFY_SSL setting now. (sheagcraig/python-jss#18)
+
 ### 0.3.3 (December 4, 2014) Pickles
 
 CHANGES:
