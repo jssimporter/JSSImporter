@@ -1,3 +1,9 @@
+### 0.3.3 (UNRELEASED) Hypercard
+
+FIXES:
+
+- Non-flat packages would not upload to a JDS. There is also the possibility of them not working on SMB fileshares as reported by @mitchelsblake. Now, non-flat packages are zipped prior to upload for all DP types. (sheagcraig/python-jss#20)
+
 ### 0.3.2 (December 4, 2014) Pickles
 
 CHANGES:
