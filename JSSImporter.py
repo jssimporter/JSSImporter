@@ -276,6 +276,14 @@ class JSSImporter(Processor):
 
         """
         os_requirements = self.env.get("os_requirements")
+        # See if the package is non-flat (requires zipping prior to upload).
+        if os.path.isdir(self.env['pkg_path']):
+            shutil.make_archive(self.env['pkg_path'], 'zip',
+                                os.path.dirname(self.env['pkg_path']),
+                                self.pkg_name)
+            self.env['pkg_path'] += '.zip'
+            self.pkg_name += '.zip'
+
         try:
             package = self.j.Package(self.pkg_name)
             self.output("Pkg-object already exists according to JSS, "
