@@ -1,9 +1,10 @@
-### 0.3.5 (UNRELEASED) Hypercard
+### 0.3.5 (December 9, 2014) Hypercard
 
 CHANGES:
 
 - Updates to python-jss 0.5.3
-- Adds ```JSS_SUPPRESS_WARNINGS``` input variable to disable urllib3 warnings (probably because you are disabling JSS_VERIFY_SSL or using a wacky certificate). Use at your own risk!
+- Adds ```JSS_SUPPRESS_WARNINGS``` input variable to disable urllib3 warnings (probably because you are disabling JSS_VERIFY_SSL or using a wacky certificate). Use at your own risk! (#18)
+- I will now refer to this project as JSSImporter instead of jss-autopkg-addon.
 
 FIXES:
 

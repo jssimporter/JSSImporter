@@ -1,4 +1,4 @@
-jss-autopkg-addon
+JSSImporter
 =================
 
 This processor adds the ability for AutoPkg to create groups, upload packages and scripts, add extension attributes, and create policies for the Casper JSS, allowing you to fully-automate your software testing workflow. 
@@ -370,9 +370,11 @@ Installing and/or upgrading the following packages may solve the problem:
 
 Hopefully this is temporary, although requests' changelog does claim to have "Fix(ed) previously broken SNI support." at version 2.1.0 (Current included version is 2.5.0).
 
+If you have lots of warnings from urllib3, there's also a ```JSS_SUPPRESS_WARNINGS``` input variable which, when set to ```True``` will prevent those warnings from appearing repeatedly. Use at your own risk!
+
 Comments/Questions/Ideas
 =================
 
 Please send me feature requests or issues through the Github page.
 
-I'm working on a series of blog posts covering software testing best practices with Casper, and how to configure jss-autopkg-addon, and write recipes for it, on my blog: (http://www.sheacraig.com/)
+I'm working on a series of blog posts covering software testing best practices with Casper, and how to configure JSSImporter, and write recipes for it, on my [blog](http://labs.da.org/wordpress/sheagcraig/)
