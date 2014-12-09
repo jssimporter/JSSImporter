@@ -31,8 +31,8 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = '0.3.4'
-REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.5.2')
+__version__ = '0.3.5'
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.5.3')
 
 
 class JSSImporter(Processor):
@@ -91,6 +91,13 @@ class JSSImporter(Processor):
             "description": "If set to False, SSL verification in communication "
             "with the JSS will be skipped. Defaults to 'True'.",
             "default": True,
+        },
+        "JSS_SUPPRESS_WARNINGS": {
+            "required": False,
+            "description": "If you get a lot of urllib3 warnings, and you "
+            "want to suppress them, set to True. Remember, these warnings are "
+            "there for a reason.",
+            "default": False,
         },
         "category": {
             "required": False,
@@ -276,6 +283,14 @@ class JSSImporter(Processor):
 
         """
         os_requirements = self.env.get("os_requirements")
+        # See if the package is non-flat (requires zipping prior to upload).
+        if os.path.isdir(self.env['pkg_path']):
+            shutil.make_archive(self.env['pkg_path'], 'zip',
+                                os.path.dirname(self.env['pkg_path']),
+                                self.pkg_name)
+            self.env['pkg_path'] += '.zip'
+            self.pkg_name += '.zip'
+
         try:
             package = self.j.Package(self.pkg_name)
             self.output("Pkg-object already exists according to JSS, "
@@ -571,10 +586,12 @@ class JSSImporter(Processor):
         repoUrl = self.env["JSS_URL"]
         authUser = self.env["API_USERNAME"]
         authPass = self.env["API_PASSWORD"]
-        sslVerify = self.env.get("JSS_VERIFY_SSL")
-        repos = self.env.get("JSS_REPOS")
+        sslVerify = self.env["JSS_VERIFY_SSL"]
+        suppress_warnings = self.env["JSS_SUPPRESS_WARNINGS"]
+        repos = self.env["JSS_REPOS"]
         self.j = jss.JSS(url=repoUrl, user=authUser, password=authPass,
-                         ssl_verify=sslVerify, repo_prefs=repos)
+                         ssl_verify=sslVerify, repo_prefs=repos,
+                         suppress_warnings=suppress_warnings)
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]
         self.version = self.env["version"]
