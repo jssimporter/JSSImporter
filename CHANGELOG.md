@@ -1,10 +1,20 @@
-### 0.3.3 (UNRELEASED) Hypercard
+### 0.3.5 (UNRELEASED) Hypercard
 
 FIXES:
 
 - Non-flat packages would not upload to a JDS. There is also the possibility of them not working on SMB fileshares as reported by @mitchelsblake. Now, non-flat packages are zipped prior to upload for all DP types. (sheagcraig/python-jss#20)
 
-### 0.3.2 (December 4, 2014) Pickles
+### 0.3.4 (December 5, 2014) Walrus Odor
+
+CHANGES:
+
+- Updates to python-jss 0.5.2
+
+FIXES:
+
+- JDS operations use the same session as "regular" API calls. This should honor the JSS_VERIFY_SSL setting now. (sheagcraig/python-jss#18)
+
+### 0.3.3 (December 4, 2014) Pickles
 
 CHANGES:
 
@@ -16,6 +26,18 @@ FIXES:
 
 - Scripts ```name``` in the recipe should be the basename for ```exists``` purposes.
 - Scripts could not be uploaded a second time due to name error. Closely related to above.
+- Solves #9 for real.
+
+### 0.3.2 (December 3, 2014) Terminator X
+
+FIXES:
+
+- Should solve #9 with update to requests 2.5. Thanks to @ocoda for figuring this out.
+- Installer package should now use an _unzipped_ python-jss egg. Solves issue with missing certs.pem file #14.
+
+CHANGES:
+
+- Updates requirement to python-jss 0.4.4 (included in package installer).
 
 ### 0.3.1 (December 2, 2014) All of Your JDS are Belong to Us
 
