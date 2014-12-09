@@ -92,6 +92,13 @@ class JSSImporter(Processor):
             "with the JSS will be skipped. Defaults to 'True'.",
             "default": True,
         },
+        "JSS_SUPPRESS_WARNINGS": {
+            "required": False,
+            "description": "If you get a lot of urllib3 warnings, and you "
+            "want to suppress them, set to True. Remember, these warnings are "
+            "there for a reason.",
+            "default": False,
+        },
         "category": {
             "required": False,
             "description": "Category to create/associate imported app "
@@ -579,10 +586,12 @@ class JSSImporter(Processor):
         repoUrl = self.env["JSS_URL"]
         authUser = self.env["API_USERNAME"]
         authPass = self.env["API_PASSWORD"]
-        sslVerify = self.env.get("JSS_VERIFY_SSL")
-        repos = self.env.get("JSS_REPOS")
+        sslVerify = self.env["JSS_VERIFY_SSL"]
+        suppress_warnings = self.env["JSS_SUPPRESS_WARNINGS"]
+        repos = self.env["JSS_REPOS"]
         self.j = jss.JSS(url=repoUrl, user=authUser, password=authPass,
-                         ssl_verify=sslVerify, repo_prefs=repos)
+                         ssl_verify=sslVerify, repo_prefs=repos,
+                         suppress_warnings=suppress_warnings)
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]
         self.version = self.env["version"]
