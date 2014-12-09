@@ -3,7 +3,7 @@ JSSImporter
 
 This processor adds the ability for AutoPkg to create groups, upload packages and scripts, add extension attributes, and create policies for the Casper JSS, allowing you to fully-automate your software testing workflow. 
 
-This project began from Allister Banks' original [jss-autopkg-addon project](https://github.com/arubdesu/jss-autopkg-addon), but has since diverged considerably to add greater customization options while maintaining the existing functionality.
+This project began from Allister Banks' original [jss-autopkg-addon project](https://github.com/arubdesu/jss-autopkg-addon), but has since diverged ~~considerably~~ completely to add greater customization options while maintaining the existing functionality.
 
 Getting Started
 =================
