@@ -215,7 +215,7 @@ If you don't specify a category when adding a package or a policy, the JSS will 
 Packages
 =================
 
-Not surprisingly, packages are forwarded on from ParentRecipes seamlessly. However, if you need to specify an ```os_requirement```, there's an input variable for that. The format follows that of the JSS: a comma-delimeted list of acceptable versions, with 'x' as a wildcard, e.g. ```10.8.6, 10.9.x```.
+Not surprisingly, packages are forwarded on from ParentRecipes seamlessly. However, if you need to specify an ```os_requirements``` setting, there's an input variable for that. The format follows that of the JSS: a comma-delimeted list of acceptable versions, with 'x' as a wildcard, e.g. ```10.8.6, 10.9.x```.
 
 To save on time spent uploading, the JSSImporter processor only uploads a package to the distribution points when it think it is needed. Specifically, on AFP/SMB DP's, it compares the filename of the package just created with those on the DP, and uploads if it is missing. On a JDS, it only uploads a package if a new package-object was created.
 
