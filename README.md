@@ -242,7 +242,7 @@ Here is an example of the smart group template that I use:
             <priority>0</priority>
             <and_or>and</and_or>
             <search_type>is</search_type>
-            <value>%JSSINVENTORY_NAME%</value>
+            <value>%JSS_INVENTORY_NAME%</value>
         </criterion>
         <criterion>
             <name>Application Version</name>
@@ -264,7 +264,7 @@ Here is an example of the smart group template that I use:
 
 This smart group applies to computers who are members of the Testing static group, who don't have the latest version of the app in question. You can see how, like elsewhere in AutoPkg recipes, variable substitution occurs with a %wrapped% variable name.
 
-For smart groups which use the "Application Title" as part of their criteria, you have to be careful. The JSS inventory seems to be based on the filenames of the apps in ```/Applications``` only. The %JSSINVENTORY_NAME% template variable / %jss_inventory_name% recipe input variable needs to be the name the JSS uses for its "Application Title" value, which in some cases differs from what the app is commonly called. You can look this up by creating a new smart group in the web interface, adding a criteria of "Application Title" "is" and then hit the ellipses button to see all of the inventoried apps.
+For smart groups which use the "Application Title" as part of their criteria, you have to be careful. The JSS inventory seems to be based on the filenames of the apps in ```/Applications``` only. The %JSS_INVENTORY_NAME% template variable / %jss_inventory_name% recipe input variable needs to be the name the JSS uses for its "Application Title" value, which in some cases differs from what the app is commonly called. You can look this up by creating a new smart group in the web interface, adding a criteria of "Application Title" "is" and then hit the ellipses button to see all of the inventoried apps.
 
 So "Google Chrome.app" and "Goat Simulator.app" may be the inventory name, even though you would want your package name to be GoogleChrome and GoatSimulator.
 
