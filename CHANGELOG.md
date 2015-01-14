@@ -1,3 +1,9 @@
+### 0.3.6 (UNRELEASED) Sergio Leone
+
+CHANGES:
+
+- Updates SmartGroupTemplate.xml and PolicyTemplate.xml to match what I have been using and recommending with my jss-recipes repo.
+
 ### 0.3.5 (December 9, 2014) Hypercard
 
 CHANGES:
