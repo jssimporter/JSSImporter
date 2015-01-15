@@ -10,15 +10,18 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+#
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""See docstring for JSSImporter class."""
 
 
 from distutils.version import StrictVersion
 import os
 import shutil
-from sys import exit
+import sys
 from xml.etree import ElementTree
 
 import jss
@@ -36,7 +39,11 @@ REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.5.3')
 
 
 class JSSImporter(Processor):
-    """Imports a flat pkg to the JSS."""
+    """Uploads a package to configured Casper distribution points, and
+    optionally creates supporting categories, computer groups, policy, self
+    service icon, extension attributes, and scripts.
+
+    """
     input_variables = {
         "prod_name": {
             "required": True,
@@ -88,8 +95,8 @@ class JSSImporter(Processor):
         },
         "JSS_VERIFY_SSL": {
             "required": False,
-            "description": "If set to False, SSL verification in communication "
-            "with the JSS will be skipped. Defaults to 'True'.",
+            "description": "If set to False, SSL verification in communication"
+            " with the JSS will be skipped. Defaults to 'True'.",
             "default": True,
         },
         "JSS_SUPPRESS_WARNINGS": {
@@ -217,16 +224,18 @@ class JSSImporter(Processor):
             'self_service_description')
         replace_dict['%SELF_SERVICE_ICON%'] = self.env.get(
             'self_service_icon')
-        # policy_category is not required, so set a default value if absent.
+        # policy_category is not required, so set a default value if
+        # absent.
         replace_dict['%POLICY_CATEGORY%'] = self.env.get(
             "policy_category") or "Unknown"
         #if self.env.get("policy_name"):
         #    replace_dict['%POLICY_NAME%'] = self.env.get("policy_name")
-        # Some applications may have a product name that differs from the name
-        # that the JSS uses for its "Application Title" inventory field. If so,
-        # you can set it with the jss_inventory_name input variable. If this
-        # variable is not specified, it will just append .app, which is how
-        # most apps work.
+        # Some applications may have a product name that differs from
+        # the name that the JSS uses for its "Application Title"
+        # inventory field. If so, you can set it with the
+        # jss_inventory_name input variable. If this variable is not
+        # specified, it will just append .app, which is how most apps
+        # work.
         if self.env.get("jss_inventory_name"):
             replace_dict['%JSS_INVENTORY_NAME%'] = self.env.get(
                 "jss_inventory_name")
@@ -249,6 +258,7 @@ class JSSImporter(Processor):
         return text
 
     def handle_category(self, category_type):
+        """Ensure a category is present."""
         if self.env.get(category_type):
             category_name = self.env.get(category_type)
             try:
@@ -269,21 +279,23 @@ class JSSImporter(Processor):
         return category
 
     def handle_package(self):
-        """Creates or updates a package object on the jss, then uploads a
-        package file to the configured distribution points.
+        """Creates or updates a package object on the jss, then uploads
+        a package file to the configured distribution points.
 
-        This will only upload a package if a file with the same name does not
-        already exist on a DP. If you need to force a re-upload, you must
-        delete the package on the DP first.
+        This will only upload a package if a file with the same name
+        does not already exist on a DP. If you need to force a
+        re-upload, you must delete the package on the DP first.
 
-        Further, if you are using a JDS, it will only upload a package if a
-        package object with a filename matching the AutoPkg filename does not
-        exist. If you need to force a re-upload to a JDS, please delete the
-        package object through the web interface first.
+        Further, if you are using a JDS, it will only upload a package
+        if a package object with a filename matching the AutoPkg
+        filename does not exist. If you need to force a re-upload to a
+        JDS, please delete the package object through the web interface
+        first.
 
         """
         os_requirements = self.env.get("os_requirements")
-        # See if the package is non-flat (requires zipping prior to upload).
+        # See if the package is non-flat (requires zipping prior to
+        # upload).
         if os.path.isdir(self.env['pkg_path']):
             shutil.make_archive(self.env['pkg_path'], 'zip',
                                 os.path.dirname(self.env['pkg_path']),
@@ -329,20 +341,21 @@ class JSSImporter(Processor):
 
         # Ensure packages are on distribution point(s)
 
-        # If we had to make a new package object, we know we need to copy
-        # the package file, regardless of DP type. This solves the issue
-        # regarding the JDS.exists() method: See python-jss docs for info.
-        # The problem with this method is that if you cancel an AutoPkg run
-        # and the package object has been created, but not uploaded, you
-        # will need to delete the package object from the JSS before
-        # running a recipe again or it won't upload the package file.
+        # If we had to make a new package object, we know we need to
+        # copy the package file, regardless of DP type. This solves the
+        # issue regarding the JDS.exists() method: See python-jss docs
+        # for info.  The problem with this method is that if you cancel
+        # an AutoPkg run and the package object has been created, but
+        # not uploaded, you will need to delete the package object from
+        # the JSS before running a recipe again or it won't upload the
+        # package file.
         #
         # Passes the id of the newly created package object so JDS' will
         # upload to the correct package object. Ignored by AFP/SMB.
         if self.env["jss_package_added"]:
             self._copy(self.env["pkg_path"], id_=package.id)
-        # For AFP/SMB shares, we still want to see if the package exists.
-        # If it's missing, copy it!
+        # For AFP/SMB shares, we still want to see if the package
+        # exists.  If it's missing, copy it!
         elif not self.j.distribution_points.exists(
             os.path.basename(self.env["pkg_path"])):
             self._copy(self.env["pkg_path"])
@@ -359,6 +372,7 @@ class JSSImporter(Processor):
         self.output("Copied %s" % source_item)
 
     def handle_groups(self):
+        """Manage group existence and creation."""
         groups = self.env.get('groups')
         computer_groups = []
         if groups:
@@ -374,7 +388,10 @@ class JSSImporter(Processor):
         return computer_groups
 
     def _add_or_update_static_group(self, group):
-        """Given a group, either add a new group or update existing group."""
+        """Given a group, either add a new group or update existing
+        group.
+
+        """
         # Check for pre-existing group first
         try:
             computer_group = self.j.ComputerGroup(group['name'])
@@ -389,7 +406,10 @@ class JSSImporter(Processor):
         return computer_group
 
     def _add_or_update_smart_group(self, group):
-        """Given a group, either add a new group or update existing group."""
+        """Given a group, either add a new group or update existing
+        group.
+
+        """
         # Build the template group object
         self.replace_dict['%group_name%'] = group['name']
         computer_group = self._update_or_create_new(
@@ -400,15 +420,18 @@ class JSSImporter(Processor):
 
     def _update_or_create_new(self, obj_cls, template_path, name='',
                               added_env='', update_env=''):
-        """Check for an existing object and update it, or create a new object.
+        """Check for an existing object and update it, or create a new
+        object.
 
         obj_cls:        The python-jss object class to work with.
-        template_path:  The environment variable pointing to this objects
-                        template.
-        name:           The name to use. Defaults to the "name" property of the
-                        templated object.
-        added_env:      The environment var to update if an object is added.
-        update_env:     The environment var to update if an object is updated.
+        template_path:  The environment variable pointing to this
+                        objects template.
+        name:           The name to use. Defaults to the "name" property
+                        of the templated object.
+        added_env:      The environment var to update if an object is
+                        added.
+        update_env:     The environment var to update if an object is
+                        updated.
 
         """
         # Create a new object from the template
@@ -427,13 +450,13 @@ class JSSImporter(Processor):
         except jss.JSSGetError:
             pass
 
-        # If object is a Policy, we need to inject scope, scripts, package, and
-        # an icon.
+        # If object is a Policy, we need to inject scope, scripts,
+        # package, and an icon.
         if obj_cls is jss.Policy:
             if existing_object is not None:
-                # If this policy already exists, and it has an icon set, copy
-                # its icon section to our template, as we have no other way of
-                # getting this information.
+                # If this policy already exists, and it has an icon set,
+                # copy its icon section to our template, as we have no
+                # other way of getting this information.
                 icon_xml = existing_object.find(
                     'self_service/self_service_icon')
                 if icon_xml is not None:
@@ -462,6 +485,7 @@ class JSSImporter(Processor):
 
 
     def handle_scripts(self):
+        """Add scripts if needed."""
         scripts = self.env.get('scripts')
         results = []
         if scripts:
@@ -479,6 +503,7 @@ class JSSImporter(Processor):
         return results
 
     def handle_extension_attributes(self):
+        """Add extension attributes if needed."""
         extattrs = self.env.get('extension_attributes')
         results = []
         if extattrs:
@@ -493,24 +518,28 @@ class JSSImporter(Processor):
         return results
 
     def handle_icon(self):
-        # Icons are tricky. The only way to add new ones is to use FileUploads.
-        # If you manually upload them, you can add them to a policy to get
-        # their ID, but there is no way to query the JSS to see what icons are
-        # available. Thus, icon handling involves several cooperating methods.
-        # If we just add an icon every time we run a recipe, however, we end up
-        # with a ton of redundent icons, and short of actually deleting them in
-        # the sql database, there's no way to delete icons. So when we run, we
-        # first check for an existing policy, and if it exists, copy its icon
-        # XML, which is then added to the templated Policy. If there is no icon
-        # information, but the recipe specifies one, then FileUpload it up.
+        """Add self service icon if needed."""
+        # Icons are tricky. The only way to add new ones is to use
+        # FileUploads.  If you manually upload them, you can add them to
+        # a policy to get their ID, but there is no way to query the JSS
+        # to see what icons are available. Thus, icon handling involves
+        # several cooperating methods.  If we just add an icon every
+        # time we run a recipe, however, we end up with a ton of
+        # redundent icons, and short of actually deleting them in the
+        # sql database, there's no way to delete icons. So when we run,
+        # we first check for an existing policy, and if it exists, copy
+        # its icon XML, which is then added to the templated Policy. If
+        # there is no icon information, but the recipe specifies one,
+        # then FileUpload it up.
 
         # If no policy handling is desired, we can't upload an icon.
         if self.env.get("self_service_icon") and self.policy is not None:
             icon_path = self.env.get("self_service_icon")
             icon_filename = os.path.basename(icon_path)
 
-            # Compare the filename in the policy to the one provided by the
-            # recipe. If they don't match, we need to upload a new icon.
+            # Compare the filename in the policy to the one provided by
+            # the recipe. If they don't match, we need to upload a new
+            # icon.
             policy_filename = self.policy.findtext(
                 'self_service/self_service_icon/filename')
             if not policy_filename == icon_filename:
@@ -523,6 +552,7 @@ class JSSImporter(Processor):
                 self.output("Icon matches existing icon, moving on...")
 
     def handle_policy(self):
+        """Create or update a policy."""
         if self.env.get("policy_template"):
             template_filename = self.env.get("policy_template")
             policy = self._update_or_create_new(jss.Policy, template_filename,
@@ -535,12 +565,14 @@ class JSSImporter(Processor):
         return policy
 
     def add_scope_to_policy(self, policy_template):
+        """Incorporate scoping groups into a policy."""
         computer_groups_element = self.ensure_XML_structure(
             policy_template, 'scope/computer_groups')
         for group in self.groups:
             policy_template.add_object_to_path(group, computer_groups_element)
 
     def add_scripts_to_policy(self, policy_template):
+        """Incorporate scripts into a policy."""
         scripts_element = self.ensure_XML_structure(policy_template, 'scripts')
         for script in self.scripts:
             script_element = policy_template.add_object_to_path(
@@ -549,6 +581,7 @@ class JSSImporter(Processor):
             priority.text = script.findtext('priority')
 
     def add_package_to_policy(self, policy_template):
+        """Incorporate a package task into a policy."""
         packages_element = self.ensure_XML_structure(
             policy_template, 'package_configuration/packages')
         package_element = policy_template.add_object_to_path(self.package,
@@ -557,14 +590,15 @@ class JSSImporter(Processor):
         action.text = 'Install'
 
     def add_icon_to_policy(self, policy_template, icon_xml):
+        """Add an icon to a self service policy."""
         self_service_icon_element = self.ensure_XML_structure(
             policy_template, 'self_service')
         self_service = policy_template.find('self_service')
         self_service.append(icon_xml)
 
     def ensure_XML_structure(self, element, path):
-        """Given an XML path and a starting element, ensure that all tiers of
-        the hierarchy exist.
+        """Given an XML path and a starting element, ensure that all
+        tiers of the hierarchy exist.
 
         """
         search, slash, path = path.partition('/')
@@ -575,12 +609,13 @@ class JSSImporter(Processor):
         return element
 
     def main(self):
+        """Main processor code."""
         # Ensure we have the right version of python-jss
         python_jss_version = StrictVersion(PYTHON_JSS_VERSION)
         if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
             self.output("Requires python-jss version: %s. Installed: %s" %
                   (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
-            exit()
+            sys.exit()
 
         # pull jss recipe-specific args, prep api auth
         repoUrl = self.env["JSS_URL"]
