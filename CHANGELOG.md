@@ -4,6 +4,15 @@ CHANGES:
 
 - Updates SmartGroupTemplate.xml and PolicyTemplate.xml to match what I have been using and recommending with my jss-recipes repo.
 
+### 0.3.6 (January 29, 2015) Cha-Cha-Cha-Chia!
+
+CHANGES:
+
+- Updates to python-jss 0.5.4
+- Gains support for migrated JSS' with AFP/SMB distribution points case. (#19)
+- Adds support for JSSImporter to *not* upload a package. Useful for specifying multiple JSSImporter processors in a recipe to automate policy creation. (#22)
+	- You need to specify ```pkg_path``` with a blank value for this to work!
+
 ### 0.3.5 (December 9, 2014) Hypercard
 
 CHANGES:

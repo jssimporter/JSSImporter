@@ -35,6 +35,12 @@ defaults write com.github.autopkg API_USERNAME apiUser
 defaults write com.github.autopkg API_PASSWORD apiPassword
 ```
 
+### Additional Preferences
+In addition the URL, user, and password preferences, there are a few others you may want to use.
+- ```JSS_VERIFY_SSL```: Boolean (True or False). Whether or not to verify SSL traffic. Defaults to ```True```, and recommended. (See below).
+- ```JSS_MIGRATED```: Boolean. If you have "migrated" your JSS (uses the web interface to edit scripts), set to ```True```. Defaults to ```False```. This only really comes into play if you have an AFP or SMB share *and* have migrated.
+- ```JSS_SUPPRESS_WARNINGS```: Boolean. If you are getting a lot of warnings from urllib3 or requests when running JSSImporter, you can disable the warnings by setting this to ```True```. Defaults to ```False```. Use at your own risk!
+
 ### Adding distribution points.
 You will need to specify your distribution points in the preferences as well. The JSSImporter will copy packages and scripts to all configured distribution points using the ```JSS_REPOS``` key. The value of this key is an array of dictionaries, which means you have to switch tools and use PlistBuddy. Of course, if you want to go all punk rock and edit this by hand like a savage, go for it. At least use vim.
 
@@ -221,6 +227,8 @@ To save on time spent uploading, the JSSImporter processor only uploads a packag
 
 This means that if your package recipe changes, but the output package filename stays the same, AFP/SMB DP's will not get the new package uploaded to them: please manually delete the package from the file shares and re-run your recipe.
 For JDS DP's, packages are only uploaded if a package-object was created. To re-trigger uploading for the next run, delete the package from the JSS web interface in the Computer Management->Packages section.
+
+If you would like to _not_ upload a package and _not_ add a package install action to a Policy, specify a ```pkg_path``` with a blank value to let JSSImporter know to skip package handling. Chances are extremely good that a previous step in a Parent pkg recipe set ```pkg_path```, so you need to *un*-set it. Why would this be useful? Some organizations are using AutoPkg and JSSImporter to automate the creation of multiple policies per product-one to actually install the product, and another to notify the user of an available update. This is a lot of work to go through to try to be [Munki](https://www.munki.org), but it may improve the experience for users, since Casper will happily install apps while a user is logged in. Regardless, you can simply specify a second JSSImporter processor in your jss recipe, making sure to set ```pkg_path``` to a blank value (e.g: ```<string/>```), and crafting the arguments and templates appropriately.
 
 Groups
 =================
