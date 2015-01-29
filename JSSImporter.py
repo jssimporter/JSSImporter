@@ -217,7 +217,8 @@ class JSSImporter(Processor):
         """
         replace_dict = {}
         replace_dict['%VERSION%'] = self.version
-        replace_dict['%PKG_NAME%'] = self.package.name
+        if self.package is not None:
+            replace_dict['%PKG_NAME%'] = self.package.name
         replace_dict['%PROD_NAME%'] = self.env.get('prod_name')
         replace_dict['%SELF_SERVICE_DESCRIPTION%'] = self.env.get(
             'self_service_description')
@@ -288,72 +289,78 @@ class JSSImporter(Processor):
         package object through the web interface first.
 
         """
-        os_requirements = self.env.get("os_requirements")
-        # See if the package is non-flat (requires zipping prior to upload).
-        if os.path.isdir(self.env['pkg_path']):
-            shutil.make_archive(self.env['pkg_path'], 'zip',
-                                os.path.dirname(self.env['pkg_path']),
-                                self.pkg_name)
-            self.env['pkg_path'] += '.zip'
-            self.pkg_name += '.zip'
+        if self.env["pkg_path"] != '':
+            os_requirements = self.env.get("os_requirements")
+            # See if the package is non-flat (requires zipping prior to
+            # upload).
+            if os.path.isdir(self.env['pkg_path']):
+                shutil.make_archive(self.env['pkg_path'], 'zip',
+                                    os.path.dirname(self.env['pkg_path']),
+                                    self.pkg_name)
+                self.env['pkg_path'] += '.zip'
+                self.pkg_name += '.zip'
 
-        try:
-            package = self.j.Package(self.pkg_name)
-            self.output("Pkg-object already exists according to JSS, "
-                        "moving on...")
+            try:
+                package = self.j.Package(self.pkg_name)
+                self.output("Pkg-object already exists according to JSS, "
+                            "moving on...")
 
-            # Set os_requirements if they don't match.
-            if os_requirements and os_requirements != package.findtext(
-                    "os_requirements"):
+                # Set os_requirements if they don't match.
+                if os_requirements and os_requirements != package.findtext(
+                        "os_requirements"):
+                    package.set_os_requirements(os_requirements)
+                    package.save()
+                    self.output("Package os_requirements updated.")
+                    self.env["jss_package_updated"] = True
+
+                # Update category if necessary.
+                if self.category is not None:
+                    recipe_name = self.category.name
+                else:
+                    recipe_name = 'Unknown'
+                if package.find('category').text != recipe_name:
+                    package.find('category').text = recipe_name
+                    package.save()
+                    self.output("Package category updated.")
+                    self.env["jss_package_updated"] = True
+
+            except jss.JSSGetError:
+                # Package doesn't exist
+                if self.category is not None:
+                    package = jss.Package(self.j, self.pkg_name,
+                                        cat_name=self.category.name)
+                else:
+                    package = jss.Package(self.j, self.pkg_name)
+
                 package.set_os_requirements(os_requirements)
                 package.save()
-                self.output("Package os_requirements updated.")
-                self.env["jss_package_updated"] = True
+                self.env["jss_package_added"] = True
 
-            # Update category if necessary.
-            if self.category is not None:
-                recipe_name = self.category.name
+            # Ensure packages are on distribution point(s)
+
+            # If we had to make a new package object, we know we need to
+            # copy the package file, regardless of DP type. This solves
+            # the issue regarding the JDS.exists() method: See
+            # python-jss docs for info.  The problem with this method is
+            # that if you cancel an AutoPkg run and the package object
+            # has been created, but not uploaded, you will need to
+            # delete the package object from the JSS before running a
+            # recipe again or it won't upload the package file.
+            #
+            # Passes the id of the newly created package object so JDS'
+            # will upload to the correct package object. Ignored by
+            # AFP/SMB.
+            if self.env["jss_package_added"]:
+                self._copy(self.env["pkg_path"], id_=package.id)
+            # For AFP/SMB shares, we still want to see if the package
+            # exists.  If it's missing, copy it!
+            elif not self.j.distribution_points.exists(
+                os.path.basename(self.env["pkg_path"])):
+                self._copy(self.env["pkg_path"])
             else:
-                recipe_name = 'Unknown'
-            if package.find('category').text != recipe_name:
-                package.find('category').text = recipe_name
-                package.save()
-                self.output("Package category updated.")
-                self.env["jss_package_updated"] = True
-
-        except jss.JSSGetError:
-            # Package doesn't exist
-            if self.category is not None:
-                package = jss.Package(self.j, self.pkg_name,
-                                      cat_name=self.category.name)
-            else:
-                package = jss.Package(self.j, self.pkg_name)
-
-            package.set_os_requirements(os_requirements)
-            package.save()
-            self.env["jss_package_added"] = True
-
-        # Ensure packages are on distribution point(s)
-
-        # If we had to make a new package object, we know we need to copy
-        # the package file, regardless of DP type. This solves the issue
-        # regarding the JDS.exists() method: See python-jss docs for info.
-        # The problem with this method is that if you cancel an AutoPkg run
-        # and the package object has been created, but not uploaded, you
-        # will need to delete the package object from the JSS before
-        # running a recipe again or it won't upload the package file.
-        #
-        # Passes the id of the newly created package object so JDS' will
-        # upload to the correct package object. Ignored by AFP/SMB.
-        if self.env["jss_package_added"]:
-            self._copy(self.env["pkg_path"], id_=package.id)
-        # For AFP/SMB shares, we still want to see if the package exists.
-        # If it's missing, copy it!
-        elif not self.j.distribution_points.exists(
-            os.path.basename(self.env["pkg_path"])):
-            self._copy(self.env["pkg_path"])
+                self.output("Package upload not needed.")
         else:
-            self.output("Package upload not needed.")
+            package = None
 
         return package
 
@@ -555,12 +562,13 @@ class JSSImporter(Processor):
             priority.text = script.findtext('priority')
 
     def add_package_to_policy(self, policy_template):
-        packages_element = self.ensure_XML_structure(
-            policy_template, 'package_configuration/packages')
-        package_element = policy_template.add_object_to_path(self.package,
-                                                             packages_element)
-        action = ElementTree.SubElement(package_element, 'action')
-        action.text = 'Install'
+        if self.package is not None:
+            packages_element = self.ensure_XML_structure(
+                policy_template, 'package_configuration/packages')
+            package_element = policy_template.add_object_to_path(
+                self.package, packages_element)
+            action = ElementTree.SubElement(package_element, 'action')
+            action.text = 'Install'
 
     def add_icon_to_policy(self, policy_template, icon_xml):
         self_service_icon_element = self.ensure_XML_structure(

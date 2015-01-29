@@ -228,6 +228,8 @@ To save on time spent uploading, the JSSImporter processor only uploads a packag
 This means that if your package recipe changes, but the output package filename stays the same, AFP/SMB DP's will not get the new package uploaded to them: please manually delete the package from the file shares and re-run your recipe.
 For JDS DP's, packages are only uploaded if a package-object was created. To re-trigger uploading for the next run, delete the package from the JSS web interface in the Computer Management->Packages section.
 
+If you would like to _not_ upload a package and _not_ add a package install action to a Policy, specify a ```pkg_path``` with a blank value to let JSSImporter know to skip package handling. Chances are extremely good that a previous step in a Parent pkg recipe set ```pkg_path```, so you need to *un*-set it. Why would this be useful? Some organizations are using AutoPkg and JSSImporter to automate the creation of multiple policies per product-one to actually install the product, and another to notify the user of an available update. This is a lot of work to go through to try to be [Munki](https://www.munki.org), but it may improve the experience for users, since Casper will happily install apps while a user is logged in. Regardless, you can simply specify a second JSSImporter processor in your jss recipe, making sure to set ```pkg_path``` to a blank value (e.g: ```<string/>```), and crafting the arguments and templates appropriately.
+
 Groups
 =================
 
