@@ -1,3 +1,10 @@
+### 0.3.6 (January 29, 2015) Cha-Cha-Cha-Chia!
+
+CHANGES:
+
+- Updates to python-jss 0.5.4
+- Gains support for migrated JSS' with AFP/SMB distribution points case. (#19)
+
 ### 0.3.5 (December 9, 2014) Hypercard
 
 CHANGES:

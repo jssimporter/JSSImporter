@@ -35,6 +35,12 @@ defaults write com.github.autopkg API_USERNAME apiUser
 defaults write com.github.autopkg API_PASSWORD apiPassword
 ```
 
+### Additional Preferences
+In addition the URL, user, and password preferences, there are a few others you may want to use.
+- ```JSS_VERIFY_SSL```: Boolean (True or False). Whether or not to verify SSL traffic. Defaults to ```True```, and recommended. (See below).
+- ```JSS_MIGRATED```: Boolean. If you have "migrated" your JSS (uses the web interface to edit scripts), set to ```True```. Defaults to ```False```. This only really comes into play if you have an AFP or SMB share *and* have migrated.
+- ```JSS_SUPPRESS_WARNINGS```: Boolean. If you are getting a lot of warnings from urllib3 or requests when running JSSImporter, you can disable the warnings by setting this to ```True```. Defaults to ```False```. Use at your own risk!
+
 ### Adding distribution points.
 You will need to specify your distribution points in the preferences as well. The JSSImporter will copy packages and scripts to all configured distribution points using the ```JSS_REPOS``` key. The value of this key is an array of dictionaries, which means you have to switch tools and use PlistBuddy. Of course, if you want to go all punk rock and edit this by hand like a savage, go for it. At least use vim.
 
