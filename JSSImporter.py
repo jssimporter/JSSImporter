@@ -92,6 +92,12 @@ class JSSImporter(Processor):
             "with the JSS will be skipped. Defaults to 'True'.",
             "default": True,
         },
+        "JSS_MIGRATED": {
+            "required": False,
+            "description": "Set to True if you use an AFP or SMB share *and* "
+            "you have migrated your JSS. Defaults to 'False'.",
+            "default": False,
+        },
         "JSS_SUPPRESS_WARNINGS": {
             "required": False,
             "description": "If you get a lot of urllib3 warnings, and you "
@@ -587,10 +593,12 @@ class JSSImporter(Processor):
         authUser = self.env["API_USERNAME"]
         authPass = self.env["API_PASSWORD"]
         sslVerify = self.env["JSS_VERIFY_SSL"]
+        jss_migrated = self.env["JSS_MIGRATED"]
         suppress_warnings = self.env["JSS_SUPPRESS_WARNINGS"]
         repos = self.env["JSS_REPOS"]
         self.j = jss.JSS(url=repoUrl, user=authUser, password=authPass,
                          ssl_verify=sslVerify, repo_prefs=repos,
+                         jss_migrated=jss_migrated,
                          suppress_warnings=suppress_warnings)
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]
