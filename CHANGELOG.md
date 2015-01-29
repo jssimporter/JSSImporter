@@ -1,9 +1,3 @@
-### 0.3.6 (UNRELEASED) Sergio Leone
-
-CHANGES:
-
-- Updates SmartGroupTemplate.xml and PolicyTemplate.xml to match what I have been using and recommending with my jss-recipes repo.
-
 ### 0.3.6 (January 29, 2015) Cha-Cha-Cha-Chia!
 
 CHANGES:
@@ -12,6 +6,7 @@ CHANGES:
 - Gains support for migrated JSS' with AFP/SMB distribution points case. (#19)
 - Adds support for JSSImporter to *not* upload a package. Useful for specifying multiple JSSImporter processors in a recipe to automate policy creation. (#22)
 	- You need to specify ```pkg_path``` with a blank value for this to work!
+- Updates SmartGroupTemplate.xml and PolicyTemplate.xml to match what I have been using and recommending with my jss-recipes repo.
 
 ### 0.3.5 (December 9, 2014) Hypercard
 
