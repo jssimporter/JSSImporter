@@ -173,6 +173,16 @@ class JSSImporter(Processor):
             "Please see the README for more information.",
             "default": '',
         },
+        "site_id": {
+          "required": False,
+          "description": "ID of the target Site",
+          "default": "-1",
+        },
+        "site_name": {
+          "required": False,
+          "description": "Name of the target Site",
+          "default": "None",
+        },
     }
     output_variables = {
         "jss_category_added": {
@@ -227,6 +237,8 @@ class JSSImporter(Processor):
         if self.package is not None:
             replace_dict['%PKG_NAME%'] = self.package.name
         replace_dict['%PROD_NAME%'] = self.env.get('prod_name')
+        replace_dict['%SITE_ID%'] = self.env.get('site_id')
+        replace_dict['%SITE_NAME%'] = self.env.get('site_name')
         replace_dict['%SELF_SERVICE_DESCRIPTION%'] = self.env.get(
             'self_service_description')
         replace_dict['%SELF_SERVICE_ICON%'] = self.env.get(
