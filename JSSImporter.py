@@ -173,6 +173,14 @@ class JSSImporter(Processor):
             "Please see the README for more information.",
             "default": '',
         },
+        "site_id": {
+          "required": False,
+          "description": "ID of the target Site",
+        },
+        "site_name": {
+          "required": False,
+          "description": "Name of the target Site",
+        },
     }
     output_variables = {
         "jss_category_added": {
@@ -227,6 +235,10 @@ class JSSImporter(Processor):
         if self.package is not None:
             replace_dict['%PKG_NAME%'] = self.package.name
         replace_dict['%PROD_NAME%'] = self.env.get('prod_name')
+        if self.env.get('site_id'):
+            replace_dict['%SITE_ID%'] = self.env.get('site_id')
+        if self.env.get('site_name'):
+            replace_dict['%SITE_NAME%'] = self.env.get('site_name')
         replace_dict['%SELF_SERVICE_DESCRIPTION%'] = self.env.get(
             'self_service_description')
         replace_dict['%SELF_SERVICE_ICON%'] = self.env.get(
@@ -423,6 +435,10 @@ class JSSImporter(Processor):
         """
         # Build the template group object
         self.replace_dict['%group_name%'] = group['name']
+        if group.get('site_id'):
+            self.replace_dict['%site_id%'] = group.get('site_id')
+        if group.get('site_name'):
+            self.replace_dict['%site_name%'] = group.get('site_name')
         computer_group = self._update_or_create_new(
             jss.ComputerGroup, group["template_path"],
             update_env="jss_group_updated", added_env="jss_group_added")

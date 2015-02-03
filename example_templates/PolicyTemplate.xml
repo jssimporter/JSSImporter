@@ -1,5 +1,10 @@
 <policy>
     <general>
+				<!-- Enable ID or Name for a Site-based Policy
+        <site>
+            <id>%SITE_ID%</id>
+            <name>%SITE_NAME%</name>
+        </site> -->
         <name>Install Latest %PROD_NAME%</name>
         <enabled>true</enabled>
         <frequency>Ongoing</frequency>
