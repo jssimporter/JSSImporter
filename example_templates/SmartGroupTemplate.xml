@@ -1,4 +1,9 @@
 <computer_group>
+    <!-- Enable ID or Name for a Site-based Group
+    <site>
+        <id>%site_id%</id>
+        <name>%site_name%</name>
+    </site> -->
     <name>%group_name%</name>
     <is_smart>true</is_smart>
     <criteria>
