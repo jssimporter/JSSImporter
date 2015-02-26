@@ -173,6 +173,43 @@ class JSSImporter(Processor):
             "Please see the README for more information.",
             "default": '',
         },
+        "extension_name": {
+            "required": False,
+            "description": "The name of the extension attribute"
+            " as it will appear in JSS",
+            "default": '',
+        },
+        "extension_path": {
+            "required": False,
+            "description": "The path in the OS to the location of "
+            "the info.plist file you wish to enumerate the "
+            "version from.",
+            "default": '',
+        },
+        "extension_parameter": {
+            "required": False,
+            "description": "The parameter from the Info.plist "
+            "that you want to query for the version number.",
+            "default": 'CFBundleShortVersionString',
+        },
+        "extension_data_type": {
+            "required": False,
+            "description": "The data type that should be returned "
+            "to JSS when an extension attribute is enumerated.",
+            "default": 'string',
+        },
+        "extension_template": {
+            "required": False,
+            "description": "The path to the Extension Attribute "
+            "template.",
+            "default": '',
+        },
+        "extension_description": {
+            "required": False,
+            "description": "The description of the Extension Attribute "
+            "in jss.",
+            "default": '',
+        },
     }
     output_variables = {
         "jss_category_added": {
@@ -249,6 +286,13 @@ class JSSImporter(Processor):
         else:
             replace_dict['%JSS_INVENTORY_NAME%'] = '%s.app' \
                 % self.env.get('prod_name')
+
+        replace_dict['%EXTENSION_NAME%'] = self.env.get('extension_name')
+        replace_dict['%EXTENSION_PATH%'] = self.env.get('extension_path')
+        replace_dict['%EXTENSION_PARAMETER%'] = self.env.get('extension_parameter')
+        replace_dict['%EXTENSION_DATA_TYPE%'] = self.env.get('extension_data_type')
+        replace_dict['%EXTENSION_TEMPLATE%'] = self.env.get('extension_template')
+        replace_dict['%EXTENSION_DESCRIPTION%'] = self.env.get('extension_description')
         return replace_dict
 
     def replace_text(self, text, replace_dict):
@@ -521,7 +565,8 @@ class JSSImporter(Processor):
             for extattr in extattrs:
                 extattr_object = self._update_or_create_new(
                     jss.ComputerExtensionAttribute,
-                    extattr['ext_attribute_path'], extattr['name'],
+                    extattr['extension_template'],
+                    extattr['extension_name'],
                     update_env="jss_extension_attribute_added",
                     added_env="jss_extension_attribute_updated")
 
