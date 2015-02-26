@@ -230,6 +230,16 @@ class JSSImporter(Processor):
             "off the policy with jamf policy -event.",
             "default": '',
         },
+        "policy_self": {
+            "required": False,
+            "description": "Make the policy available through self service.",
+            "default": 'true',
+        },
+        "policy_recon": {
+            "required": False,
+            "description": "Run recon at the end of policy execution.",
+            "default": 'true',
+        },
         "self_service_description": {
             "required": False,
             "description": "Use to populate the %SELF_SERVICE_DESCRIPTION% "
@@ -338,6 +348,8 @@ class JSSImporter(Processor):
         replace_dict['%POLICY_NETWORK_STATE%'] = self.env.get('policy_network_state') or "false"
         replace_dict['%POLICY_STARTUP%'] = self.env.get('policy_startup') or "false"      
         replace_dict['%POLICY_TRIGGER%'] = self.env.get('policy_trigger') or "false"
+        replace_dict['%POLICY_SELF%'] = self.env.get('policy_self') or "true"
+        replace_dict['%POLICY_RECON%'] = self.env.get('policy_recon') or "true"
         
         return replace_dict
 

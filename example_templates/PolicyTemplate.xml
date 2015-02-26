@@ -24,11 +24,11 @@
 		<!--Scripts added by JSSImporter-->
     </scripts>
     <self_service>
-        <use_for_self_service>true</use_for_self_service>
+        <use_for_self_service>%POLICY_SELF%</use_for_self_service>
 		<install_button_text>Install %VERSION%</install_button_text>
 		<self_service_description>%SELF_SERVICE_DESCRIPTION%</self_service_description>
     </self_service>
     <maintenance>
-        <recon>true</recon>
+        <recon>%POLICY_RECON%</recon>
     </maintenance>
 </policy>
