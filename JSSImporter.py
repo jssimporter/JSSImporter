@@ -194,6 +194,42 @@ class JSSImporter(Processor):
             "missing or value is blank, policy creation will be skipped.",
             "default": '',
         },
+        "policy_checkin": {
+            "required": False,
+            "description": "Execute policy at device check-in.",
+            "default": 'false',
+        },
+        "policy_enrollment": {
+            "required": False,
+            "description": "Execute policy at device enrollment.",
+            "default": 'false',
+        },
+        "policy_login": {
+            "required": False,
+            "description": "Execute policy at user login.",
+            "default": 'false',
+        },
+        "policy_logout": {
+            "required": False,
+            "description": "Execute policy at logout.",
+            "default": 'false',
+        },
+        "policy_network_state": {
+            "required": False,
+            "description": "Execute policy at network state change.",
+            "default": 'false',
+        },
+        "policy_startup": {
+            "required": False,
+            "description": "Execute policy at device startup.",
+            "default": 'false',
+        },     
+        "policy_trigger": {
+            "required": False,
+            "description": "An additional trigger that can be used to fire "
+            "off the policy with jamf policy -event.",
+            "default": '',
+        },
         "self_service_description": {
             "required": False,
             "description": "Use to populate the %SELF_SERVICE_DESCRIPTION% "
@@ -293,6 +329,16 @@ class JSSImporter(Processor):
         replace_dict['%EXTENSION_DATA_TYPE%'] = self.env.get('extension_data_type')
         replace_dict['%EXTENSION_TEMPLATE%'] = self.env.get('extension_template')
         replace_dict['%EXTENSION_DESCRIPTION%'] = self.env.get('extension_description')
+        
+        # variables that modify policy execution
+        replace_dict['%POLICY_CHECKIN%'] = self.env.get('policy_checkin') or "false"
+        replace_dict['%POLICY_ENROLLMENT%'] = self.env.get('policy_enrollment') or "false"
+        replace_dict['%POLICY_LOGIN%'] = self.env.get('policy_login') or "false"
+        replace_dict['%POLICY_LOGOUT%'] = self.env.get('policy_logout') or "false"
+        replace_dict['%POLICY_NETWORK_STATE%'] = self.env.get('policy_network_state') or "false"
+        replace_dict['%POLICY_STARTUP%'] = self.env.get('policy_startup') or "false"      
+        replace_dict['%POLICY_TRIGGER%'] = self.env.get('policy_trigger') or "false"
+        
         return replace_dict
 
     def replace_text(self, text, replace_dict):

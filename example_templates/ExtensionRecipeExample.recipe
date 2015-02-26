@@ -16,6 +16,20 @@
             <string>Third Party Applications</string>
             <key>POLICY_TEMPLATE</key>
             <string>%RECIPE_DIR%/PolicyTemplate.xml</string>
+            <key>POLICY_CHECKIN</key>
+            <string>false</string>
+            <key>POLICY_ENROLLMENT</key>
+            <string>false</string>
+            <key>POLICY_LOGIN</key>
+            <string>false</string>
+            <key>POLICY_LOGOUT</key>
+            <string>false</string>
+            <key>POLICY_NETWORK_STATE</key>
+            <string>false</string>
+            <key>POLICY_STARTUP</key>
+            <string>false</string>
+            <key>POLICY_TRIGGER</key>
+            <string>Install_Shockwave</string>
             <key>GROUP_NAME</key>
             <string>Outdated Shockwave - Test</string>
             <key>GROUP_TEMPLATE</key>
@@ -52,6 +66,20 @@
                     <string>%POLICY_CATEGORY%</string>
                     <key>policy_template</key>
                     <string>%POLICY_TEMPLATE%</string>
+                    <key>policy_checkin</key>
+                    <string>%POLICY_CHECKIN%</string>
+                    <key>policy_enrollment</key>
+                    <string>%POLICY_ENROLLMENT%</string>
+                    <key>policy_login</key>
+                    <string>%POLICY_LOGIN%</string>
+                    <key>policy_logout</key>
+                    <string>%POLICY_LOGOUT%</string>
+                    <key>policy_network_state</key>
+                    <string>%POLICY_NETWORK_STATE%</string>
+                    <key>policy_startup</key>
+                    <string>%POLICY_STARTUP%</string>
+                    <key>policy_trigger</key>
+                    <string>%POLICY_TRIGGER%</string>
                     <key>self_service_icon</key>
                     <string>%ICON%</string>
                     <key>extension_name</key>

@@ -2,6 +2,13 @@
     <general>
         <name>Install Latest %PROD_NAME%</name>
         <enabled>true</enabled>
+        <trigger_checkin>%POLICY_CHECKIN%</trigger_checkin>
+    	<trigger_enrollment_complete>%POLICY_ENROLLMENT%</trigger_enrollment_complete>
+    	<trigger_login>%POLICY_LOGIN%</trigger_login>
+    	<trigger_logout>%POLICY_LOGOUT%</trigger_logout>
+    	<trigger_network_state_changed>%POLICY_NETWORK_STATE%</trigger_network_state_changed>
+    	<trigger_startup>%POLICY_STARTUP%</trigger_startup>
+    	<trigger_other>%POLICY_TRIGGER%</trigger_other>
         <frequency>Ongoing</frequency>
         <category>
             <name>%POLICY_CATEGORY%</name>
