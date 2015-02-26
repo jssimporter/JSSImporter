@@ -151,28 +151,6 @@ class JSSImporter(Processor):
             "'name' (Name of the extension attribute to use, required), "
             "'ext_attribute_path' (string: path to extension attribute file.)",
         },
-        "policy_template": {
-            "required": False,
-            "description": "Filename of policy template file. If key is "
-            "missing or value is blank, policy creation will be skipped.",
-            "default": '',
-        },
-        "self_service_description": {
-            "required": False,
-            "description": "Use to populate the %SELF_SERVICE_DESCRIPTION% "
-            "variable for use in templates. Primary use is for filling the "
-            "info button text in Self Service, but could be used elsewhere.",
-            "default": '',
-        },
-        "self_service_icon": {
-            "required": False,
-            "description": "Path to an icon file. Use to add an icon to a "
-            "self-service enabled policy. Because of the way Casper handles "
-            "this, the JSSImporter will only upload if the icon's filename is "
-            "different than the one set on the policy (if it even exists). "
-            "Please see the README for more information.",
-            "default": '',
-        },
         "extension_name": {
             "required": False,
             "description": "The name of the extension attribute"
@@ -208,6 +186,28 @@ class JSSImporter(Processor):
             "required": False,
             "description": "The description of the Extension Attribute "
             "in jss.",
+            "default": '',
+        },
+        "policy_template": {
+            "required": False,
+            "description": "Filename of policy template file. If key is "
+            "missing or value is blank, policy creation will be skipped.",
+            "default": '',
+        },
+        "self_service_description": {
+            "required": False,
+            "description": "Use to populate the %SELF_SERVICE_DESCRIPTION% "
+            "variable for use in templates. Primary use is for filling the "
+            "info button text in Self Service, but could be used elsewhere.",
+            "default": '',
+        },
+        "self_service_icon": {
+            "required": False,
+            "description": "Path to an icon file. Use to add an icon to a "
+            "self-service enabled policy. Because of the way Casper handles "
+            "this, the JSSImporter will only upload if the icon's filename is "
+            "different than the one set on the policy (if it even exists). "
+            "Please see the README for more information.",
             "default": '',
         },
     }
