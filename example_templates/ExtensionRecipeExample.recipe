@@ -12,46 +12,21 @@
             <string>Adobe Shockwave Player</string>
             <key>CATEGORY</key>
             <string>Plugins and Frameworks</string>
-            <key>POLICY_CATEGORY</key>
-            <string>Third Party Applications</string>
             <key>POLICY_TEMPLATE</key>
             <string>%RECIPE_DIR%/PolicyTemplate.xml</string>
-            <key>POLICY_CHECKIN</key>
-            <string>false</string>
-            <key>POLICY_ENROLLMENT</key>
-            <string>false</string>
-            <key>POLICY_LOGIN</key>
-            <string>false</string>
-            <key>POLICY_LOGOUT</key>
-            <string>false</string>
-            <key>POLICY_NETWORK_STATE</key>
-            <string>false</string>
-            <key>POLICY_STARTUP</key>
-            <string>false</string>
+            <!-- POLICY_TRIGGER is the 'event' that can be passed to the jamf binary for jamf policy -event -->
             <key>POLICY_TRIGGER</key>
             <string>Install_Shockwave</string>
-            <key>POLICY_SELF</key>
-            <string>true</string>
-            <key>POLICY_RECON</key>
-            <string>false</string>
             <key>GROUP_NAME</key>
             <string>Outdated Shockwave - Test</string>
             <key>GROUP_TEMPLATE</key>
             <string>%RECIPE_DIR%/SmartGroupTemplate-Extension.xml</string>
             <key>ICON</key>
             <string>%RECIPE_DIR%/Shockwave.png</string>
-            <key>EXTENSION_NAME</key>
-            <string>Shockwave Version - test</string>
             <key>EXTENSION_PATH</key>
             <string>/Library/Internet\ Plug-Ins/DirectorShockwave.plugin/Contents</string>
-            <key>EXTENSION_PARAMETER</key>
-            <string>CFBundleShortVersionString</string>
-            <key>EXTENSION_DATA_TYPE</key>
-            <string>string</string>
             <key>EXTENSION_TEMPLATE</key>
             <string>%RECIPE_DIR%/ExtensionAttributeTemplate.xml</string>
-            <key>EXTENSION_DESCRIPTION</key>
-            <string>Returns the installed version of Adobe Shockwave.</string>
         </dict>
         <key>MinimumVersion</key>
         <string>0.4.0</string>
@@ -66,40 +41,14 @@
                     <string>%NAME%</string>
                     <key>category</key>
                     <string>%CATEGORY%</string>
-                    <key>policy_category</key>
-                    <string>%POLICY_CATEGORY%</string>
                     <key>policy_template</key>
                     <string>%POLICY_TEMPLATE%</string>
-                    <key>policy_checkin</key>
-                    <string>%POLICY_CHECKIN%</string>
-                    <key>policy_enrollment</key>
-                    <string>%POLICY_ENROLLMENT%</string>
-                    <key>policy_login</key>
-                    <string>%POLICY_LOGIN%</string>
-                    <key>policy_logout</key>
-                    <string>%POLICY_LOGOUT%</string>
-                    <key>policy_network_state</key>
-                    <string>%POLICY_NETWORK_STATE%</string>
-                    <key>policy_startup</key>
-                    <string>%POLICY_STARTUP%</string>
                     <key>policy_trigger</key>
                     <string>%POLICY_TRIGGER%</string>
-                    <key>policy_self</key>
-                    <string>%POLICY_SELF%</string>
-                    <key>policy_recon</key>
-                    <string>%POLICY_RECON%</string>
                     <key>self_service_icon</key>
                     <string>%ICON%</string>
-                    <key>extension_name</key>
-                    <string>%EXTENSION_NAME%</string>
                     <key>extension_path</key>
                     <string>%EXTENSION_PATH%</string>
-                    <key>extension_parameter</key>
-                    <string>%EXTENSION_PARAMETER%</string>
-                    <key>extension_data_type</key>
-                    <string>%EXTENSION_DATA_TYPE%</string>
-                    <key>extension_description</key>
-                    <string>%EXTENSION_DESCRIPTION%</string>
                     <key>groups</key>
                     <array>
                         <dict>
@@ -114,8 +63,8 @@
                     <key>extension_attributes</key>
                     <array>
                         <dict>
-                            <key>extension_name</key>
-                            <string>%EXTENSION_NAME%</string>
+                            <key>name</key>
+                            <string>%NAME%</string>
                             <key>extension_template</key>
                             <string>%EXTENSION_TEMPLATE%</string>
                         </dict>

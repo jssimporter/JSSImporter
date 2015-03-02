@@ -3,7 +3,7 @@
     <is_smart>true</is_smart>
     <criteria>
         <criterion>
-            <name>%EXTENSION_NAME%</name>
+            <name>%PROD_NAME% version</name>
             <priority>0</priority>
             <and_or>and</and_or>
             <search_type>is not</search_type>

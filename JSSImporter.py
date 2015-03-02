@@ -151,12 +151,6 @@ class JSSImporter(Processor):
             "'name' (Name of the extension attribute to use, required), "
             "'ext_attribute_path' (string: path to extension attribute file.)",
         },
-        "extension_name": {
-            "required": False,
-            "description": "The name of the extension attribute"
-            " as it will appear in JSS",
-            "default": '',
-        },
         "extension_path": {
             "required": False,
             "description": "The path in the OS to the location of "
@@ -164,28 +158,10 @@ class JSSImporter(Processor):
             "version from.",
             "default": '',
         },
-        "extension_parameter": {
-            "required": False,
-            "description": "The parameter from the Info.plist "
-            "that you want to query for the version number.",
-            "default": 'CFBundleShortVersionString',
-        },
-        "extension_data_type": {
-            "required": False,
-            "description": "The data type that should be returned "
-            "to JSS when an extension attribute is enumerated.",
-            "default": 'string',
-        },
         "extension_template": {
             "required": False,
             "description": "The path to the Extension Attribute "
             "template.",
-            "default": '',
-        },
-        "extension_description": {
-            "required": False,
-            "description": "The description of the Extension Attribute "
-            "in jss.",
             "default": '',
         },
         "policy_template": {
@@ -194,51 +170,11 @@ class JSSImporter(Processor):
             "missing or value is blank, policy creation will be skipped.",
             "default": '',
         },
-        "policy_checkin": {
-            "required": False,
-            "description": "Execute policy at device check-in.",
-            "default": 'false',
-        },
-        "policy_enrollment": {
-            "required": False,
-            "description": "Execute policy at device enrollment.",
-            "default": 'false',
-        },
-        "policy_login": {
-            "required": False,
-            "description": "Execute policy at user login.",
-            "default": 'false',
-        },
-        "policy_logout": {
-            "required": False,
-            "description": "Execute policy at logout.",
-            "default": 'false',
-        },
-        "policy_network_state": {
-            "required": False,
-            "description": "Execute policy at network state change.",
-            "default": 'false',
-        },
-        "policy_startup": {
-            "required": False,
-            "description": "Execute policy at device startup.",
-            "default": 'false',
-        },     
         "policy_trigger": {
             "required": False,
             "description": "An additional trigger that can be used to fire "
             "off the policy with jamf policy -event.",
             "default": '',
-        },
-        "policy_self": {
-            "required": False,
-            "description": "Make the policy available through self service.",
-            "default": 'true',
-        },
-        "policy_recon": {
-            "required": False,
-            "description": "Run recon at the end of policy execution.",
-            "default": 'true',
         },
         "self_service_description": {
             "required": False,
@@ -333,23 +269,11 @@ class JSSImporter(Processor):
             replace_dict['%JSS_INVENTORY_NAME%'] = '%s.app' \
                 % self.env.get('prod_name')
 
-        replace_dict['%EXTENSION_NAME%'] = self.env.get('extension_name')
         replace_dict['%EXTENSION_PATH%'] = self.env.get('extension_path')
-        replace_dict['%EXTENSION_PARAMETER%'] = self.env.get('extension_parameter')
-        replace_dict['%EXTENSION_DATA_TYPE%'] = self.env.get('extension_data_type')
         replace_dict['%EXTENSION_TEMPLATE%'] = self.env.get('extension_template')
-        replace_dict['%EXTENSION_DESCRIPTION%'] = self.env.get('extension_description')
         
-        # variables that modify policy execution
-        replace_dict['%POLICY_CHECKIN%'] = self.env.get('policy_checkin') or "false"
-        replace_dict['%POLICY_ENROLLMENT%'] = self.env.get('policy_enrollment') or "false"
-        replace_dict['%POLICY_LOGIN%'] = self.env.get('policy_login') or "false"
-        replace_dict['%POLICY_LOGOUT%'] = self.env.get('policy_logout') or "false"
-        replace_dict['%POLICY_NETWORK_STATE%'] = self.env.get('policy_network_state') or "false"
-        replace_dict['%POLICY_STARTUP%'] = self.env.get('policy_startup') or "false"      
+        # variables that modify policy execution    
         replace_dict['%POLICY_TRIGGER%'] = self.env.get('policy_trigger') or "false"
-        replace_dict['%POLICY_SELF%'] = self.env.get('policy_self') or "true"
-        replace_dict['%POLICY_RECON%'] = self.env.get('policy_recon') or "true"
         
         return replace_dict
 
@@ -624,7 +548,7 @@ class JSSImporter(Processor):
                 extattr_object = self._update_or_create_new(
                     jss.ComputerExtensionAttribute,
                     extattr['extension_template'],
-                    extattr['extension_name'],
+                    extattr['name'],
                     update_env="jss_extension_attribute_added",
                     added_env="jss_extension_attribute_updated")
 

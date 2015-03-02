@@ -1,13 +1,13 @@
 <computer_extension_attribute>
-    <name>%EXTENSION_NAME%</name>
-    <description>%EXTENSION_DESCRIPTION%</description>
-    <data_type>%EXTENSION_DATA_TYPE%</data_type>
+    <name>%PROD_NAME% version</name>
+    <description>Returns the installed version of %PROD_NAME%</description>
+    <data_type>string</data_type>
     <input_type>
         <type>script</type>
         <platform>Mac</platform>
         <script>#!/bin/bash
 
-ExtensionVersion=$(defaults read %EXTENSION_PATH%/Info.plist %EXTENSION_PARAMETER%)
+ExtensionVersion=$(defaults read %EXTENSION_PATH%/Info.plist CFBundleShortVersionString)
 
 echo "&lt;result&gt;$ExtensionVersion&lt;/result&gt;"
 
