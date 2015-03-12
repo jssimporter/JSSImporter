@@ -1,5 +1,5 @@
 <computer_extension_attribute>
-    <name>%PROD_NAME% version</name>
+    <name>%PROD_NAME%</name>
     <description>Returns the installed version of %PROD_NAME%</description>
     <data_type>string</data_type>
     <input_type>
