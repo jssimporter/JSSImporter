@@ -2,25 +2,31 @@
     <general>
         <name>Install Latest %PROD_NAME%</name>
         <enabled>true</enabled>
+        <trigger_checkin>false</trigger_checkin>
+    	<trigger_enrollment_complete>false</trigger_enrollment_complete>
+    	<trigger_login>false</trigger_login>
+    	<trigger_logout>false</trigger_logout>
+    	<trigger_network_state_changed>false</trigger_network_state_changed>
+    	<trigger_startup>false</trigger_startup>
+    	<trigger_other>%POLICY_TRIGGER%</trigger_other>
         <frequency>Ongoing</frequency>
         <category>
-            <name>%POLICY_CATEGORY%</name>
+            <name>Third Party Applications</name>
         </category>
     </general>
-    <scope>
-        <!--Scope added by JSSImporter-->
-    </scope>
-    <package_configuration>
-        <!--Package added by JSSImporter-->
+	<scope>
+		<!--Scope added by JSSImporter-->
+	</scope>
+	<package_configuration>
+		<!--Package added by JSSImporter-->
     </package_configuration>
     <scripts>
-        <!--Scripts added by JSSImporter-->
+		<!--Scripts added by JSSImporter-->
     </scripts>
     <self_service>
-        <!--Icons added by JSSImporter-->
         <use_for_self_service>true</use_for_self_service>
-        <install_button_text>Install %VERSION%</install_button_text>
-        <self_service_description>%SELF_SERVICE_DESCRIPTION%</self_service_description>
+		<install_button_text>Install %VERSION%</install_button_text>
+		<self_service_description>%SELF_SERVICE_DESCRIPTION%</self_service_description>
     </self_service>
     <maintenance>
         <recon>true</recon>

@@ -151,10 +151,29 @@ class JSSImporter(Processor):
             "'name' (Name of the extension attribute to use, required), "
             "'ext_attribute_path' (string: path to extension attribute file.)",
         },
+        "extension_path": {
+            "required": False,
+            "description": "The path in the OS to the location of "
+            "the info.plist file you wish to enumerate the "
+            "version from.",
+            "default": '',
+        },
+        "extension_template": {
+            "required": False,
+            "description": "The path to the Extension Attribute "
+            "template.",
+            "default": '',
+        },
         "policy_template": {
             "required": False,
             "description": "Filename of policy template file. If key is "
             "missing or value is blank, policy creation will be skipped.",
+            "default": '',
+        },
+        "policy_trigger": {
+            "required": False,
+            "description": "An additional trigger that can be used to fire "
+            "off the policy with jamf policy -event.",
             "default": '',
         },
         "self_service_description": {
@@ -249,6 +268,13 @@ class JSSImporter(Processor):
         else:
             replace_dict['%JSS_INVENTORY_NAME%'] = '%s.app' \
                 % self.env.get('prod_name')
+
+        replace_dict['%EXTENSION_PATH%'] = self.env.get('extension_path')
+        replace_dict['%EXTENSION_TEMPLATE%'] = self.env.get('extension_template')
+        
+        # variables that modify policy execution    
+        replace_dict['%POLICY_TRIGGER%'] = self.env.get('policy_trigger') or "false"
+        
         return replace_dict
 
     def replace_text(self, text, replace_dict):
@@ -521,7 +547,8 @@ class JSSImporter(Processor):
             for extattr in extattrs:
                 extattr_object = self._update_or_create_new(
                     jss.ComputerExtensionAttribute,
-                    extattr['ext_attribute_path'], extattr['name'],
+                    extattr['extension_template'],
+                    extattr['name'],
                     update_env="jss_extension_attribute_added",
                     added_env="jss_extension_attribute_updated")
 

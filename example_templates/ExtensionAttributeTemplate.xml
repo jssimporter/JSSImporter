@@ -1,0 +1,18 @@
+<computer_extension_attribute>
+    <name>%PROD_NAME%</name>
+    <description>Returns the installed version of %PROD_NAME%</description>
+    <data_type>string</data_type>
+    <input_type>
+        <type>script</type>
+        <platform>Mac</platform>
+        <script>#!/bin/bash
+
+ExtensionVersion=$(defaults read %EXTENSION_PATH%/Info.plist CFBundleShortVersionString)
+
+echo "&lt;result&gt;$ExtensionVersion&lt;/result&gt;"
+
+exit 0</script>
+    </input_type>
+    <inventory_display>Extension Attributes</inventory_display>
+    <recon_display>Extension Attributes</recon_display>
+</computer_extension_attribute>
