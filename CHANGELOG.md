@@ -1,7 +1,13 @@
-### 0.3.7 (UNRELEASED) Dire Weasel
+### 0.3.7 (March 17, 2015) Dire Weasel
 
 CHANGES:
 
+- Adds support for Sites.
+	- See ```PolicyTemplate.xml``` and ```SmartGroupTemplate.xml``` for example of proper block to include.
+	- Will do text replacement. Adds input variables:
+		- ```site_id```
+		- ```site_name```
+		- You don't need both!
 - Extension Attribute input variable ```name``` is deprecated  and removed since it is redundent and can potentially clash with the name value in the Extension Attribute template (#26).
 	- Existing recipes will safely work as long as the template has a ```name```.
 - Input variable validation for groups (#33)
