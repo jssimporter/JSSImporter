@@ -2,6 +2,8 @@
 
 CHANGES:
 
+- Extension Attribute input variable ```name``` is deprecated  and removed since it is redundent and can potentially clash with the name value in the Extension Attribute template.
+	- Existing recipes will safely work as long as the template has a ```name```.
 - Input variable validation for groups (#33)
 	- Most recipes are written to scope a policy to a group. However, if you want to override that recipe to NOT scope, it fails, because there is still a groups input variable that just isn't getting text replacement.
 	- Now, you can specify blank values in the override to skip group creation.

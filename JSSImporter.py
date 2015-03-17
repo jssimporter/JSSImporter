@@ -147,8 +147,7 @@ class JSSImporter(Processor):
         "extension_attributes": {
             "required": False,
             "description": "Array of extension attribute dictionaries. Wrap "
-            "each extension attribute in a dictionary. Script keys include "
-            "'name' (Name of the extension attribute to use, required), "
+            "each extension attribute in a dictionary. Script keys include: "
             "'ext_attribute_path' (string: path to extension attribute file.)",
         },
         "policy_template": {
@@ -539,7 +538,7 @@ class JSSImporter(Processor):
             for extattr in extattrs:
                 extattr_object = self._update_or_create_new(
                     jss.ComputerExtensionAttribute,
-                    extattr['ext_attribute_path'], extattr['name'],
+                    extattr['ext_attribute_path'],
                     update_env="jss_extension_attribute_added",
                     added_env="jss_extension_attribute_updated")
 
