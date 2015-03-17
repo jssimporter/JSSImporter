@@ -1,3 +1,13 @@
+### 0.3.7 (UNRELEASED) Dire Weasel
+
+CHANGES:
+
+- Input variable validation for groups (#33)
+	- Most recipes are written to scope a policy to a group. However, if you want to override that recipe to NOT scope, it fails, because there is still a groups input variable that just isn't getting text replacement.
+	- Now, you can specify blank values in the override to skip group creation.
+	- Groups with un-replaced text values (i.e. anything with ```%``` pre/postfix) will be skipped as well.
+	- This validation could be added to other inputs (scripts, extension attributes, etc) if needed.
+
 ### 0.3.6 (January 29, 2015) Cha-Cha-Cha-Chia!
 
 CHANGES:

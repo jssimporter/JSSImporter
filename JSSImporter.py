@@ -388,13 +388,15 @@ class JSSImporter(Processor):
         computer_groups = []
         if groups:
             for group in groups:
-                is_smart = group.get('smart') or False
-                if is_smart:
-                    computer_group = self._add_or_update_smart_group(group)
-                else:
-                    computer_group = self._add_or_update_static_group(group)
+                if self._validate_input_var(group):
+                    is_smart = group.get('smart', False)
+                    if is_smart:
+                        computer_group = self._add_or_update_smart_group(group)
+                    else:
+                        computer_group = \
+                            self._add_or_update_static_group(group)
 
-                computer_groups.append(computer_group)
+                    computer_groups.append(computer_group)
 
         return computer_groups
 
@@ -493,6 +495,23 @@ class JSSImporter(Processor):
                 self.env[added_env] = True
 
         return recipe_object
+
+    def _validate_input_var(self, input):
+        """Validate the value before trying to add a group.
+
+        Returns False if dictionary has invalid values, or True if it
+        seems okay.
+
+        """
+        # Skipping non-string values:
+        # Does group name or template have a replacement var
+        # that has not been replaced?
+        # Does the group have a blank value? (A blank value isn't really
+        # invalid, but there's no need to process it further.)
+        invalid = [False for value in input.values() if isinstance(value, str)
+                   and (value.startswith('%') and value.endswith('%')) or not
+                   value]
+        return bool(invalid)
 
     def handle_scripts(self):
         """Add scripts if needed."""
