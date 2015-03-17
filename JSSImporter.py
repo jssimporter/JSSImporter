@@ -526,7 +526,12 @@ class JSSImporter(Processor):
         invalid = [False for value in input.values() if isinstance(value, str)
                    and (value.startswith('%') and value.endswith('%')) or not
                    value]
-        return bool(invalid)
+        if invalid:
+            result = False
+        else:
+            result = True
+
+        return result
 
     def handle_scripts(self):
         """Add scripts if needed."""
