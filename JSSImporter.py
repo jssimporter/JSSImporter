@@ -494,7 +494,6 @@ class JSSImporter(Processor):
 
         return recipe_object
 
-
     def handle_scripts(self):
         """Add scripts if needed."""
         scripts = self.env.get('scripts')
