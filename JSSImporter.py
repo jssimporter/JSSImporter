@@ -34,7 +34,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = '0.3.6'
+__version__ = '0.3.7'
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.5.4')
 
 
@@ -147,8 +147,7 @@ class JSSImporter(Processor):
         "extension_attributes": {
             "required": False,
             "description": "Array of extension attribute dictionaries. Wrap "
-            "each extension attribute in a dictionary. Script keys include "
-            "'name' (Name of the extension attribute to use, required), "
+            "each extension attribute in a dictionary. Script keys include: "
             "'ext_attribute_path' (string: path to extension attribute file.)",
         },
         "extension_path": {
@@ -414,13 +413,15 @@ class JSSImporter(Processor):
         computer_groups = []
         if groups:
             for group in groups:
-                is_smart = group.get('smart') or False
-                if is_smart:
-                    computer_group = self._add_or_update_smart_group(group)
-                else:
-                    computer_group = self._add_or_update_static_group(group)
-
-                computer_groups.append(computer_group)
+                if self._validate_input_var(group):
+                    is_smart = group.get('smart', False)
+                    if is_smart:
+                        computer_group = self._add_or_update_smart_group(group)
+                    else:
+                        computer_group = \
+                            self._add_or_update_static_group(group)
+            
+                    computer_groups.append(computer_group)
 
         return computer_groups
 
@@ -548,7 +549,6 @@ class JSSImporter(Processor):
                 extattr_object = self._update_or_create_new(
                     jss.ComputerExtensionAttribute,
                     extattr['extension_template'],
-                    extattr['name'],
                     update_env="jss_extension_attribute_added",
                     added_env="jss_extension_attribute_updated")
 

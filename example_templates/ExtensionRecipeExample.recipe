@@ -63,8 +63,6 @@
                     <key>extension_attributes</key>
                     <array>
                         <dict>
-                            <key>name</key>
-                            <string>%NAME%</string>
                             <key>extension_template</key>
                             <string>%EXTENSION_TEMPLATE%</string>
                         </dict>
