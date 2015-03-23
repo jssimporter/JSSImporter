@@ -1,5 +1,10 @@
 <policy>
     <general>
+        <!-- Enable ID or Name for a Site-based Policy
+        <site>
+            <id>%SITE_ID%</id>
+            <name>%SITE_NAME%</name>
+        </site> -->
         <name>Install Latest %PROD_NAME%</name>
         <enabled>true</enabled>
         <trigger_checkin>false</trigger_checkin>
@@ -11,7 +16,7 @@
     	<trigger_other>%POLICY_TRIGGER%</trigger_other>
         <frequency>Ongoing</frequency>
         <category>
-            <name>Third Party Applications</name>
+            <name>%POLICY_CATEGORY%</name>
         </category>
     </general>
 	<scope>
@@ -24,6 +29,7 @@
 		<!--Scripts added by JSSImporter-->
     </scripts>
     <self_service>
+        <!--Icons added by JSSImporter-->
         <use_for_self_service>true</use_for_self_service>
 		<install_button_text>Install %VERSION%</install_button_text>
 		<self_service_description>%SELF_SERVICE_DESCRIPTION%</self_service_description>
