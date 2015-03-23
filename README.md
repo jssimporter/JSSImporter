@@ -282,6 +282,8 @@ See the "Template" section for a list of all of the string replacement variables
 
 _NOTE_: Applications that don't install into ```/Applications``` will not be available for "Application Title" criteria. The best solution is to create an extension attribute that returns the version number of the app in question and use that value in your smart group criteria. If you look at the Adobe Flash Player, Silverlight, or Oracle Java 7 recipes in [my jss recipe repo](https://github.com/sheagcraig/jss-recipes), there are examples of how to solve this problem.
 
+You can of course *also*/*instead* set the Computer Management/Computer Inventory Collection/Software/Plug-ins setting in Casper to "Collect Plug-ins", which should already know the right path to check for Internet Plugins.
+
 Scripts
 =================
 
@@ -298,7 +300,7 @@ Extension attributes work just like scripts. You need a complete and valid XML f
 
 Solutions to handle this automatically are being considered, but at this moment, XML is not valid if there are < and > sitting around that aren't escaped.
 
-The ```extension_attributes``` input variable should contain an array of dictionaries. Each dictionary should contain a ```name``` key, which is the name of the extension attribute. It should also have a ```ext_attribute_path``` item which is a path to the extension attribute file. You may also skip this key entirely if you don't need extension attributes for your recipe.
+The ```extension_attributes``` input variable should contain an array of dictionaries. Each dictionary should contain an ```ext_attribute_path``` item which is a path to the extension attribute file. You may also skip this key entirely if you don't need extension attributes for your recipe.
 
 Policy
 =================
@@ -336,6 +338,8 @@ Substitution variables available in templates include:
 - ```%POLICY_CATEGORY%```: The value of ```%policy_category%```, if specified, or "Unknown", if not-this is what the JSS will assign anyway.
 - ```%SELF_SERVICE_DESCRIPTION%```: Used to specify the contents of the description field for self service items. Use this input variable in concert with ensuring that it is added to the policy template.
 - ```%JSSINVENTORY_NAME%```: If you want to override the default guessing of the "Application Title" for a smart group, use this along with an input variable of jss_inventory_name
+- ```%SITE_NAME%```: If you want to specify a SITE for you policy or group.
+- ```%SITE_ID%```: If you want to specify a SITE for you policy or group.
 
 Using Overrides
 =================
