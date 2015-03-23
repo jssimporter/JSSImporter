@@ -521,6 +521,27 @@ class JSSImporter(Processor):
 
         return recipe_object
 
+    def _validate_input_var(self, input):
+        """Validate the value before trying to add a group.
+        
+        Returns False if dictionary has invalid values, or True if it
+        seems okay.
+        
+        """
+        # Skipping non-string values:
+        # Does group name or template have a replacement var
+        # that has not been replaced?
+        # Does the group have a blank value? (A blank value isn't really
+        # invalid, but there's no need to process it further.)
+        invalid = [False for value in input.values() if isinstance(value, str)
+                   and (value.startswith('%') and value.endswith('%')) or not
+                   value]
+        if invalid:
+            result = False
+        else:
+            result = True
+
+        return result
 
     def handle_scripts(self):
         """Add scripts if needed."""
@@ -548,7 +569,7 @@ class JSSImporter(Processor):
             for extattr in extattrs:
                 extattr_object = self._update_or_create_new(
                     jss.ComputerExtensionAttribute,
-                    extattr['extension_template'],
+                    extattr['ext_attribute_path'],
                     update_env="jss_extension_attribute_added",
                     added_env="jss_extension_attribute_updated")
 

@@ -63,7 +63,7 @@
                     <key>extension_attributes</key>
                     <array>
                         <dict>
-                            <key>extension_template</key>
+                            <key>ext_attribute_path</key>
                             <string>%EXTENSION_TEMPLATE%</string>
                         </dict>
                     </array>
