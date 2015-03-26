@@ -229,25 +229,30 @@ class JSSImporter(Processor):
         input variables.
 
         """
-        replace_dict = {}
-        replace_dict['%VERSION%'] = self.version
+        # First, add in AutoPkg's env, excluding types that don't make
+        # sense:
+        replace_dict = {key: val for key, val in self.env.items() if val is not
+                        None and type(val) in (str, unicode)}
+
+        # Next, add in "official" and Legacy input variables.
+        replace_dict['VERSION'] = self.version
         if self.package is not None:
-            replace_dict['%PKG_NAME%'] = self.package.name
-        replace_dict['%PROD_NAME%'] = self.env.get('prod_name')
+            replace_dict['PKG_NAME'] = self.package.name
+        replace_dict['PROD_NAME'] = self.env.get('prod_name')
         if self.env.get('site_id'):
-            replace_dict['%SITE_ID%'] = self.env.get('site_id')
+            replace_dict['SITE_ID'] = self.env.get('site_id')
         if self.env.get('site_name'):
-            replace_dict['%SITE_NAME%'] = self.env.get('site_name')
-        replace_dict['%SELF_SERVICE_DESCRIPTION%'] = self.env.get(
+            replace_dict['SITE_NAME'] = self.env.get('site_name')
+        replace_dict['SELF_SERVICE_DESCRIPTION'] = self.env.get(
             'self_service_description')
-        replace_dict['%SELF_SERVICE_ICON%'] = self.env.get(
+        replace_dict['SELF_SERVICE_ICON'] = self.env.get(
             'self_service_icon')
         # policy_category is not required, so set a default value if
         # absent.
-        replace_dict['%POLICY_CATEGORY%'] = self.env.get(
+        replace_dict['POLICY_CATEGORY'] = self.env.get(
             "policy_category") or "Unknown"
         #if self.env.get("policy_name"):
-        #    replace_dict['%POLICY_NAME%'] = self.env.get("policy_name")
+        #    replace_dict['POLICY_NAME'] = self.env.get("policy_name")
         # Some applications may have a product name that differs from
         # the name that the JSS uses for its "Application Title"
         # inventory field. If so, you can set it with the
@@ -255,12 +260,12 @@ class JSSImporter(Processor):
         # specified, it will just append .app, which is how most apps
         # work.
         if self.env.get("jss_inventory_name"):
-            replace_dict['%JSS_INVENTORY_NAME%'] = self.env.get(
+            replace_dict['JSS_INVENTORY_NAME'] = self.env.get(
                 "jss_inventory_name")
         else:
-            replace_dict['%JSS_INVENTORY_NAME%'] = '%s.app' \
+            replace_dict['JSS_INVENTORY_NAME'] = '%s.app' \
                 % self.env.get('prod_name')
-        return replace_dict
+        self.replace_dict = replace_dict
 
     def replace_text(self, text, replace_dict):
         """Substitute items in a text string.
@@ -272,7 +277,8 @@ class JSSImporter(Processor):
 
         """
         for key, value in replace_dict.iteritems():
-            text = text.replace(key, value)
+            # Wrap our keys in % to match template tags.
+            text = text.replace("%%%s%%" % key, value)
         return text
 
     def handle_category(self, category_type):
@@ -703,7 +709,7 @@ class JSSImporter(Processor):
         self.j.distribution_points.mount()
         self.package = self.handle_package()
         # Build our text replacement dictionary
-        self.replace_dict = self.build_replace_dict()
+        self.build_replace_dict()
 
         self.extattrs = self.handle_extension_attributes()
         self.groups = self.handle_groups()
