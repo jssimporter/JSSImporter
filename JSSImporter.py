@@ -441,11 +441,11 @@ class JSSImporter(Processor):
 
         """
         # Build the template group object
-        self.replace_dict['%group_name%'] = group['name']
+        self.replace_dict['group_name'] = group['name']
         if group.get('site_id'):
-            self.replace_dict['%site_id%'] = group.get('site_id')
+            self.replace_dict['site_id'] = group.get('site_id')
         if group.get('site_name'):
-            self.replace_dict['%site_name%'] = group.get('site_name')
+            self.replace_dict['site_name'] = group.get('site_name')
         computer_group = self._update_or_create_new(
             jss.ComputerGroup, group["template_path"],
             update_env="jss_group_updated", added_env="jss_group_added")
