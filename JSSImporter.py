@@ -666,6 +666,51 @@ class JSSImporter(Processor):
             return self.ensure_XML_structure(element.find(search), path)
         return element
 
+    def report_names(self, objects):
+        """Given a list of some kind of objects, cat together their
+        names in a human-readable way.
+
+        """
+        result = ""
+        for obj in objects:
+            result += "%s " % obj.name
+
+        return result.strip()
+
+    def summarize(self):
+        """If anything has been added or updated, report back to
+        AutoPkg.
+
+        """
+        if self.env["jss_package_added"] or self.env["jss_package_updated"] \
+        or self.env["jss_repo_updated"] or self.env["jss_category_added"] or \
+        self.env["jss_group_added"] or self.env["jss_group_updated"] or \
+        self.env["jss_script_added"] or self.env["jss_script_updated"] or \
+        self.env["jss_extension_attribute_added"] or \
+        self.env["jss_extension_attribute_updated"] or \
+        self.env["jss_policy_added"] or self.env["jss_policy_updated"] or \
+        self.env["jss_icon_uploaded"]:
+            categories_results = self.report_names([self.category,
+                                                    self.policy_category])
+            groups_results  = self.report_names(self.groups)
+            scripts_results = self.report_names(self.scripts)
+            ext_attrs_results = self.report_names(self.extattrs)
+            self.env['jss_importer_summary_result'] = {
+                'summary_text': 'The following changes were made to the JSS:',
+                'report_fields': ['Package', 'Category', 'Group', 'Script',
+                                  'Extension Attribute', 'Policy', 'Icon'],
+                'data': {
+                    'Package': self.package.name,
+                    'Category': categories_results,
+                    'Group': groups_results,
+                    'Script': scripts_results,
+                    'Extension Attribute': ext_attrs_results,
+                    'Policy': self.policy.name,
+                    'Icon': os.path.basename(
+                        self.env.get('self_service_icon', ''))
+                }
+            }
+
     def main(self):
         """Main processor code."""
         # Ensure we have the right version of python-jss
@@ -678,7 +723,7 @@ class JSSImporter(Processor):
         # clear any pre-exising summary result
         if 'jss_importer_summary_result' in self.env:
             del self.env['jss_importer_summary_result']
-        
+
         # pull jss recipe-specific args, prep api auth
         repoUrl = self.env["JSS_URL"]
         authUser = self.env["API_USERNAME"]
@@ -726,14 +771,7 @@ class JSSImporter(Processor):
         # Done with DPs, unmount them.
         self.j.distribution_points.umount()
 
-        if self.env["jss_package_added"] or self.env["jss_package_updated"]:
-            self.env['jss_importer_summary_result'] = {
-                'summary_text': ('The following items '
-                                 'were importerd into the JSS:'),
-                'data': {
-                    'Package': self.package.name,
-                }
-            }
+        self.summarize()
 
 
 if __name__ == "__main__":
