@@ -221,6 +221,9 @@ class JSSImporter(Processor):
         "jss_icon_uploaded": {
             "description": "True if an icon was uploaded."
         },
+        "jss_importer_summary_result": {
+            "description": "Description of interesting results."
+        },
     }
     description = __doc__
 
@@ -672,6 +675,10 @@ class JSSImporter(Processor):
                   (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
             sys.exit()
 
+        # clear any pre-exising summary result
+        if 'jss_importer_summary_result' in self.env:
+            del self.env['jss_importer_summary_result']
+        
         # pull jss recipe-specific args, prep api auth
         repoUrl = self.env["JSS_URL"]
         authUser = self.env["API_USERNAME"]
@@ -718,6 +725,15 @@ class JSSImporter(Processor):
         self.handle_icon()
         # Done with DPs, unmount them.
         self.j.distribution_points.umount()
+
+        if self.env["jss_package_added"] or self.env["jss_package_updated"]:
+            self.env['jss_importer_summary_result'] = {
+                'summary_text': ('The following items '
+                                 'were importerd into the JSS:'),
+                'data': {
+                    'Package': self.package.name,
+                }
+            }
 
 
 if __name__ == "__main__":
