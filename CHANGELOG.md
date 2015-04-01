@@ -1,3 +1,13 @@
+### 0.3.8 (April 1, 2015) The Soft Bullet In
+
+CHANGES:
+
+- ALL AutoPkg environment variable string values are now available for text replacement in your templates.
+	- Use the environment variable name wrapped in %'s, e.g. , for AUTOPKG_VERSION, use ```%AUTOPKG_VERSION%``` in your template, and it will get substituted.
+	- Non-string types (For example, PARENT_RECIPES) are not available.
+	- Inject whatever you want by adding a key to your recipe input variables with a string value. See [the blog post on this](http://labs.da.org/wordpress/sheagcraig/2015/04/01/expanding-text-replacement-in-jssimporter/)
+- Adds summary reporting to AutoPkg >= 0.4.3
+
 ### 0.3.7 (March 17, 2015) Dire Weasel
 
 CHANGES:
