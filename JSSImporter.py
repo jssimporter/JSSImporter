@@ -182,44 +182,8 @@ class JSSImporter(Processor):
         },
     }
     output_variables = {
-        "jss_category_added": {
-            "description": "True if category was created."
-        },
-        "jss_package_added": {
-            "description": "True if package was created."
-        },
-        "jss_package_updated": {
-            "description": "True if package was updated."
-        },
-        "jss_repo_updated": {
-            "description": "True if item was imported."
-        },
-        "jss_group_added": {
-            "description": "True if a group was added."
-        },
-        "jss_group_updated": {
-            "description": "True if a group was updated."
-        },
-        "jss_script_added": {
-            "description": "True if a script was added."
-        },
-        "jss_script_updated": {
-            "description": "True if a script was updated."
-        },
-        "jss_extension_attribute_added": {
-            "description": "True if an extension attribute was added."
-        },
-        "jss_extension_attribute_updated": {
-            "description": "True if an extension attribute was updated."
-        },
-        "jss_policy_added": {
-            "description": "True if policy was added."
-        },
-        "jss_policy_updated": {
-            "description": "True if policy was updated."
-        },
-        "jss_icon_uploaded": {
-            "description": "True if an icon was uploaded."
+        "jss_changed_objects": {
+            "description": "Dictionary of added or changed values."
         },
         "jss_importer_summary_result": {
             "description": "Description of interesting results."
@@ -299,7 +263,7 @@ class JSSImporter(Processor):
                 category.save()
                 self.output("Category type: %s-'%s' created." % (category_type,
                                                                 category_name))
-                self.env["jss_category_added"] = True
+                self.env["jss_changed_objects"]["jss_category_added"] = True
         else:
             category = None
 
@@ -342,7 +306,8 @@ class JSSImporter(Processor):
                     package.set_os_requirements(os_requirements)
                     package.save()
                     self.output("Package os_requirements updated.")
-                    self.env["jss_package_updated"] = True
+                    self.env["jss_changed_objects"]["jss_package_updated"] \
+                        = True
 
                 # Update category if necessary.
                 if self.category is not None:
@@ -353,7 +318,8 @@ class JSSImporter(Processor):
                     package.find('category').text = recipe_name
                     package.save()
                     self.output("Package category updated.")
-                    self.env["jss_package_updated"] = True
+                    self.env["jss_changed_objects"]["jss_package_updated"] \
+                        = True
 
             except jss.JSSGetError:
                 # Package doesn't exist
@@ -365,7 +331,7 @@ class JSSImporter(Processor):
 
                 package.set_os_requirements(os_requirements)
                 package.save()
-                self.env["jss_package_added"] = True
+                self.env["jss_changed_objects"]["jss_package_added"] = True
 
             # Ensure packages are on distribution point(s)
 
@@ -381,7 +347,7 @@ class JSSImporter(Processor):
             # Passes the id of the newly created package object so JDS'
             # will upload to the correct package object. Ignored by
             # AFP/SMB.
-            if self.env["jss_package_added"]:
+            if self.env["jss_changed_objects"]["jss_package_added"]:
                 self._copy(self.env["pkg_path"], id_=package.id)
             # For AFP/SMB shares, we still want to see if the package
             # exists.  If it's missing, copy it!
@@ -399,7 +365,7 @@ class JSSImporter(Processor):
         """Copy a package or script using the JSS_REPOS preference."""
         self.output("Copying %s to all distribution points." % source_item)
         self.j.distribution_points.copy(source_item, id_=id_)
-        self.env["jss_repo_updated"] = True
+        self.env["jss_changed_objects"]["jss_repo_updated"] = True
         self.output("Copied %s" % source_item)
 
     def handle_groups(self):
@@ -434,7 +400,7 @@ class JSSImporter(Processor):
             computer_group = jss.ComputerGroup(self.j, group['name'])
             computer_group.save()
             self.output("Computer Group: %s created." % computer_group.name)
-            self.env["jss_group_added"] = True
+            self.env["jss_changed_objects"]["jss_group_added"] = True
 
         return computer_group
 
@@ -510,13 +476,13 @@ class JSSImporter(Processor):
             recipe_object = self.j.factory.get_object(obj_cls, name)
             self.output("%s: %s updated." % (obj_cls.__name__, name))
             if update_env:
-                self.env[update_env] = True
+                self.env["jss_changed_objects"][update_env] = True
         else:
             # Object doesn't exist yet.
             recipe_object.save()
             self.output("%s: %s created." % (obj_cls.__name__, name))
             if added_env:
-                self.env[added_env] = True
+                self.env["jss_changed_objects"][added_env] = True
 
         return recipe_object
 
@@ -604,7 +570,7 @@ class JSSImporter(Processor):
                 icon = jss.FileUpload(self.j, 'policies', 'id', self.policy.id,
                                       icon_path)
                 icon.save()
-                self.env["jss_icon_uploaded"] = True
+                self.env["jss_changed_objects"]["jss_icon_uploaded"] = True
                 self.output("Icon uploaded to JSS.")
             else:
                 self.output("Icon matches existing icon, moving on...")
@@ -666,50 +632,86 @@ class JSSImporter(Processor):
             return self.ensure_XML_structure(element.find(search), path)
         return element
 
-    def report_names(self, objects):
-        """Given a list of some kind of objects, cat together their
-        names in a human-readable way.
+    def get_report_string(self, items):
+        """Return a nice human-readable string from a list of JSS
+        objects.
 
         """
-        result = ""
-        for obj in objects:
-            result += "%s " % obj.name
-
-        return result.strip()
+        return ', '.join([item.name for item in items])
 
     def summarize(self):
         """If anything has been added or updated, report back to
         AutoPkg.
 
         """
-        if self.env["jss_package_added"] or self.env["jss_package_updated"] \
-        or self.env["jss_repo_updated"] or self.env["jss_category_added"] or \
-        self.env["jss_group_added"] or self.env["jss_group_updated"] or \
-        self.env["jss_script_added"] or self.env["jss_script_updated"] or \
-        self.env["jss_extension_attribute_added"] or \
-        self.env["jss_extension_attribute_updated"] or \
-        self.env["jss_policy_added"] or self.env["jss_policy_updated"] or \
-        self.env["jss_icon_uploaded"]:
-            categories_results = self.report_names([self.category,
-                                                    self.policy_category])
-            groups_results  = self.report_names(self.groups)
-            scripts_results = self.report_names(self.scripts)
-            ext_attrs_results = self.report_names(self.extattrs)
+        # Only summarize if something has happened.
+        if True in self.env["jss_changed_objects"].values():
+            # Create a blank summary.
             self.env['jss_importer_summary_result'] = {
                 'summary_text': 'The following changes were made to the JSS:',
-                'report_fields': ['Package', 'Category', 'Group', 'Script',
-                                  'Extension Attribute', 'Policy', 'Icon'],
+                'report_fields': ['Package', 'Categories', 'Groups', 'Scripts',
+                                  'Extension Attributes', 'Policy', 'Icon'],
                 'data': {
-                    'Package': self.package.name,
-                    'Category': categories_results,
-                    'Group': groups_results,
-                    'Script': scripts_results,
-                    'Extension Attribute': ext_attrs_results,
-                    'Policy': self.policy.name,
-                    'Icon': os.path.basename(
-                        self.env.get('self_service_icon', ''))
+                    'Package': '',
+                    'Categories': '',
+                    'Groups': '',
+                    'Scripts': '',
+                    'Extension Attributes': '',
+                    'Policy': '',
+                    'Icon': ''
                 }
             }
+
+            # Shortcut variables for lovely code conciseness
+            changes = self.env["jss_changed_objects"]
+            data = self.env["jss_importer_summary_result"]["data"]
+
+            if changes["jss_repo_updated"] or changes["jss_package_added"] or \
+                    changes["jss_package_updated"]:
+                data["Package"] = self.package.name
+
+            if changes["jss_policy_updated"] or changes["jss_policy_added"]:
+                data['Policy'] = self.policy.name
+
+            if changes["jss_icon_uploaded"]:
+                    data['Icon'] = os.path.basename(
+                        self.env['self_service_icon'])
+
+            # Get nice strings for our list-types.
+            if changes["jss_category_added"]:
+                data["Categories"] = self.get_report_string(
+                    [self.category, self.policy_category])
+
+            if changes["jss_group_updated"] or changes["jss_group_added"]:
+                data["Groups"] = self.get_report_string(self.groups)
+
+            if changes["jss_script_updated"] or changes["jss_script_added"]:
+                data["Scripts"] = self.get_report_string(self.scripts)
+
+            if changes["jss_extension_attribute_updated"] or \
+                changes["jss_extension_attribute_added"]:
+                data["Extension Attributes"] = self.get_report_string(
+                    self.extattrs)
+
+    def init_jss_changed_objects(self):
+        """Build a dictionary to track changes to JSS objects for
+        later reporting.
+
+        """
+        self.env["jss_changed_objects"] = {
+            "jss_repo_updated": False,
+            "jss_category_added": False,
+            "jss_package_added": False,
+            "jss_package_updated": False,
+            "jss_group_added": False,
+            "jss_group_updated": False,
+            "jss_script_added": False,
+            "jss_script_updated": False,
+            "jss_extension_attribute_added": False,
+            "jss_extension_attribute_updated": False,
+            "jss_policy_added": False,
+            "jss_policy_updated": False,
+            "jss_icon_uploaded": False}
 
     def main(self):
         """Main processor code."""
@@ -740,20 +742,8 @@ class JSSImporter(Processor):
         self.prod_name = self.env["prod_name"]
         self.version = self.env["version"]
 
-        # pre-set 'added/updated' output checks to False
-        self.env["jss_repo_updated"] = False
-        self.env["jss_category_added"] = False
-        self.env["jss_package_added"] = False
-        self.env["jss_package_updated"] = False
-        self.env["jss_group_added"] = False
-        self.env["jss_group_updated"] = False
-        self.env["jss_script_added"] = False
-        self.env["jss_script_updated"] = False
-        self.env["jss_extension_attribute_added"] = False
-        self.env["jss_extension_attribute_updated"] = False
-        self.env["jss_policy_added"] = False
-        self.env["jss_policy_updated"] = False
-        self.env["jss_icon_uploaded"] = False
+        # Build and init jss_changed_objects
+        self.init_jss_changed_objects()
 
         self.category = self.handle_category("category")
         self.policy_category = self.handle_category("policy_category")
