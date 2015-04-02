@@ -670,8 +670,7 @@ class JSSImporter(Processor):
             changes = self.env["jss_changed_objects"]
             data = self.env["jss_importer_summary_result"]["data"]
 
-            package = self.get_report_string(changes["jss_repo_updated"] +
-                                             changes["jss_package_added"] +
+            package = self.get_report_string(changes["jss_package_added"] +
                                              changes["jss_package_updated"])
             if package:
                 data["Package"] = package
