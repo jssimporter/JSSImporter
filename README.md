@@ -328,10 +328,11 @@ Then, to include in a recipe, use the ```self_service_icon``` key, with a string
 
 If you don't want to worry about icons, just leave out the ```self_service_icon``` key and JSSImporter will skip it.
 
-Template
-=================
+Template Substitution Variables
+===============================
+All templates used in JSS recipes will perform text substitution before attempting to upload to the JSS. A text substitution variable is indicated by surrounding a variable name in "%"'s. Substitution will occur if an AutoPkg environement variable exists for that substition (i.e., if you put ```%giant_burrito%``` in your template, and there's no AutoPkg "giant_burrito", then nothing will happen).
 
-Substitution variables available in templates include:
+JSSImporter defines the following default substitution variables:
 - ```%VERSION%```: The AutoPkg version variable.
 - ```%PKG_NAME%```: The name of the package. Specifically, the display name that the JSS uses to represent that package. Usually the filename.
 - ```%PROD_NAME%```: The value of the input variable ```%prod_name%```. Note, ```%prod_name%``` is a required recipe input variable.
@@ -340,6 +341,8 @@ Substitution variables available in templates include:
 - ```%JSSINVENTORY_NAME%```: If you want to override the default guessing of the "Application Title" for a smart group, use this along with an input variable of jss_inventory_name
 - ```%SITE_NAME%```: If you want to specify a SITE for you policy or group.
 - ```%SITE_ID%```: If you want to specify a SITE for you policy or group.
+
+However, any AutoPkg environment variable may be accessed in this manner. For example, ```AUTOPKG_VERSION``` can be substituted in a template by wrapping in "%", i.e. ```%AUTOPKG_VERSION%```. 
 
 Using Overrides
 =================

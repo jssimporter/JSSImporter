@@ -1,4 +1,4 @@
-### 0.3.8 (April 2, 2015) The Soft Bullet In
+### 0.3.8 (April 3, 2015) The Soft Bullet In
 
 CHANGES:
 
