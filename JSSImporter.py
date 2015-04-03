@@ -439,8 +439,8 @@ class JSSImporter(Processor):
 
         """
         # Create a new object from the template
-        with open(os.path.expanduser(template_path), 'r') as f:
-            text = f.read()
+        with open(os.path.expanduser(template_path), 'r') as template_file:
+            text = template_file.read()
         template = self.replace_text(text, self.replace_dict)
         recipe_object = obj_cls.from_string(self.j, template)
 
@@ -487,7 +487,7 @@ class JSSImporter(Processor):
 
         return recipe_object
 
-    def _validate_input_var(self, input):
+    def _validate_input_var(self, var):
         """Validate the value before trying to add a group.
 
         Returns False if dictionary has invalid values, or True if it
@@ -499,7 +499,7 @@ class JSSImporter(Processor):
         # that has not been replaced?
         # Does the group have a blank value? (A blank value isn't really
         # invalid, but there's no need to process it further.)
-        invalid = [False for value in input.values() if isinstance(value, str)
+        invalid = [False for value in var.values() if isinstance(value, str)
                    and (value.startswith('%') and value.endswith('%')) or not
                    value]
         if invalid:
@@ -681,8 +681,7 @@ class JSSImporter(Processor):
                 data['Policy'] = self.get_report_string(policy)
 
             if changes["jss_icon_uploaded"]:
-                    data['Icon'] = os.path.basename(
-                        self.env['self_service_icon'])
+                data['Icon'] = os.path.basename(self.env['self_service_icon'])
 
             # Get nice strings for our list-types.
             if changes["jss_category_added"]:
@@ -729,7 +728,7 @@ class JSSImporter(Processor):
         python_jss_version = StrictVersion(PYTHON_JSS_VERSION)
         if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
             self.output("Requires python-jss version: %s. Installed: %s" %
-                  (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
+                        (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
             sys.exit()
 
         # clear any pre-exising summary result
