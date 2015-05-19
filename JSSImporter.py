@@ -731,7 +731,7 @@ class JSSImporter(Processor):
                         (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
             sys.exit()
 
-        # clear any pre-exising summary result
+        # clear any pre-existing summary result
         if 'jss_importer_summary_result' in self.env:
             del self.env['jss_importer_summary_result']
 
