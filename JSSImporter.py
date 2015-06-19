@@ -40,9 +40,24 @@ REQUIRED_PYTHON_JSS_VERSION = StrictVersion('0.5.4')
 
 class JSSImporter(Processor):
     """Uploads a package to configured Casper distribution points, and
-    optionally creates supporting categories, computer groups, policy, self
-    service icon, extension attributes, and scripts.
+    optionally creates supporting categories, computer groups, policy,
+    self service icon, extension attributes, and scripts.
 
+    File paths to support files are searched for in order:
+        1. Path as specified.
+        2. The parent folder of the path.
+        3. First ParentRecipe's folder.
+        4. First ParentRecipe's parent folder.
+        5. Second ParentRecipe's folder.
+        6. Second ParentRecipe's parent folder.
+        7. Nth ParentRecipe's folder.
+        8. Nth ParentRecipe's parent folder.
+
+    This search-path method is primarily in place to support using
+    recipe overrides. It applies to policy_template, computer group
+    templates, self_service_icon, script templates, and extension
+    attribute templates. It allows users to avoid having to copy the
+    file to the override directory for each recipe.
     """
     input_variables = {
         "prod_name": {
@@ -142,7 +157,7 @@ class JSSImporter(Processor):
             "description": "Array of script dictionaries. Wrap each script in "
             "a dictionary. Script keys include 'name' (Name of the script to "
             "use, required), 'template_path' (string: path to template file to"
-            " use for script, " "required)",
+            " use for script, required)",
         },
         "extension_attributes": {
             "required": False,
@@ -427,22 +442,22 @@ class JSSImporter(Processor):
         """Check for an existing object and update it, or create a new
         object.
 
-        obj_cls:        The python-jss object class to work with.
-        template_path:  The environment variable pointing to this
-                        objects template.
-        name:           The name to use. Defaults to the "name" property
-                        of the templated object.
-        added_env:      The environment var to update if an object is
-                        added.
-        update_env:     The environment var to update if an object is
-                        updated.
+        Args:
+            obj_cls: The python-jss object class to work with.
+            template_path:  String filename or path to the template
+                file.  See get_templated_object() for more info.
+            name: The name to use. Defaults to the "name" property of
+                the templated object.
+            added_env: The environment var to update if an object is
+                added.
+            update_env: The environment var to update if an object is
+                updated.
 
+        Returns:
+            The recipe object after updating.
         """
         # Create a new object from the template
-        with open(os.path.expanduser(template_path), 'r') as template_file:
-            text = template_file.read()
-        template = self.replace_text(text, self.replace_dict)
-        recipe_object = obj_cls.from_string(self.j, template)
+        recipe_object = self.get_templated_object(obj_cls, template_path)
 
         if not name:
             name = recipe_object.name
@@ -486,6 +501,96 @@ class JSSImporter(Processor):
                 self.env["jss_changed_objects"][added_env].append(name)
 
         return recipe_object
+
+    def get_templated_object(self, obj_cls, template_path):
+        """Return an object based on a template located in search path.
+
+        Args:
+            obj_cls: JSSObject class (for the purposes of JSSIMporter a
+                Policy or a ComputerGroup)
+            template_path: String filename or path to template file.
+                See find_file_in_search_path() for more information on
+                file searching.
+
+        Returns:
+            A JSS Object created based on the template,
+            post-text-replacement.
+        """
+        final_template_path = self.find_file_in_search_path(template_path)
+
+        # Open and return a new object.
+        with open(final_template_path, 'r') as template_file:
+            text = template_file.read()
+        template = self.replace_text(text, self.replace_dict)
+        return obj_cls.from_string(self.j, template)
+
+    def find_file_in_search_path(self, path):
+        """Search search_paths for the first existing instance of path.
+
+        Searches, in order, through the following directories
+        until a matching file is found:
+            1. Path as specified.
+            2. The parent folder of the path.
+            3. First ParentRecipe's folder.
+            4. First ParentRecipe's parent folder.
+            5. Second ParentRecipe's folder.
+            6. Second ParentRecipe's parent folder.
+            7. Nth ParentRecipe's folder.
+            8. Nth ParentRecipe's parent folder.
+
+        This search-path method is primarily in place to
+        support using recipe overrides. It allows users to avoid having
+        to copy templates, icons, etc, to the override directory.
+
+        Args:
+            obj_cls: JSSObject class (for the purposes of JSSIMporter a
+                Policy or a ComputerGroup)
+            path: String filename or path to file.
+
+                If path is just a filename, path is assumed to
+                be self.env["RECIPE_DIR"].
+
+        Returns:
+            Absolute path to the first match in search paths.
+
+        Raises:
+            ProcessorError if none of the above files exist.
+        """
+        # Ensure input is expanded.
+        path = os.path.expanduser(path)
+        # Check to see if path is a filename.
+        if not os.path.dirname(path):
+            # If so, assume that the file is meant to be in the recipe
+            # directory.
+            path = os.path.join(self.env["RECIPE_DIR"], path)
+
+        filename = os.path.basename(path)
+        search_dirs = ([os.path.dirname(path)] + self.env["PARENT_RECIPES"])
+
+        tested = []
+        final_path = ""
+        # Look for the first file that exists in the search_dirs and
+        # their parent folders.
+        for dir in search_dirs:
+            test_path = os.path.join(dir, filename)
+            test_parent_folder_path = os.path.abspath(
+                os.path.join(dir, "..", filename))
+            if os.path.exists(test_path):
+                final_path = test_path
+            elif os.path.exists(test_parent_folder_path):
+                final_path = test_parent_folder_path
+            tested.append(test_path)
+            tested.append(test_parent_folder_path)
+
+            if final_path:
+                self.output("Found file: %s" % final_path)
+                break
+
+        if not final_path:
+            raise IOError("Unable to find file %s at any of the following "
+                          "locations: %s" % (filename, tested))
+
+        return final_path
 
     def _validate_input_var(self, var):
         """Validate the value before trying to add a group.
@@ -559,7 +664,10 @@ class JSSImporter(Processor):
 
         # If no policy handling is desired, we can't upload an icon.
         if self.env.get("self_service_icon") and self.policy is not None:
-            icon_path = self.env.get("self_service_icon")
+            # Search through search-paths for icon file.
+            icon_path = self.find_file_in_search_path(
+                self.env["self_service_icon"])
+
             icon_filename = os.path.basename(icon_path)
 
             # Compare the filename in the policy to the one provided by

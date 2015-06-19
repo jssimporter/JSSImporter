@@ -5,8 +5,23 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
-- Nothing yet.
+### Changed
 
+- Any files referenced in a JSS Recipe will now be searched for in this order:
+	1. Path as specified.
+	2. The parent folder of the path.
+	3. First ParentRecipe's folder.
+	4. First ParentRecipe's parent folder.
+	5. Second ParentRecipe's folder.
+	6. Second ParentRecipe's parent folder.
+	7. Nth ParentRecipe's folder.
+	8. Nth ParentRecipe's parent folder.
+
+	This search-path method is primarily in place to support using recipe
+	overrides. It applies to policy_template, computer group templates,
+	self_service_icon, script templates, and extension attribute templates. It
+	allows users to avoid having to copy the file to the override directory for
+	each recipe.
 
 ## [0.3.8] - 2015-04-03 - The Soft Bullet In
 

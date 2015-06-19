@@ -184,6 +184,30 @@ Recipes may be somewhat confusing to put together at first. Have a look at [my J
 
 Also, a group template and a policy template are included with the project files to give you a place to start. (Note: They're in ```/usr/share/jss-autopkg-addon```)
 
+Filenames and Paths
+===================
+For any argument to JSSImporter that requires a filename, you may use *just* a filename, *or* a full path to that file. Since these values often contain substitution variables (e.g. `%RECIPE\_DIR%`) or may be overridden, JSSImporter follows a set series of search directories until it finds the filename specified.
+
+These directories are:
+1. The path as specified.
+2. The parent folder of the path.
+3. First ParentRecipe's folder.
+4. First ParentRecipe's parent folder.
+5. Second ParentRecipe's folder.
+6. Second ParentRecipe's parent folder.
+7. Nth ParentRecipe's folder.
+8. Nth ParentRecipe's parent folder.
+
+In most cases, it is probably best to simply specify the filename of the file in question, and let JSSImporter find it in the expected folders.
+
+This searching applies to policy_template, computer group templates,
+self_service_icon, scripts and script templates, and extension attribute templates.
+
+It allows users to avoid having to copy the file to the override directory for
+each recipe. It also allows users to structure a repository of JSS recipes in
+subfolders, without having to copy shared support files into each product's
+subdirectory.
+
 Note on Objects
 =================
 
