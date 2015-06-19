@@ -620,16 +620,19 @@ class JSSImporter(Processor):
         results = []
         if scripts:
             for script in scripts:
+                script_file = self.find_file_in_search_path(
+                    script["name"])
                 script_object = self._update_or_create_new(
-                    jss.Script, script['template_path'],
-                    os.path.basename(script['name']),
+                    jss.Script,
+                    script["template_path"],
+                    os.path.basename(script_file),
                     added_env="jss_script_added",
                     update_env="jss_script_updated")
 
                 # Copy the script to the distribution points.
-                self._copy(script['name'], id_=script_object.id)
-
+                self._copy(script_file, id_=script_object.id)
                 results.append(script_object)
+
         return results
 
     def handle_extension_attributes(self):
