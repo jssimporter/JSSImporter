@@ -291,8 +291,6 @@ Scripts work the same way as groups. The ```scripts``` input variable should con
 
 Unlike packages, scripts are uploaded every run, as presumably, they are signicantly smaller than even modestly-sized packages.
 
-Just a reminder: at this time, recipes with scripts will not run when a JDS is configured (See the section on configuring distribution points, above).
-
 Extension Attributes
 =================
 
