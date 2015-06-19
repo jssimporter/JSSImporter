@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file. This projec
 	self_service_icon, script templates, and extension attribute templates. It
 	allows users to avoid having to copy the file to the override directory for
 	each recipe.
+- Updates required python-jss to 1.0.2.
 
 ## [0.3.8] - 2015-04-03 - The Soft Bullet In
 
