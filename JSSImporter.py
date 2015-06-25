@@ -34,7 +34,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = '0.3.9'
+__version__ = '0.4.0'
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion('1.0.2')
 
 

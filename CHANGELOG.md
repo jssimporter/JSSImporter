@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [0.4.0] - 2015-06-25 - Get to the Chopper
+
 ### Changed
 
 - Any files referenced in a JSS Recipe will now be searched for in this order:
@@ -215,7 +217,8 @@ All notable changes to this project will be documented in this file. This projec
 - Deprecated `JSS_REPO` key. It will still work, but the processor prioritizes `JSS_REPOS` over it.
 
 
-[unreleased]: https://github.com/sheagcraig/JSSImporter/compare/v0.3.8...HEAD
+[unreleased]: https://github.com/sheagcraig/JSSImporter/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/sheagcraig/JSSImporter/compare/v0.3.8...v0.4.0
 [0.3.8]: https://github.com/sheagcraig/JSSImporter/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/sheagcraig/JSSImporter/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/sheagcraig/JSSImporter/compare/v0.3.5...v0.3.6
