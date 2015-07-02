@@ -18,6 +18,7 @@
 """See docstring for JSSImporter class."""
 
 
+from collections import OrderedDict
 from distutils.version import StrictVersion
 import os
 import shutil
@@ -34,7 +35,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion('1.0.2')
 
 
@@ -565,7 +566,12 @@ class JSSImporter(Processor):
             path = os.path.join(self.env["RECIPE_DIR"], path)
 
         filename = os.path.basename(path)
-        search_dirs = ([os.path.dirname(path)] + self.env["PARENT_RECIPES"])
+        parent_recipe_dirs = [os.path.dirname(parent) for parent in
+                              self.env["PARENT_RECIPES"]]
+        unique_parent_dirs = OrderedDict()
+        for parent in parent_recipe_dirs:
+            unique_parent_dirs[parent] = parent
+        search_dirs = ([os.path.dirname(path)] + unique_parent_dirs.keys())
 
         tested = []
         final_path = ""

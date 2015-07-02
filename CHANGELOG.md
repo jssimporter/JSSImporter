@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [0.4.1] - 2015-06-25 - It's not a Tumor
+
+### Fixed
+
+- Fix file searching mistake with path generation using recipe filename.
+
 ## [0.4.0] - 2015-06-25 - Get to the Chopper
 
 ### Changed
