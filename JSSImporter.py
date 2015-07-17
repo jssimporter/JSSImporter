@@ -123,8 +123,11 @@ class JSSImporter(Processor):
         },
         "JSS_SUPPRESS_WARNINGS": {
             "required": False,
-            "description": "If you want to see urllib3 ssl warnings, enable "
-            "this.",
+            "description": "Determines whether to suppress urllib3 warnings. "
+            "If you choose not to verify SSL with JSS_VERIFY_SSL, urllib3 "
+            "throws warnings for each of the numerous requests JSSImporter "
+            "makes. If you would like to see them, set to 'False'. "
+            "Defaults to 'True'.",
             "default": True,
         },
         "category": {
