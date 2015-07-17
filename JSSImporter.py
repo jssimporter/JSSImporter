@@ -217,6 +217,22 @@ class JSSImporter(Processor):
     }
     description = __doc__
 
+    def __init__(self, env=None, infile=None, outfile=None):
+        """Sets attributes here."""
+        super(JSSImporter, self).__init__(env, infile, outfile)
+        self.jss = None
+        self.pkg_name = None
+        self.prod_name = None
+        self.version = None
+        self.category = None
+        self.policy_category = None
+        self.package = None
+        self.replace_dict = {}
+        self.extattrs = None
+        self.groups = None
+        self.scripts = None
+        self.policy = None
+
     def build_replace_dict(self):
         """Build dict of replacement values based on available input."""
         # First, add in AutoPkg's env, excluding types that don't make
@@ -275,13 +291,13 @@ class JSSImporter(Processor):
         if self.env.get(category_type):
             category_name = self.env.get(category_type)
             try:
-                category = self.j.Category(category_name)
+                category = self.jss.Category(category_name)
                 self.output("Category type: %s-'%s' already exists "
                             "according to JSS, moving on..." %
                             (category_type, category_name))
             except jss.JSSGetError:
                 # Category doesn't exist
-                category = jss.Category(self.j, category_name)
+                category = jss.Category(self.jss, category_name)
                 category.save()
                 self.output("Category type: %s-'%s' created." % (category_type,
                                                                 category_name))
@@ -322,7 +338,7 @@ class JSSImporter(Processor):
                 self.pkg_name += ".zip"
 
             try:
-                package = self.j.Package(self.pkg_name)
+                package = self.jss.Package(self.pkg_name)
                 self.output("Pkg-object already exists according to JSS, "
                             "moving on...")
 
@@ -366,10 +382,10 @@ class JSSImporter(Processor):
             except jss.JSSGetError:
                 # Package doesn't exist
                 if self.category is not None:
-                    package = jss.Package(self.j, self.pkg_name,
+                    package = jss.Package(self.jss, self.pkg_name,
                                         category=self.category.name)
                 else:
-                    package = jss.Package(self.j, self.pkg_name)
+                    package = jss.Package(self.jss, self.pkg_name)
 
                 package.set_os_requirements(os_requirements)
                 package.find("info").text = package_info
@@ -395,7 +411,7 @@ class JSSImporter(Processor):
                 self._copy(self.env["pkg_path"], id_=package.id)
             # For AFP/SMB shares, we still want to see if the package
             # exists.  If it's missing, copy it!
-            elif not self.j.distribution_points.exists(
+            elif not self.jss.distribution_points.exists(
                 os.path.basename(self.env["pkg_path"])):
                 self._copy(self.env["pkg_path"])
             else:
@@ -415,7 +431,7 @@ class JSSImporter(Processor):
             """Output AutoPkg copying status."""
             self.output("Copying to %s" % connection["url"])
 
-        self.j.distribution_points.copy(source_item, id_=id_,
+        self.jss.distribution_points.copy(source_item, id_=id_,
                                         pre_callback=output_copy_status)
         self.env["jss_changed_objects"]["jss_repo_updated"].append(
             os.path.basename(source_item))
@@ -447,11 +463,11 @@ class JSSImporter(Processor):
         """
         # Check for pre-existing group first
         try:
-            computer_group = self.j.ComputerGroup(group["name"])
+            computer_group = self.jss.ComputerGroup(group["name"])
             self.output("Computer Group: %s already exists." %
                         computer_group.name)
         except jss.JSSGetError:
-            computer_group = jss.ComputerGroup(self.j, group["name"])
+            computer_group = jss.ComputerGroup(self.jss, group["name"])
             computer_group.save()
             self.output("Computer Group: %s created." % computer_group.name)
             self.env["jss_changed_objects"]["jss_group_added"].append(
@@ -504,7 +520,7 @@ class JSSImporter(Processor):
         # Check for an existing object with this name.
         existing_object = None
         try:
-            existing_object = self.j.factory.get_object(obj_cls, name)
+            existing_object = self.jss.factory.get_object(obj_cls, name)
         except jss.JSSGetError:
             pass
 
@@ -526,9 +542,9 @@ class JSSImporter(Processor):
         if existing_object is not None:
             # Update the existing object.
             url = existing_object.get_object_url()
-            self.j.put(url, recipe_object)
+            self.jss.put(url, recipe_object)
             # Retrieve the updated XML.
-            recipe_object = self.j.factory.get_object(obj_cls, name)
+            recipe_object = self.jss.factory.get_object(obj_cls, name)
             self.output("%s: %s updated." % (obj_cls.__name__, name))
             if update_env:
                 self.env["jss_changed_objects"][update_env].append(name)
@@ -561,7 +577,7 @@ class JSSImporter(Processor):
         with open(final_template_path, "r") as template_file:
             text = template_file.read()
         template = self.replace_text(text, self.replace_dict)
-        return obj_cls.from_string(self.j, template)
+        return obj_cls.from_string(self.jss, template)
 
     def find_file_in_search_path(self, path):
         """Search search_paths for the first existing instance of path.
@@ -631,8 +647,9 @@ class JSSImporter(Processor):
                 break
 
         if not final_path:
-            raise IOError("Unable to find file %s at any of the following "
-                          "locations: %s" % (filename, tested))
+            raise ProcessorError(
+                "Unable to find file %s at any of the following locations: %s"
+                % (filename, tested))
 
         return final_path
 
@@ -723,7 +740,7 @@ class JSSImporter(Processor):
             policy_filename = self.policy.findtext(
                 "self_service/self_service_icon/filename")
             if not policy_filename == icon_filename:
-                icon = jss.FileUpload(self.j, "policies", "id", self.policy.id,
+                icon = jss.FileUpload(self.jss, "policies", "id", self.policy.id,
                                       icon_path)
                 icon.save()
                 self.env["jss_changed_objects"]["jss_icon_uploaded"].append(
@@ -888,17 +905,17 @@ class JSSImporter(Processor):
             del self.env["jss_importer_summary_result"]
 
         # pull jss recipe-specific args, prep api auth
-        repoUrl = self.env["JSS_URL"]
-        authUser = self.env["API_USERNAME"]
-        authPass = self.env["API_PASSWORD"]
-        sslVerify = self.env["JSS_VERIFY_SSL"]
+        repo_url = self.env["JSS_URL"]
+        auth_user = self.env["API_USERNAME"]
+        auth_pass = self.env["API_PASSWORD"]
+        ssl_verify = self.env["JSS_VERIFY_SSL"]
         jss_migrated = self.env["JSS_MIGRATED"]
         suppress_warnings = self.env["JSS_SUPPRESS_WARNINGS"]
         repos = self.env["JSS_REPOS"]
-        self.j = jss.JSS(url=repoUrl, user=authUser, password=authPass,
-                         ssl_verify=sslVerify, repo_prefs=repos,
-                         jss_migrated=jss_migrated,
-                         suppress_warnings=suppress_warnings)
+        self.jss = jss.JSS(url=repo_url, user=auth_user, password=auth_pass,
+                           ssl_verify=ssl_verify, repo_prefs=repos,
+                           jss_migrated=jss_migrated,
+                           suppress_warnings=suppress_warnings)
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]
         self.version = self.env["version"]
@@ -910,7 +927,7 @@ class JSSImporter(Processor):
         self.policy_category = self.handle_category("policy_category")
 
         # Get our DPs read for copying.
-        self.j.distribution_points.mount()
+        self.jss.distribution_points.mount()
         self.package = self.handle_package()
         # Build our text replacement dictionary
         self.build_replace_dict()
@@ -921,11 +938,11 @@ class JSSImporter(Processor):
         self.policy = self.handle_policy()
         self.handle_icon()
         # Done with DPs, unmount them.
-        self.j.distribution_points.umount()
+        self.jss.distribution_points.umount()
 
         self.summarize()
 
 
 if __name__ == "__main__":
-    processor = JSSImporter()
+    processor = JSSImporter()   # pylint: disable=invalid-name
     processor.execute_shell()
