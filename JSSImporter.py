@@ -196,6 +196,10 @@ class JSSImporter(Processor):
           "required": False,
           "description": "Name of the target Site",
         },
+        "NAME": {
+          "required": False,
+          "description": "Name of the current Package",
+				},
     }
     output_variables = {
         "jss_changed_objects": {
@@ -226,6 +230,8 @@ class JSSImporter(Processor):
             replace_dict['SITE_ID'] = self.env.get('site_id')
         if self.env.get('site_name'):
             replace_dict['SITE_NAME'] = self.env.get('site_name')
+        if self.env.get('NAME'):
+            replace_dict['NAME'] = self.env.get('NAME')
         replace_dict['SELF_SERVICE_DESCRIPTION'] = self.env.get(
             'self_service_description')
         replace_dict['SELF_SERVICE_ICON'] = self.env.get(
