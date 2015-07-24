@@ -247,6 +247,8 @@ Packages
 
 Not surprisingly, packages are forwarded on from ParentRecipes seamlessly. However, if you need to specify an `os_requirements` setting, there's an input variable for that. The format follows that of the JSS: a comma-delimeted list of acceptable versions, with 'x' as a wildcard, e.g. `10.8.6, 10.9.x`.
 
+Packages accept two other arguments: `package_notes` and `package_info` for specifying the corresponding fields on the package object. 
+
 To save on time spent uploading, the JSSImporter processor only uploads a package to the distribution points when it think it is needed. Specifically, on AFP/SMB DP's, it compares the filename of the package just created with those on the DP, and uploads if it is missing. On a JDS, it only uploads a package if a new package-object was created.
 
 This means that if your package recipe changes, but the output package filename stays the same, AFP/SMB DP's will not get the new package uploaded to them: please manually delete the package from the file shares and re-run your recipe.
@@ -372,42 +374,11 @@ All of my recipes are designed to allow you to use overrides to change the major
 
 SSL
 ===
-
 If you have issues with certificate validation (either a self-signed certificate on a JSS instance, or issues due to Python's weak SSL support in 2.x on OS X), there is an additional boolean preference you can set to disable SSL verification:
 
     defaults write com.github.autopkg JSS_VERIFY_SSL -bool false
 
 This value defaults to true.
-
-JSSImporter uses "python-jss", which embeds "requests". Requests is in the process of integrating changes to urllib3 to support Server
-Name Indication ('SNI') for python 2.x versions. If you are requesting SSL
-verification (which is on by default), _and_ your JSS uses SNI,
-you will probably get Tracebacks that look like this:
-
-```
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "requests/api.py", line 55, in get
-    return request('get', url, **kwargs)
-  File "requests/api.py", line 44, in request
-    return session.request(method=method, url=url, **kwargs)
-  File "requests/sessions.py", line 461, in request
-    resp = self.send(prep, **send_kwargs)
-  File "requests/sessions.py", line 567, in send
-    r = adapter.send(request, **kwargs)
-  File "requests/adapters.py", line 399, in send
-    raise SSLError(e, request=request)
-requests.exceptions.SSLError: hostname 'testssl-expire.disig.sk' doesn't match 'testssl-valid.disig.sk'
-```
-
-Installing and/or upgrading the following packages may solve the problem:
-- pyOpenSSL
-- ndg-httpsclient
-- pyasn1
-
-Hopefully this is temporary, although requests' changelog does claim to have "Fix(ed) previously broken SNI support." at version 2.1.0 (Current included version is 2.5.0).
-
-If you have lots of warnings from urllib3, there's also a `JSS_SUPPRESS_WARNINGS` input variable which, when set to `True` will prevent those warnings from appearing repeatedly. Use at your own risk!
 
 Comments/Questions/Ideas
 =================

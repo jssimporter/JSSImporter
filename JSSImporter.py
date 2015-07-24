@@ -35,7 +35,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = '0.4.1'
+__version__ = '0.5.0'
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion('1.2.0')
 
 
@@ -123,10 +123,9 @@ class JSSImporter(Processor):
         },
         "JSS_SUPPRESS_WARNINGS": {
             "required": False,
-            "description": "If you get a lot of urllib3 warnings, and you "
-            "want to suppress them, set to True. Remember, these warnings are "
-            "there for a reason.",
-            "default": False,
+            "description": "If you want to see urllib3 ssl warnings, enable "
+            "this.",
+            "default": True,
         },
         "category": {
             "required": False,
@@ -314,6 +313,8 @@ class JSSImporter(Processor):
         """
         if self.env["pkg_path"] != '':
             os_requirements = self.env.get("os_requirements")
+            package_info = self.env.get("package_info")
+            package_notes = self.env.get("package_notes")
             # See if the package is non-flat (requires zipping prior to
             # upload).
             if os.path.isdir(self.env['pkg_path']):
@@ -328,13 +329,30 @@ class JSSImporter(Processor):
                 self.output("Pkg-object already exists according to JSS, "
                             "moving on...")
 
+                # TODO: 4x of basically the same block code smell!
                 # Set os_requirements if they don't match.
-                if os_requirements and os_requirements != package.findtext(
-                        "os_requirements"):
+                if os_requirements != package.findtext("os_requirements"):
                     package.set_os_requirements(os_requirements)
                     package.save()
                     self.output("Package os_requirements updated.")
-                    self.env["jss_changed_objects"]["jss_package_updated"].append(package.name)
+                    self.env["jss_changed_objects"][
+                        "jss_package_updated"].append(package.name)
+
+                # Set package_info if they don't match.
+                if package_info != package.findtext("info"):
+                    package.find("info").text = package_info
+                    package.save()
+                    self.output("Package info field updated.")
+                    self.env["jss_changed_objects"][
+                        "jss_package_updated"].append(package.name)
+
+                # Set package_notes if they don't match.
+                if package_notes != package.findtext("notes"):
+                    package.find("notes").text = package_notes
+                    package.save()
+                    self.output("Package notes field updated.")
+                    self.env["jss_changed_objects"][
+                        "jss_package_updated"].append(package.name)
 
                 # Update category if necessary.
                 if self.category is not None:
@@ -345,7 +363,8 @@ class JSSImporter(Processor):
                     package.find('category').text = recipe_name
                     package.save()
                     self.output("Package category updated.")
-                    self.env["jss_changed_objects"]["jss_package_updated"].append(package.name)
+                    self.env["jss_changed_objects"][
+                        "jss_package_updated"].append(package.name)
 
             except jss.JSSGetError:
                 # Package doesn't exist
@@ -356,6 +375,8 @@ class JSSImporter(Processor):
                     package = jss.Package(self.j, self.pkg_name)
 
                 package.set_os_requirements(os_requirements)
+                package.find("info").text = package_info
+                package.find("notes").text = package_notes
                 package.save()
                 self.env["jss_changed_objects"]["jss_package_added"].append(package.name)
 

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [0.5.0] - 2015-07-24 - Careful With That Axe, Eugene
+
+### Fixed
+
+- Package values `package_info`, `package_notes`, and `os_requirements` couldn't be enforced as blank. (Now they can.)
+
+### Changed
+
+- Requires python-jss 1.2.0 for compatibility with JSS 9.73.
+- Adds arguments `package_info` and `package_notes`.
+- `os_requirements` now defaults to "".
+- Set `JSS_SUPPRESS_WARNINGS` to default to `True`.
+
 ## [0.4.1] - 2015-06-25 - It's not a Tumor
 
 ### Fixed
