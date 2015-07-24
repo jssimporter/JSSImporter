@@ -143,16 +143,17 @@ class JSSImporter(Processor):
             "description": "Comma-seperated list of OS version numbers to "
             "allow. Corresponds to the OS Requirements field for packages. "
             "The character 'x' may be used as a wildcard, as in '10.9.x'",
+            "default": ""
         },
         "package_info": {
             "required": False,
             "description": "Text to apply to the package's Info field.",
-            "Default": ""
+            "default": ""
         },
         "package_notes": {
             "required": False,
             "description": "Text to apply to the package's Notes field.",
-            "Default": ""
+            "default": ""
         },
         "groups": {
             "required": False,
