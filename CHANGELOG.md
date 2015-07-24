@@ -14,7 +14,7 @@ All notable changes to this project will be documented in this file. This projec
 ### Changed
 
 - Requires python-jss 1.2.0 for compatibility with JSS 9.73.
-- Adds arguments `package_info` and `package_notes`.
+- Adds arguments `package_info` and `package_notes`. Thanks to @quovadimus for the suggestion. (#41)
 - `os_requirements` now defaults to "".
 - Set `JSS_SUPPRESS_WARNINGS` to default to `True`.
 - If you have no repos configured, JSSImporter will skip the package creation/upload/update process, and won't put a package into the install policy. Log message indicates that it is skipped in case this is an accident.
