@@ -144,6 +144,16 @@ class JSSImporter(Processor):
             "allow. Corresponds to the OS Requirements field for packages. "
             "The character 'x' may be used as a wildcard, as in '10.9.x'",
         },
+        "package_info": {
+            "required": False,
+            "description": "Text to apply to the package's Info field.",
+            "Default": ""
+        },
+        "package_notes": {
+            "required": False,
+            "description": "Text to apply to the package's Notes field.",
+            "Default": ""
+        },
         "groups": {
             "required": False,
             "description": "Array of group dictionaries. Wrap each group in a "
