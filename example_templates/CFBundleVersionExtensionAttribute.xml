@@ -1,16 +1,14 @@
 <computer_extension_attribute>
-    <name>Example Extension Attribute</name>
+    <name>%NAME%Version</name>
     <description />
     <data_type>String</data_type>
     <input_type>
         <type>script</type>
         <platform>Mac</platform>
-        <script>#!/usr/bin/python
-
-# Do some stuff
-
-# Don't forget to encode reserved characters
-print '&lt;result&gt;%s&lt;/result&gt;' % 'True'</script>
+        <script>#!/bin/bash
+CFBundleVersion=$(defaults read /Applications/"%NAME%.app"/Contents/Info.plist CFBundleVersion)
+echo "&lt;result&gt;$CFBundleVersion&lt;/result&gt;"
+exit 0</script>
     </input_type>
     <inventory_display>Extension Attributes</inventory_display>
     <recon_display>Extension Attributes</recon_display>
