@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file. This projec
 - Adds arguments `package_info` and `package_notes`.
 - `os_requirements` now defaults to "".
 - Set `JSS_SUPPRESS_WARNINGS` to default to `True`.
+- If you have no repos configured, JSSImporter will skip the package creation/upload/update process, and won't put a package into the install policy. Log message indicates that it is skipped in case this is an accident.
 
 ## [0.4.1] - 2015-06-25 - It's not a Tumor
 

@@ -311,7 +311,8 @@ class JSSImporter(Processor):
         first.
 
         """
-        if self.env["pkg_path"] != '':
+        # Skip package handling if there is no package or repos.
+        if self.env["JSS_REPOS"] and self.env["pkg_path"] != '':
             os_requirements = self.env.get("os_requirements")
             package_info = self.env.get("package_info")
             package_notes = self.env.get("package_notes")
@@ -405,6 +406,8 @@ class JSSImporter(Processor):
                 self.output("Package upload not needed.")
         else:
             package = None
+            self.output("Package upload and object update skipped. If this is "
+                        " a mistake, ensure you have JSS_REPOS configured.")
 
         return package
 
