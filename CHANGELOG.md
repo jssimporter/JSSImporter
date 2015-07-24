@@ -237,7 +237,9 @@ All notable changes to this project will be documented in this file. This projec
 - Deprecated `JSS_REPO` key. It will still work, but the processor prioritizes `JSS_REPOS` over it.
 
 
-[unreleased]: https://github.com/sheagcraig/JSSImporter/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/sheagcraig/JSSImporter/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/sheagcraig/JSSImporter/compare/v0.4.1...v0.5.0
+[0.4.1]: https://github.com/sheagcraig/JSSImporter/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/sheagcraig/JSSImporter/compare/v0.3.8...v0.4.0
 [0.3.8]: https://github.com/sheagcraig/JSSImporter/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/sheagcraig/JSSImporter/compare/v0.3.6...v0.3.7
