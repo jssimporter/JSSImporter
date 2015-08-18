@@ -407,7 +407,7 @@ class JSSImporter(Processor):
         else:
             package = None
             self.output("Package upload and object update skipped. If this is "
-                        " a mistake, ensure you have JSS_REPOS configured.")
+                        "a mistake, ensure you have JSS_REPOS configured.")
 
         return package
 
