@@ -734,8 +734,8 @@ class JSSImporter(Processor):
         if self.env.get("policy_template"):
             template_filename = self.env.get("policy_template")
             policy = self._update_or_create_new(jss.Policy, template_filename,
-                                                update_env="jss_policy_added",
-                                                added_env="jss_policy_updated")
+                                                update_env="jss_policy_updated",
+                                                added_env="jss_policy_added")
         else:
             self.output("Policy creation not desired, moving on...")
             policy = None
