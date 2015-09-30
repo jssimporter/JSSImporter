@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Fixed
 - Updates for use with python-jss 1.4.0
+- Installs templates and temporary python-jss egg installer in /usr/local/share instead of /usr/share for El Capitan friendship. (#60)
 
 ### Added
 - Adds a tiny bit of increased verbose reporting: As a package is copied to each repo, you should see a line in the output telling you which repo is being targeted.
