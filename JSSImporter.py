@@ -67,84 +67,100 @@ class JSSImporter(Processor):
         },
         "jss_inventory_name": {
             "required": False,
-            "description": "Smart groups using the 'Application Title' "
-            "criteria need to specify the app's filename, as registered in "
-            "the JSS's inventory. If this variable is left out, it will "
-            "generate an 'Application Title' by adding '.app' to the "
-            "prod_name, e.g. prod_name='Google Chrome', calculated "
-            " jss_inventory_name='Google Chrome.app'. If you need to override "
-            "this behavior, specify the correct name with this variable.",
+            "description":
+                "Smart groups using the 'Application Title' " "criteria need "
+                "to specify the app's filename, as registered in the JSS's "
+                "inventory. If this variable is left out, it will generate an "
+                "'Application Title' by adding '.app' to the prod_name, e.g. "
+                "prod_name='Google Chrome', calculated "
+                "jss_inventory_name='Google Chrome.app'. If you need to "
+                "override this behavior, specify the correct name with this "
+                "variable.",
         },
         "pkg_path": {
             "required": True,
-            "description": "Path to a pkg or dmg to import - provided by "
-            "previous pkg recipe/processor.",
+            "description":
+                "Path to a pkg or dmg to import - provided by "
+                "previous pkg recipe/processor.",
         },
         "version": {
             "required": True,
-            "description": "Version number of software to import - provided "
-            "by previous pkg recipe/processor.",
+            "description":
+                "Version number of software to import - provided "
+                "by previous pkg recipe/processor.",
         },
         "JSS_REPOS": {
             "required": False,
-            "description": "Array of dicts for each intended distribution "
-            "point. Each distribution point type requires slightly different "
-            "configuration keys and data. Please consult the documentation. ",
+            "description":
+                "Array of dicts for each intended distribution point. Each "
+                "distribution point type requires slightly different "
+                "configuration keys and data. Please consult the "
+                "documentation. ",
             "default": [],
         },
         "JSS_URL": {
             "required": True,
-            "description": "URL to a JSS that api the user has write access "
-            "to, optionally set as a key in the com.github.autopkg preference "
-            "file.",
+            "description":
+                "URL to a JSS that api the user has write access "
+                "to, optionally set as a key in the com.github.autopkg preference "
+                "file.",
         },
         "API_USERNAME": {
             "required": True,
-            "description": "Username of account with appropriate access to "
-            "jss, optionally set as a key in the com.github.autopkg "
-            "preference file.",
+            "description":
+                "Username of account with appropriate access to "
+                "jss, optionally set as a key in the com.github.autopkg "
+                "preference file.",
         },
         "API_PASSWORD": {
             "required": True,
-            "description": "Password of api user, optionally set as a key in "
-            "the com.github.autopkg preference file.",
+            "description":
+                "Password of api user, optionally set as a key in "
+                "the com.github.autopkg preference file.",
         },
         "JSS_VERIFY_SSL": {
             "required": False,
-            "description": "If set to False, SSL verification in communication"
-            " with the JSS will be skipped. Defaults to 'True'.",
+            "description":
+                "If set to False, SSL verification in communication"
+                " with the JSS will be skipped. Defaults to 'True'.",
             "default": True,
         },
         "JSS_MIGRATED": {
             "required": False,
-            "description": "Set to True if you use an AFP or SMB share *and* "
-            "you have migrated your JSS. Defaults to 'False'.",
+            "description":
+                "Set to True if you use an AFP or SMB share *and* "
+                "you have migrated your JSS. Defaults to 'False'.",
             "default": False,
         },
         "JSS_SUPPRESS_WARNINGS": {
             "required": False,
-            "description": "Determines whether to suppress urllib3 warnings. "
-            "If you choose not to verify SSL with JSS_VERIFY_SSL, urllib3 "
-            "throws warnings for each of the numerous requests JSSImporter "
-            "makes. If you would like to see them, set to 'False'. "
-            "Defaults to 'True'.",
+            "description":
+                "Determines whether to suppress urllib3 warnings. "
+                "If you choose not to verify SSL with JSS_VERIFY_SSL, urllib3 "
+                "throws warnings for each of the numerous requests "
+                "JSSImporter makes. If you would like to see them, set to "
+                "'False'. Defaults to 'True'.",
             "default": True,
         },
         "category": {
             "required": False,
-            "description": "Category to create/associate imported app "
-            "package with. Defaults to 'No category assigned'.",
+            "description":
+                "Category to create/associate imported app "
+                "package with. Defaults to 'No category assigned'.",
         },
         "policy_category": {
             "required": False,
-            "description": "Category to create/associate policy with. Defaults"
-            " to 'No category assigned'.",
+            "description":
+                "Category to create/associate policy with. Defaults"
+                " to 'No category assigned'.",
         },
         "os_requirements": {
             "required": False,
-            "description": "Comma-seperated list of OS version numbers to "
-            "allow. Corresponds to the OS Requirements field for packages. "
-            "The character 'x' may be used as a wildcard, as in '10.9.x'",
+            "description":
+                "Comma-seperated list of OS version numbers to "
+                "allow. Corresponds to the OS Requirements field for "
+                "packages. The character 'x' may be used as a wildcard, as "
+                "in '10.9.x'",
             "default": ""
         },
         "package_info": {
@@ -159,55 +175,62 @@ class JSSImporter(Processor):
         },
         "groups": {
             "required": False,
-            "description": "Array of group dictionaries. Wrap each group in a "
-            "dictionary. Group keys include 'name' (Name of the group to use, "
-            "required), 'smart' (Boolean: static group=False, "
-            "smart group=True, default is False, not required), and "
-            "'template_path' (string: path to template file to use for group, "
-            "required for smart groups, invalid for static groups)",
+            "description":
+                "Array of group dictionaries. Wrap each group in a "
+                "dictionary. Group keys include 'name' (Name of the group to "
+                "use, required), 'smart' (Boolean: static group=False, smart "
+                "group=True, default is False, not required), and "
+                "template_path' (string: path to template file to use for "
+                "group, required for smart groups, invalid for static groups)",
         },
         "scripts": {
             "required": False,
-            "description": "Array of script dictionaries. Wrap each script in "
-            "a dictionary. Script keys include 'name' (Name of the script to "
-            "use, required), 'template_path' (string: path to template file to"
-            " use for script, required)",
+            "description":
+                "Array of script dictionaries. Wrap each script in "
+                "a dictionary. Script keys include 'name' (Name of the script "
+                "to use, required), 'template_path' (string: path to template "
+                "file to" " use for script, required)",
         },
         "extension_attributes": {
             "required": False,
-            "description": "Array of extension attribute dictionaries. Wrap "
-            "each extension attribute in a dictionary. Script keys include: "
-            "'ext_attribute_path' (string: path to extension attribute file.)",
+            "description":
+                "Array of extension attribute dictionaries. Wrap each "
+                "extension attribute in a dictionary. Script keys include: "
+                "'ext_attribute_path' (string: path to extension attribute "
+                "file.)",
         },
         "policy_template": {
             "required": False,
-            "description": "Filename of policy template file. If key is "
-            "missing or value is blank, policy creation will be skipped.",
+            "description":
+                "Filename of policy template file. If key is "
+                "missing or value is blank, policy creation will be skipped.",
             "default": "",
         },
         "self_service_description": {
             "required": False,
-            "description": "Use to populate the %SELF_SERVICE_DESCRIPTION% "
-            "variable for use in templates. Primary use is for filling the "
-            "info button text in Self Service, but could be used elsewhere.",
+            "description":
+                "Use to populate the %SELF_SERVICE_DESCRIPTION% variable for "
+                "use in templates. Primary use is for filling the info button "
+                "text in Self Service, but could be used elsewhere.",
             "default": "",
         },
         "self_service_icon": {
             "required": False,
-            "description": "Path to an icon file. Use to add an icon to a "
-            "self-service enabled policy. Because of the way Casper handles "
-            "this, the JSSImporter will only upload if the icon's filename is "
-            "different than the one set on the policy (if it even exists). "
-            "Please see the README for more information.",
+            "description":
+                "Path to an icon file. Use to add an icon to a "
+                "self-service enabled policy. Because of the way Casper "
+                "handles this, the JSSImporter will only upload if the icon's "
+                "filename is different than the one set on the policy (if it "
+                "even exists). Please see the README for more information.",
             "default": "",
         },
         "site_id": {
-          "required": False,
-          "description": "ID of the target Site",
+            "required": False,
+            "description": "ID of the target Site",
         },
         "site_name": {
-          "required": False,
-          "description": "Name of the target Site",
+            "required": False,
+            "description": "Name of the target Site",
         },
     }
     output_variables = {
@@ -271,8 +294,8 @@ class JSSImporter(Processor):
             replace_dict["JSS_INVENTORY_NAME"] = self.env.get(
                 "jss_inventory_name")
         else:
-            replace_dict["JSS_INVENTORY_NAME"] = ("%s.app"
-                % self.env.get("prod_name"))
+            replace_dict["JSS_INVENTORY_NAME"] = ("%s.app" %
+                                                  self.env.get("prod_name"))
         self.replace_dict = replace_dict
 
     def replace_text(self, text, replace_dict):
@@ -302,8 +325,9 @@ class JSSImporter(Processor):
                 # Category doesn't exist
                 category = jss.Category(self.jss, category_name)
                 category.save()
-                self.output("Category type: %s-'%s' created." % (category_type,
-                                                                category_name))
+                self.output(
+                    "Category type: %s-'%s' created." % (category_type,
+                                                         category_name))
                 self.env["jss_changed_objects"]["jss_category_added"].append(
                     category_name)
         else:
@@ -386,7 +410,7 @@ class JSSImporter(Processor):
                 # Package doesn't exist
                 if self.category is not None:
                     package = jss.Package(self.jss, self.pkg_name,
-                                        category=self.category.name)
+                                          category=self.category.name)
                 else:
                     package = jss.Package(self.jss, self.pkg_name)
 
@@ -415,7 +439,7 @@ class JSSImporter(Processor):
             # For AFP/SMB shares, we still want to see if the package
             # exists.  If it's missing, copy it!
             elif not self.jss.distribution_points.exists(
-                os.path.basename(self.env["pkg_path"])):
+                    os.path.basename(self.env["pkg_path"])):
                 self._copy(self.env["pkg_path"])
             else:
                 self.output("Package upload not needed.")
@@ -435,7 +459,7 @@ class JSSImporter(Processor):
             self.output("Copying to %s" % connection["url"])
 
         self.jss.distribution_points.copy(source_item, id_=id_,
-                                        pre_callback=output_copy_status)
+                                          pre_callback=output_copy_status)
         self.env["jss_changed_objects"]["jss_repo_updated"].append(
             os.path.basename(source_item))
         self.output("Copied %s" % source_item)
@@ -634,10 +658,10 @@ class JSSImporter(Processor):
         final_path = ""
         # Look for the first file that exists in the search_dirs and
         # their parent folders.
-        for dir in search_dirs:
-            test_path = os.path.join(dir, filename)
+        for search_dir in search_dirs:
+            test_path = os.path.join(search_dir, filename)
             test_parent_folder_path = os.path.abspath(
-                os.path.join(dir, "..", filename))
+                os.path.join(search_dir, "..", filename))
             if os.path.exists(test_path):
                 final_path = test_path
             elif os.path.exists(test_parent_folder_path):
@@ -767,14 +791,14 @@ class JSSImporter(Processor):
 
     def add_scope_to_policy(self, policy_template):
         """Incorporate scoping groups into a policy."""
-        computer_groups_element = self.ensure_XML_structure(
+        computer_groups_element = self.ensure_xml_structure(
             policy_template, "scope/computer_groups")
         for group in self.groups:
             policy_template.add_object_to_path(group, computer_groups_element)
 
     def add_scripts_to_policy(self, policy_template):
         """Incorporate scripts into a policy."""
-        scripts_element = self.ensure_XML_structure(policy_template, "scripts")
+        scripts_element = self.ensure_xml_structure(policy_template, "scripts")
         for script in self.scripts:
             script_element = policy_template.add_object_to_path(
                 script, scripts_element)
@@ -784,27 +808,27 @@ class JSSImporter(Processor):
     def add_package_to_policy(self, policy_template):
         """Add a package to a self service policy."""
         if self.package is not None:
-            packages_element = self.ensure_XML_structure(
+            packages_element = self.ensure_xml_structure(
                 policy_template, "package_configuration/packages")
             policy_template.add_package(self.package)
 
     def add_icon_to_policy(self, policy_template, icon_xml):
         """Add an icon to a self service policy."""
-        self_service_icon_element = self.ensure_XML_structure(
+        self_service_icon_element = self.ensure_xml_structure(
             policy_template, "self_service")
         self_service = policy_template.find("self_service")
         self_service.append(icon_xml)
 
-    def ensure_XML_structure(self, element, path):
+    def ensure_xml_structure(self, element, path):
         """Given an XML path and a starting element, ensure that all
         tiers of the hierarchy exist.
 
         """
-        search, slash, path = path.partition("/")
+        search, _, path = path.partition("/")
         if search:
             if element.find(search) is None:
                 ElementTree.SubElement(element, search)
-            return self.ensure_XML_structure(element.find(search), path)
+            return self.ensure_xml_structure(element.find(search), path)
         return element
 
     def get_report_string(self, items):
@@ -820,8 +844,8 @@ class JSSImporter(Processor):
 
         """
         # Only summarize if something has happened.
-        if [True for value in self.env["jss_changed_objects"].values() if
-            value]:
+        if [True for value in self.env["jss_changed_objects"].values()
+                if value]:
             # Create a blank summary.
             self.env["jss_importer_summary_result"] = {
                 "summary_text": "The following changes were made to the JSS:",
