@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
-## [0.5.1] - 2015-07-24 - I've Got a Bike, You Can Ride it if You Like
+## [0.5.1] - 2015-09-30 - I've Got a Bike, You Can Ride it if You Like
 
 ### Fixed
 - Updates for use with python-jss 1.4.0
