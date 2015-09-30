@@ -35,8 +35,8 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = '0.5.0'
-REQUIRED_PYTHON_JSS_VERSION = StrictVersion('1.2.0')
+__version__ = '0.5.1'
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion('1.4.0')
 
 
 class JSSImporter(Processor):
@@ -371,7 +371,7 @@ class JSSImporter(Processor):
                 # Package doesn't exist
                 if self.category is not None:
                     package = jss.Package(self.j, self.pkg_name,
-                                        cat_name=self.category.name)
+                                        category=self.category.name)
                 else:
                     package = jss.Package(self.j, self.pkg_name)
 
@@ -414,7 +414,13 @@ class JSSImporter(Processor):
     def _copy(self, source_item, id_=-1):
         """Copy a package or script using the JSS_REPOS preference."""
         self.output("Copying %s to all distribution points." % source_item)
-        self.j.distribution_points.copy(source_item, id_=id_)
+
+        def output_copy_status(connection):
+            """Output AutoPkg copying status."""
+            self.output("Copying to %s" % connection["url"])
+
+        self.j.distribution_points.copy(source_item, id_=id_,
+                                        pre_callback=output_copy_status)
         self.env["jss_changed_objects"]["jss_repo_updated"].append(
             os.path.basename(source_item))
         self.output("Copied %s" % source_item)
@@ -764,10 +770,7 @@ class JSSImporter(Processor):
         if self.package is not None:
             packages_element = self.ensure_XML_structure(
                 policy_template, 'package_configuration/packages')
-            package_element = policy_template.add_object_to_path(
-                self.package, packages_element)
-            action = ElementTree.SubElement(package_element, 'action')
-            action.text = 'Install'
+            policy_template.add_package(self.package)
 
     def add_icon_to_policy(self, policy_template, icon_xml):
         """Add an icon to a self service policy."""

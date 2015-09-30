@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [0.5.1] - 2015-07-24 - I've Got a Bike, You Can Ride it if You Like
+
+### Fixed
+- Updates for use with python-jss 1.4.0
+
+### Added
+- Adds a tiny bit of increased verbose reporting: As a package is copied to each repo, you should see a line in the output telling you which repo is being targeted.
+
 ## [0.5.0] - 2015-07-24 - Careful With That Axe, Eugene
 
 ### Fixed
@@ -237,7 +245,8 @@ All notable changes to this project will be documented in this file. This projec
 - Deprecated `JSS_REPO` key. It will still work, but the processor prioritizes `JSS_REPOS` over it.
 
 
-[unreleased]: https://github.com/sheagcraig/JSSImporter/compare/v0.5.0...HEAD
+[unreleased]: https://github.com/sheagcraig/JSSImporter/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/sheagcraig/JSSImporter/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/sheagcraig/JSSImporter/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/sheagcraig/JSSImporter/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/sheagcraig/JSSImporter/compare/v0.3.8...v0.4.0
