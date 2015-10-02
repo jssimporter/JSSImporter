@@ -386,57 +386,21 @@ class JSSImporter(Processor):
                 package = self.jss.Package(self.pkg_name)
                 self.output("Pkg-object already exists according to JSS, "
                             "moving on...")
-
-                # TODO: 4x of basically the same block code smell!
-                # Set os_requirements if they don't match.
-                if os_requirements != package.findtext("os_requirements"):
-                    package.set_os_requirements(os_requirements)
-                    package.save()
-                    self.output("Package os_requirements updated.")
-                    self.env["jss_changed_objects"][
-                        "jss_package_updated"].append(package.name)
-
-                # Set package_info if they don't match.
-                if package_info != package.findtext("info"):
-                    package.find("info").text = package_info
-                    package.save()
-                    self.output("Package info field updated.")
-                    self.env["jss_changed_objects"][
-                        "jss_package_updated"].append(package.name)
-
-                # Set package_notes if they don't match.
-                if package_notes != package.findtext("notes"):
-                    package.find("notes").text = package_notes
-                    package.save()
-                    self.output("Package notes field updated.")
-                    self.env["jss_changed_objects"][
-                        "jss_package_updated"].append(package.name)
-
-                # Update category if necessary.
-                if self.category is not None:
-                    recipe_name = self.category.name
-                else:
-                    recipe_name = "Unknown"
-                if package.find("category").text != recipe_name:
-                    package.find("category").text = recipe_name
-                    package.save()
-                    self.output("Package category updated.")
-                    self.env["jss_changed_objects"][
-                        "jss_package_updated"].append(package.name)
-
             except jss.JSSGetError:
                 # Package doesn't exist
-                if self.category is not None:
-                    package = jss.Package(self.jss, self.pkg_name,
-                                          category=self.category.name)
-                else:
-                    package = jss.Package(self.jss, self.pkg_name)
+                package = jss.Package(self.jss, self.pkg_name)
 
-                package.set_os_requirements(os_requirements)
-                package.find("info").text = package_info
-                package.find("notes").text = package_notes
-                package.save()
-                self.env["jss_changed_objects"]["jss_package_added"].append(package.name)
+            pkg_update = (self.env[
+                "jss_changed_objects"]["jss_package_updated"])
+            if self.category is not None:
+                cat_name = self.category.name
+            else:
+                cat_name = ""
+            self.update_object(cat_name, package, "category", pkg_update)
+            self.update_object(os_requirements, package, "os_requirements",
+                                pkg_update)
+            self.update_object(package_info, package, "info", pkg_update)
+            self.update_object(package_notes, package, "notes", pkg_update)
 
             # Ensure packages are on distribution point(s)
 
@@ -633,6 +597,15 @@ class JSSImporter(Processor):
                 changes["jss_extension_attribute_added"]
             if extattrs:
                 data["Extension Attributes"] = self.get_report_string(extattrs)
+
+    def update_object(self, data, obj, path, update):
+        """"""
+        if data != obj.findtext(path):
+            obj.find(path).text = data
+            obj.save()
+            self.output("%s %s updated." % (
+                str(obj.__class__).split(".")[-1][:-2], path))
+            update.append(obj.name)
 
     def copy(self, source_item, id_=-1):
         """Copy a package or script using the JSS_REPOS preference."""
