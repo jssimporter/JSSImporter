@@ -398,7 +398,7 @@ class JSSImporter(Processor):
                 cat_name = ""
             self.update_object(cat_name, package, "category", pkg_update)
             self.update_object(os_requirements, package, "os_requirements",
-                                pkg_update)
+                               pkg_update)
             self.update_object(package_info, package, "info", pkg_update)
             self.update_object(package_notes, package, "notes", pkg_update)
 
@@ -454,7 +454,6 @@ class JSSImporter(Processor):
         if groups:
             for group in groups:
                 if self.validate_input_var(group):
-                    # TODO: There is a proper property for this now.
                     is_smart = group.get("smart", False)
                     if is_smart:
                         computer_group = self.add_or_updatesmart_group(group)
@@ -599,7 +598,19 @@ class JSSImporter(Processor):
                 data["Extension Attributes"] = self.get_report_string(extattrs)
 
     def update_object(self, data, obj, path, update):
-        """"""
+        """Update an object if it differs.
+
+        If a value differs between the recipe and the object, update
+        the object to reflect the change, and add the object to a
+        summary list.
+
+        Args:
+            data: Recipe string value to enforce.
+            obj: JSSObject type to set data on.
+            path: String path to desired XML.
+            update: Summary list object to append obj to if something
+                is changed.
+        """
         if data != obj.findtext(path):
             obj.find(path).text = data
             obj.save()
@@ -912,14 +923,13 @@ class JSSImporter(Processor):
     def add_package_to_policy(self, policy_template):
         """Add a package to a self service policy."""
         if self.package is not None:
-            packages_element = self.ensure_xml_structure(
-                policy_template, "package_configuration/packages")
+            self.ensure_xml_structure(policy_template,
+                                      "package_configuration/packages")
             policy_template.add_package(self.package)
 
     def add_icon_to_policy(self, policy_template, icon_xml):
         """Add an icon to a self service policy."""
-        self_service_icon_element = self.ensure_xml_structure(
-            policy_template, "self_service")
+        self.ensure_xml_structure(policy_template, "self_service")
         self_service = policy_template.find("self_service")
         self_service.append(icon_xml)
 
