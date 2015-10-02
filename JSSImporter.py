@@ -103,8 +103,8 @@ class JSSImporter(Processor):
             "required": True,
             "description":
                 "URL to a JSS that api the user has write access "
-                "to, optionally set as a key in the com.github.autopkg preference "
-                "file.",
+                "to, optionally set as a key in the com.github.autopkg "
+                "preference file.",
         },
         "API_USERNAME": {
             "required": True,
@@ -312,10 +312,7 @@ class JSSImporter(Processor):
         self.summarize()
 
     def init_jss_changed_objects(self):
-        """Build a dictionary to track changes to JSS objects for
-        later reporting.
-
-        """
+        """Build a dictionary to track changes to JSS objects."""
         self.env["jss_changed_objects"] = {
             "jss_repo_updated": [],
             "jss_category_added": [],
@@ -355,8 +352,7 @@ class JSSImporter(Processor):
         return category
 
     def handle_package(self):
-        """Creates or updates a package object on the jss, then uploads
-        a package file to the configured distribution points.
+        """Creates or updates, and copies a package object.
 
         This will only upload a package if a file with the same name
         does not already exist on a DP. If you need to force a
@@ -367,7 +363,6 @@ class JSSImporter(Processor):
         filename does not exist. If you need to force a re-upload to a
         JDS, please delete the package object through the web interface
         first.
-
         """
         # Skip package handling if there is no package or repos.
         if self.env["JSS_REPOS"] and self.env["pkg_path"] != "":
@@ -457,10 +452,10 @@ class JSSImporter(Processor):
                 if self.validate_input_var(group):
                     is_smart = group.get("smart", False)
                     if is_smart:
-                        computer_group = self.add_or_updatesmart_group(group)
+                        computer_group = self.add_or_update_smart_group(group)
                     else:
-                        computer_group = \
-                            self.add_or_updatestatic_group(group)
+                        computer_group = (
+                            self.add_or_update_static_group(group))
 
                     computer_groups.append(computer_group)
 
@@ -529,8 +524,8 @@ class JSSImporter(Processor):
             policy_filename = self.policy.findtext(
                 "self_service/self_service_icon/filename")
             if not policy_filename == icon_filename:
-                icon = jss.FileUpload(self.jss, "policies", "id", self.policy.id,
-                                      icon_path)
+                icon = jss.FileUpload(self.jss, "policies", "id",
+                                      self.policy.id, icon_path)
                 icon.save()
                 self.env["jss_changed_objects"]["jss_icon_uploaded"].append(
                     icon_filename)
@@ -539,10 +534,7 @@ class JSSImporter(Processor):
                 self.output("Icon matches existing icon, moving on...")
 
     def summarize(self):
-        """If anything has been added or updated, report back to
-        AutoPkg.
-
-        """
+        """If anything has been added or updated, report back."""
         # Only summarize if something has happened.
         if [True for value in self.env["jss_changed_objects"].values()
                 if value]:
@@ -571,8 +563,8 @@ class JSSImporter(Processor):
             if package:
                 data["Package"] = package
 
-            policy = changes["jss_policy_updated"] + \
-                changes["jss_policy_added"]
+            policy = changes["jss_policy_updated"] + (
+                changes["jss_policy_added"])
             if policy:
                 data["Policy"] = self.get_report_string(policy)
 
@@ -588,13 +580,13 @@ class JSSImporter(Processor):
             if groups:
                 data["Groups"] = self.get_report_string(groups)
 
-            scripts = changes["jss_script_updated"] + \
-                changes["jss_script_added"]
+            scripts = changes["jss_script_updated"] + (
+                changes["jss_script_added"])
             if scripts:
                 data["Scripts"] = self.get_report_string(scripts)
 
-            extattrs = changes["jss_extension_attribute_updated"] + \
-                changes["jss_extension_attribute_added"]
+            extattrs = changes["jss_extension_attribute_updated"] + (
+                changes["jss_extension_attribute_added"])
             if extattrs:
                 data["Extension Attributes"] = self.get_report_string(extattrs)
 
@@ -838,11 +830,14 @@ class JSSImporter(Processor):
     def replace_text(self, text, replace_dict):   # pylint: disable=no-self-use
         """Substitute items in a text string.
 
-        text: A string with embedded %tags%.
-        replace_dict: A dict, where
-            key: Corresponds to the % delimited tag in text.
-            value: Text to swap in.
+        Args:
+            text: A string with embedded %tags%.
+            replace_dict: A dict, where
+                key: Corresponds to the % delimited tag in text.
+                value: Text to swap in.
 
+        Returns:
+            The text after replacement.
         """
         for key, value in replace_dict.iteritems():
             # Wrap our keys in % to match template tags.
@@ -852,9 +847,11 @@ class JSSImporter(Processor):
     def validate_input_var(self, var):   # pylint: disable=no-self-use
         """Validate the value before trying to add a group.
 
-        Returns False if dictionary has invalid values, or True if it
-        seems okay.
+        Args:
+            var: Dictionary to check for problems.
 
+        Returns: False if dictionary has invalid values, or True if it
+            seems okay.
         """
         # Skipping non-string values:
         # Does group name or template have a replacement var
@@ -864,18 +861,10 @@ class JSSImporter(Processor):
         invalid = [False for value in var.values() if isinstance(value, str)
                    and (value.startswith("%") and value.endswith("%")) or not
                    value]
-        if invalid:
-            result = False
-        else:
-            result = True
+        return False if invalid else True
 
-        return result
-
-    def add_or_updatesmart_group(self, group):
-        """Given a group, either add a new group or update existing
-        group.
-
-        """
+    def add_or_update_smart_group(self, group):
+        """Either add a new group or update existing group."""
         # Build the template group object
         self.replace_dict["group_name"] = group["name"]
         if group.get("site_id"):
@@ -888,11 +877,8 @@ class JSSImporter(Processor):
 
         return computer_group
 
-    def add_or_updatestatic_group(self, group):
-        """Given a group, either add a new group or update existing
-        group.
-
-        """
+    def add_or_update_static_group(self, group):
+        """Either add a new group or update existing group."""
         # Check for pre-existing group first
         try:
             computer_group = self.jss.ComputerGroup(group["name"])
@@ -937,10 +923,7 @@ class JSSImporter(Processor):
         self_service.append(icon_xml)
 
     def ensure_xml_structure(self, element, path):
-        """Given an XML path and a starting element, ensure that all
-        tiers of the hierarchy exist.
-
-        """
+        """Ensure that all tiers of an XML hierarchy exist."""
         search, _, path = path.partition("/")
         if search:
             if element.find(search) is None:
@@ -949,10 +932,7 @@ class JSSImporter(Processor):
         return element
 
     def get_report_string(self, items):   # pylint: disable=no-self-use
-        """Return a nice human-readable string from a list of JSS
-        objects.
-
-        """
+        """Return human-readable string from a list of JSS objects."""
         return ", ".join(set(items))
 
 # pylint: enable=too-many-instance-attributes, too-many-public-methods
