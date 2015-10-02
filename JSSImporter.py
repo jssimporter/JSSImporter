@@ -259,58 +259,76 @@ class JSSImporter(Processor):
         self.scripts = None
         self.policy = None
 
-    def build_replace_dict(self):
-        """Build dict of replacement values based on available input."""
-        # First, add in AutoPkg's env, excluding types that don't make
-        # sense:
-        replace_dict = {key: val for key, val in self.env.items()
-                        if val is not None and isinstance(val, basestring)}
+    def main(self):
+        """Main processor code."""
+        # Ensure we have the right version of python-jss
+        python_jss_version = StrictVersion(PYTHON_JSS_VERSION)
+        if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
+            self.output("Requires python-jss version: %s. Installed: %s" %
+                        (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
+            sys.exit()
 
-        # Next, add in "official" and Legacy input variables.
-        replace_dict["VERSION"] = self.version
-        if self.package is not None:
-            replace_dict["PKG_NAME"] = self.package.name
-        replace_dict["PROD_NAME"] = self.env.get("prod_name")
-        if self.env.get("site_id"):
-            replace_dict["SITE_ID"] = self.env.get("site_id")
-        if self.env.get("site_name"):
-            replace_dict["SITE_NAME"] = self.env.get("site_name")
-        replace_dict["SELF_SERVICE_DESCRIPTION"] = self.env.get(
-            "self_service_description")
-        replace_dict["SELF_SERVICE_ICON"] = self.env.get(
-            "self_service_icon")
-        # policy_category is not required, so set a default value if
-        # absent.
-        replace_dict["POLICY_CATEGORY"] = self.env.get(
-            "policy_category") or "Unknown"
+        # clear any pre-existing summary result
+        if "jss_importer_summary_result" in self.env:
+            del self.env["jss_importer_summary_result"]
 
-        # Some applications may have a product name that differs from
-        # the name that the JSS uses for its "Application Title"
-        # inventory field. If so, you can set it with the
-        # jss_inventory_name input variable. If this variable is not
-        # specified, it will just append .app, which is how most apps
-        # work.
-        if self.env.get("jss_inventory_name"):
-            replace_dict["JSS_INVENTORY_NAME"] = self.env.get(
-                "jss_inventory_name")
-        else:
-            replace_dict["JSS_INVENTORY_NAME"] = ("%s.app" %
-                                                  self.env.get("prod_name"))
-        self.replace_dict = replace_dict
+        # pull jss recipe-specific args, prep api auth
+        repo_url = self.env["JSS_URL"]
+        auth_user = self.env["API_USERNAME"]
+        auth_pass = self.env["API_PASSWORD"]
+        ssl_verify = self.env["JSS_VERIFY_SSL"]
+        jss_migrated = self.env["JSS_MIGRATED"]
+        suppress_warnings = self.env["JSS_SUPPRESS_WARNINGS"]
+        repos = self.env["JSS_REPOS"]
+        self.jss = jss.JSS(url=repo_url, user=auth_user, password=auth_pass,
+                           ssl_verify=ssl_verify, repo_prefs=repos,
+                           jss_migrated=jss_migrated,
+                           suppress_warnings=suppress_warnings)
+        self.pkg_name = os.path.basename(self.env["pkg_path"])
+        self.prod_name = self.env["prod_name"]
+        self.version = self.env["version"]
 
-    def replace_text(self, text, replace_dict):
-        """Substitute items in a text string.
+        # Build and init jss_changed_objects
+        self.init_jss_changed_objects()
 
-        text: A string with embedded %tags%.
-        replace_dict: A dict, where
-            key: Corresponds to the % delimited tag in text.
-            value: Text to swap in.
+        self.category = self.handle_category("category")
+        self.policy_category = self.handle_category("policy_category")
+
+        # Get our DPs read for copying.
+        self.jss.distribution_points.mount()
+        self.package = self.handle_package()
+        # Build our text replacement dictionary
+        self.build_replace_dict()
+
+        self.extattrs = self.handle_extension_attributes()
+        self.groups = self.handle_groups()
+        self.scripts = self.handle_scripts()
+        self.policy = self.handle_policy()
+        self.handle_icon()
+        # Done with DPs, unmount them.
+        self.jss.distribution_points.umount()
+
+        self.summarize()
+
+    def init_jss_changed_objects(self):
+        """Build a dictionary to track changes to JSS objects for
+        later reporting.
 
         """
-        for key, value in replace_dict.iteritems():
-            # Wrap our keys in % to match template tags.
-            text = text.replace("%%%s%%" % key, value)
-        return text
+        self.env["jss_changed_objects"] = {
+            "jss_repo_updated": [],
+            "jss_category_added": [],
+            "jss_package_added": [],
+            "jss_package_updated": [],
+            "jss_group_added": [],
+            "jss_group_updated": [],
+            "jss_script_added": [],
+            "jss_script_updated": [],
+            "jss_extension_attribute_added": [],
+            "jss_extension_attribute_updated": [],
+            "jss_policy_added": [],
+            "jss_policy_updated": [],
+            "jss_icon_uploaded": []}
 
     def handle_category(self, category_type):
         """Ensure a category is present."""
@@ -435,12 +453,12 @@ class JSSImporter(Processor):
             # will upload to the correct package object. Ignored by
             # AFP/SMB.
             if self.env["jss_changed_objects"]["jss_package_added"]:
-                self._copy(self.env["pkg_path"], id_=package.id)
+                self.copy(self.env["pkg_path"], id_=package.id)
             # For AFP/SMB shares, we still want to see if the package
             # exists.  If it's missing, copy it!
             elif not self.jss.distribution_points.exists(
                     os.path.basename(self.env["pkg_path"])):
-                self._copy(self.env["pkg_path"])
+                self.copy(self.env["pkg_path"])
             else:
                 self.output("Package upload not needed.")
         else:
@@ -450,7 +468,173 @@ class JSSImporter(Processor):
 
         return package
 
-    def _copy(self, source_item, id_=-1):
+    def handle_extension_attributes(self):
+        """Add extension attributes if needed."""
+        extattrs = self.env.get("extension_attributes")
+        results = []
+        if extattrs:
+            for extattr in extattrs:
+                extattr_object = self.update_or_create_new(
+                    jss.ComputerExtensionAttribute,
+                    extattr["ext_attribute_path"],
+                    update_env="jss_extension_attribute_added",
+                    added_env="jss_extension_attribute_updated")
+
+                results.append(extattr_object)
+        return results
+
+    def handle_groups(self):
+        """Manage group existence and creation."""
+        groups = self.env.get("groups")
+        computer_groups = []
+        if groups:
+            for group in groups:
+                if self.validate_input_var(group):
+                    # TODO: There is a proper property for this now.
+                    is_smart = group.get("smart", False)
+                    if is_smart:
+                        computer_group = self.add_or_updatesmart_group(group)
+                    else:
+                        computer_group = \
+                            self.add_or_updatestatic_group(group)
+
+                    computer_groups.append(computer_group)
+
+        return computer_groups
+
+    def handle_scripts(self):
+        """Add scripts if needed."""
+        scripts = self.env.get("scripts")
+        results = []
+        if scripts:
+            for script in scripts:
+                script_file = self.find_file_in_search_path(
+                    script["name"])
+                script_object = self.update_or_create_new(
+                    jss.Script,
+                    script["template_path"],
+                    os.path.basename(script_file),
+                    added_env="jss_script_added",
+                    update_env="jss_script_updated")
+
+                # Copy the script to the distribution points.
+                self.copy(script_file, id_=script_object.id)
+                results.append(script_object)
+
+        return results
+
+    def handle_policy(self):
+        """Create or update a policy."""
+        if self.env.get("policy_template"):
+            template_filename = self.env.get("policy_template")
+            policy = self.update_or_create_new(
+                jss.Policy, template_filename, update_env="jss_policy_updated",
+                added_env="jss_policy_added")
+        else:
+            self.output("Policy creation not desired, moving on...")
+            policy = None
+
+        return policy
+
+    def handle_icon(self):
+        """Add self service icon if needed."""
+        # Icons are tricky. The only way to add new ones is to use
+        # FileUploads.  If you manually upload them, you can add them to
+        # a policy to get their ID, but there is no way to query the JSS
+        # to see what icons are available. Thus, icon handling involves
+        # several cooperating methods.  If we just add an icon every
+        # time we run a recipe, however, we end up with a ton of
+        # redundent icons, and short of actually deleting them in the
+        # sql database, there's no way to delete icons. So when we run,
+        # we first check for an existing policy, and if it exists, copy
+        # its icon XML, which is then added to the templated Policy. If
+        # there is no icon information, but the recipe specifies one,
+        # then FileUpload it up.
+
+        # If no policy handling is desired, we can't upload an icon.
+        if self.env.get("self_service_icon") and self.policy is not None:
+            # Search through search-paths for icon file.
+            icon_path = self.find_file_in_search_path(
+                self.env["self_service_icon"])
+
+            icon_filename = os.path.basename(icon_path)
+
+            # Compare the filename in the policy to the one provided by
+            # the recipe. If they don't match, we need to upload a new
+            # icon.
+            policy_filename = self.policy.findtext(
+                "self_service/self_service_icon/filename")
+            if not policy_filename == icon_filename:
+                icon = jss.FileUpload(self.jss, "policies", "id", self.policy.id,
+                                      icon_path)
+                icon.save()
+                self.env["jss_changed_objects"]["jss_icon_uploaded"].append(
+                    icon_filename)
+                self.output("Icon uploaded to JSS.")
+            else:
+                self.output("Icon matches existing icon, moving on...")
+
+    def summarize(self):
+        """If anything has been added or updated, report back to
+        AutoPkg.
+
+        """
+        # Only summarize if something has happened.
+        if [True for value in self.env["jss_changed_objects"].values()
+                if value]:
+            # Create a blank summary.
+            self.env["jss_importer_summary_result"] = {
+                "summary_text": "The following changes were made to the JSS:",
+                "report_fields": ["Package", "Categories", "Groups", "Scripts",
+                                  "Extension Attributes", "Policy", "Icon"],
+                "data": {
+                    "Package": "",
+                    "Categories": "",
+                    "Groups": "",
+                    "Scripts": "",
+                    "Extension Attributes": "",
+                    "Policy": "",
+                    "Icon": ""
+                }
+            }
+
+            # Shortcut variables for lovely code conciseness
+            changes = self.env["jss_changed_objects"]
+            data = self.env["jss_importer_summary_result"]["data"]
+
+            package = self.get_report_string(changes["jss_package_added"] +
+                                             changes["jss_package_updated"])
+            if package:
+                data["Package"] = package
+
+            policy = changes["jss_policy_updated"] + \
+                changes["jss_policy_added"]
+            if policy:
+                data["Policy"] = self.get_report_string(policy)
+
+            if changes["jss_icon_uploaded"]:
+                data["Icon"] = os.path.basename(self.env["self_service_icon"])
+
+            # Get nice strings for our list-types.
+            if changes["jss_category_added"]:
+                data["Categories"] = self.get_report_string(
+                    changes["jss_category_added"])
+
+            groups = changes["jss_group_updated"] + changes["jss_group_added"]
+            if groups:
+                data["Groups"] = self.get_report_string(groups)
+
+            scripts = changes["jss_script_updated"] + \
+                changes["jss_script_added"]
+            if scripts:
+                data["Scripts"] = self.get_report_string(scripts)
+
+            extattrs = changes["jss_extension_attribute_updated"] + \
+                changes["jss_extension_attribute_added"]
+            if extattrs:
+                data["Extension Attributes"] = self.get_report_string(extattrs)
+
+    def copy(self, source_item, id_=-1):
         """Copy a package or script using the JSS_REPOS preference."""
         self.output("Copying %s to all distribution points." % source_item)
 
@@ -464,63 +648,47 @@ class JSSImporter(Processor):
             os.path.basename(source_item))
         self.output("Copied %s" % source_item)
 
-    def handle_groups(self):
-        """Manage group existence and creation."""
-        groups = self.env.get("groups")
-        computer_groups = []
-        if groups:
-            for group in groups:
-                if self._validate_input_var(group):
-                    # TODO: There is a proper property for this now.
-                    is_smart = group.get("smart", False)
-                    if is_smart:
-                        computer_group = self._add_or_update_smart_group(group)
-                    else:
-                        computer_group = \
-                            self._add_or_update_static_group(group)
+    def build_replace_dict(self):
+        """Build dict of replacement values based on available input."""
+        # First, add in AutoPkg's env, excluding types that don't make
+        # sense:
+        replace_dict = {key: val for key, val in self.env.items()
+                        if val is not None and isinstance(val, basestring)}
 
-                    computer_groups.append(computer_group)
+        # Next, add in "official" and Legacy input variables.
+        replace_dict["VERSION"] = self.version
+        if self.package is not None:
+            replace_dict["PKG_NAME"] = self.package.name
+        replace_dict["PROD_NAME"] = self.env.get("prod_name")
+        if self.env.get("site_id"):
+            replace_dict["SITE_ID"] = self.env.get("site_id")
+        if self.env.get("site_name"):
+            replace_dict["SITE_NAME"] = self.env.get("site_name")
+        replace_dict["SELF_SERVICE_DESCRIPTION"] = self.env.get(
+            "self_service_description")
+        replace_dict["SELF_SERVICE_ICON"] = self.env.get(
+            "self_service_icon")
+        # policy_category is not required, so set a default value if
+        # absent.
+        replace_dict["POLICY_CATEGORY"] = self.env.get(
+            "policy_category") or "Unknown"
 
-        return computer_groups
+        # Some applications may have a product name that differs from
+        # the name that the JSS uses for its "Application Title"
+        # inventory field. If so, you can set it with the
+        # jss_inventory_name input variable. If this variable is not
+        # specified, it will just append .app, which is how most apps
+        # work.
+        if self.env.get("jss_inventory_name"):
+            replace_dict["JSS_INVENTORY_NAME"] = self.env.get(
+                "jss_inventory_name")
+        else:
+            replace_dict["JSS_INVENTORY_NAME"] = ("%s.app" %
+                                                  self.env.get("prod_name"))
+        self.replace_dict = replace_dict
 
-    def _add_or_update_static_group(self, group):
-        """Given a group, either add a new group or update existing
-        group.
-
-        """
-        # Check for pre-existing group first
-        try:
-            computer_group = self.jss.ComputerGroup(group["name"])
-            self.output("Computer Group: %s already exists." %
-                        computer_group.name)
-        except jss.JSSGetError:
-            computer_group = jss.ComputerGroup(self.jss, group["name"])
-            computer_group.save()
-            self.output("Computer Group: %s created." % computer_group.name)
-            self.env["jss_changed_objects"]["jss_group_added"].append(
-                computer_group.name)
-
-        return computer_group
-
-    def _add_or_update_smart_group(self, group):
-        """Given a group, either add a new group or update existing
-        group.
-
-        """
-        # Build the template group object
-        self.replace_dict["group_name"] = group["name"]
-        if group.get("site_id"):
-            self.replace_dict["site_id"] = group.get("site_id")
-        if group.get("site_name"):
-            self.replace_dict["site_name"] = group.get("site_name")
-        computer_group = self._update_or_create_new(
-            jss.ComputerGroup, group["template_path"],
-            update_env="jss_group_updated", added_env="jss_group_added")
-
-        return computer_group
-
-    def _update_or_create_new(self, obj_cls, template_path, name="",
-                              added_env="", update_env=""):
+    def update_or_create_new(self, obj_cls, template_path, name="",
+                             added_env="", update_env=""):
         """Check for an existing object and update it, or create a new
         object.
 
@@ -680,7 +848,21 @@ class JSSImporter(Processor):
 
         return final_path
 
-    def _validate_input_var(self, var):
+    def replace_text(self, text, replace_dict):
+        """Substitute items in a text string.
+
+        text: A string with embedded %tags%.
+        replace_dict: A dict, where
+            key: Corresponds to the % delimited tag in text.
+            value: Text to swap in.
+
+        """
+        for key, value in replace_dict.iteritems():
+            # Wrap our keys in % to match template tags.
+            text = text.replace("%%%s%%" % key, value)
+        return text
+
+    def validate_input_var(self, var):
         """Validate the value before trying to add a group.
 
         Returns False if dictionary has invalid values, or True if it
@@ -702,92 +884,41 @@ class JSSImporter(Processor):
 
         return result
 
-    def handle_scripts(self):
-        """Add scripts if needed."""
-        scripts = self.env.get("scripts")
-        results = []
-        if scripts:
-            for script in scripts:
-                script_file = self.find_file_in_search_path(
-                    script["name"])
-                script_object = self._update_or_create_new(
-                    jss.Script,
-                    script["template_path"],
-                    os.path.basename(script_file),
-                    added_env="jss_script_added",
-                    update_env="jss_script_updated")
+    def add_or_updatesmart_group(self, group):
+        """Given a group, either add a new group or update existing
+        group.
 
-                # Copy the script to the distribution points.
-                self._copy(script_file, id_=script_object.id)
-                results.append(script_object)
+        """
+        # Build the template group object
+        self.replace_dict["group_name"] = group["name"]
+        if group.get("site_id"):
+            self.replace_dict["site_id"] = group.get("site_id")
+        if group.get("site_name"):
+            self.replace_dict["site_name"] = group.get("site_name")
+        computer_group = self.update_or_create_new(
+            jss.ComputerGroup, group["template_path"],
+            update_env="jss_group_updated", added_env="jss_group_added")
 
-        return results
+        return computer_group
 
-    def handle_extension_attributes(self):
-        """Add extension attributes if needed."""
-        extattrs = self.env.get("extension_attributes")
-        results = []
-        if extattrs:
-            for extattr in extattrs:
-                extattr_object = self._update_or_create_new(
-                    jss.ComputerExtensionAttribute,
-                    extattr["ext_attribute_path"],
-                    update_env="jss_extension_attribute_added",
-                    added_env="jss_extension_attribute_updated")
+    def add_or_updatestatic_group(self, group):
+        """Given a group, either add a new group or update existing
+        group.
 
-                results.append(extattr_object)
-        return results
+        """
+        # Check for pre-existing group first
+        try:
+            computer_group = self.jss.ComputerGroup(group["name"])
+            self.output("Computer Group: %s already exists." %
+                        computer_group.name)
+        except jss.JSSGetError:
+            computer_group = jss.ComputerGroup(self.jss, group["name"])
+            computer_group.save()
+            self.output("Computer Group: %s created." % computer_group.name)
+            self.env["jss_changed_objects"]["jss_group_added"].append(
+                computer_group.name)
 
-    def handle_icon(self):
-        """Add self service icon if needed."""
-        # Icons are tricky. The only way to add new ones is to use
-        # FileUploads.  If you manually upload them, you can add them to
-        # a policy to get their ID, but there is no way to query the JSS
-        # to see what icons are available. Thus, icon handling involves
-        # several cooperating methods.  If we just add an icon every
-        # time we run a recipe, however, we end up with a ton of
-        # redundent icons, and short of actually deleting them in the
-        # sql database, there's no way to delete icons. So when we run,
-        # we first check for an existing policy, and if it exists, copy
-        # its icon XML, which is then added to the templated Policy. If
-        # there is no icon information, but the recipe specifies one,
-        # then FileUpload it up.
-
-        # If no policy handling is desired, we can't upload an icon.
-        if self.env.get("self_service_icon") and self.policy is not None:
-            # Search through search-paths for icon file.
-            icon_path = self.find_file_in_search_path(
-                self.env["self_service_icon"])
-
-            icon_filename = os.path.basename(icon_path)
-
-            # Compare the filename in the policy to the one provided by
-            # the recipe. If they don't match, we need to upload a new
-            # icon.
-            policy_filename = self.policy.findtext(
-                "self_service/self_service_icon/filename")
-            if not policy_filename == icon_filename:
-                icon = jss.FileUpload(self.jss, "policies", "id", self.policy.id,
-                                      icon_path)
-                icon.save()
-                self.env["jss_changed_objects"]["jss_icon_uploaded"].append(
-                    icon_filename)
-                self.output("Icon uploaded to JSS.")
-            else:
-                self.output("Icon matches existing icon, moving on...")
-
-    def handle_policy(self):
-        """Create or update a policy."""
-        if self.env.get("policy_template"):
-            template_filename = self.env.get("policy_template")
-            policy = self._update_or_create_new(jss.Policy, template_filename,
-                                                update_env="jss_policy_updated",
-                                                added_env="jss_policy_added")
-        else:
-            self.output("Policy creation not desired, moving on...")
-            policy = None
-
-        return policy
+        return computer_group
 
     def add_scope_to_policy(self, policy_template):
         """Incorporate scoping groups into a policy."""
@@ -837,137 +968,6 @@ class JSSImporter(Processor):
 
         """
         return ", ".join(set(items))
-
-    def summarize(self):
-        """If anything has been added or updated, report back to
-        AutoPkg.
-
-        """
-        # Only summarize if something has happened.
-        if [True for value in self.env["jss_changed_objects"].values()
-                if value]:
-            # Create a blank summary.
-            self.env["jss_importer_summary_result"] = {
-                "summary_text": "The following changes were made to the JSS:",
-                "report_fields": ["Package", "Categories", "Groups", "Scripts",
-                                  "Extension Attributes", "Policy", "Icon"],
-                "data": {
-                    "Package": "",
-                    "Categories": "",
-                    "Groups": "",
-                    "Scripts": "",
-                    "Extension Attributes": "",
-                    "Policy": "",
-                    "Icon": ""
-                }
-            }
-
-            # Shortcut variables for lovely code conciseness
-            changes = self.env["jss_changed_objects"]
-            data = self.env["jss_importer_summary_result"]["data"]
-
-            package = self.get_report_string(changes["jss_package_added"] +
-                                             changes["jss_package_updated"])
-            if package:
-                data["Package"] = package
-
-            policy = changes["jss_policy_updated"] + \
-                changes["jss_policy_added"]
-            if policy:
-                data["Policy"] = self.get_report_string(policy)
-
-            if changes["jss_icon_uploaded"]:
-                data["Icon"] = os.path.basename(self.env["self_service_icon"])
-
-            # Get nice strings for our list-types.
-            if changes["jss_category_added"]:
-                data["Categories"] = self.get_report_string(
-                    changes["jss_category_added"])
-
-            groups = changes["jss_group_updated"] + changes["jss_group_added"]
-            if groups:
-                data["Groups"] = self.get_report_string(groups)
-
-            scripts = changes["jss_script_updated"] + \
-                changes["jss_script_added"]
-            if scripts:
-                data["Scripts"] = self.get_report_string(scripts)
-
-            extattrs = changes["jss_extension_attribute_updated"] + \
-                changes["jss_extension_attribute_added"]
-            if extattrs:
-                data["Extension Attributes"] = self.get_report_string(extattrs)
-
-    def init_jss_changed_objects(self):
-        """Build a dictionary to track changes to JSS objects for
-        later reporting.
-
-        """
-        self.env["jss_changed_objects"] = {
-            "jss_repo_updated": [],
-            "jss_category_added": [],
-            "jss_package_added": [],
-            "jss_package_updated": [],
-            "jss_group_added": [],
-            "jss_group_updated": [],
-            "jss_script_added": [],
-            "jss_script_updated": [],
-            "jss_extension_attribute_added": [],
-            "jss_extension_attribute_updated": [],
-            "jss_policy_added": [],
-            "jss_policy_updated": [],
-            "jss_icon_uploaded": []}
-
-    def main(self):
-        """Main processor code."""
-        # Ensure we have the right version of python-jss
-        python_jss_version = StrictVersion(PYTHON_JSS_VERSION)
-        if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
-            self.output("Requires python-jss version: %s. Installed: %s" %
-                        (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
-            sys.exit()
-
-        # clear any pre-existing summary result
-        if "jss_importer_summary_result" in self.env:
-            del self.env["jss_importer_summary_result"]
-
-        # pull jss recipe-specific args, prep api auth
-        repo_url = self.env["JSS_URL"]
-        auth_user = self.env["API_USERNAME"]
-        auth_pass = self.env["API_PASSWORD"]
-        ssl_verify = self.env["JSS_VERIFY_SSL"]
-        jss_migrated = self.env["JSS_MIGRATED"]
-        suppress_warnings = self.env["JSS_SUPPRESS_WARNINGS"]
-        repos = self.env["JSS_REPOS"]
-        self.jss = jss.JSS(url=repo_url, user=auth_user, password=auth_pass,
-                           ssl_verify=ssl_verify, repo_prefs=repos,
-                           jss_migrated=jss_migrated,
-                           suppress_warnings=suppress_warnings)
-        self.pkg_name = os.path.basename(self.env["pkg_path"])
-        self.prod_name = self.env["prod_name"]
-        self.version = self.env["version"]
-
-        # Build and init jss_changed_objects
-        self.init_jss_changed_objects()
-
-        self.category = self.handle_category("category")
-        self.policy_category = self.handle_category("policy_category")
-
-        # Get our DPs read for copying.
-        self.jss.distribution_points.mount()
-        self.package = self.handle_package()
-        # Build our text replacement dictionary
-        self.build_replace_dict()
-
-        self.extattrs = self.handle_extension_attributes()
-        self.groups = self.handle_groups()
-        self.scripts = self.handle_scripts()
-        self.policy = self.handle_policy()
-        self.handle_icon()
-        # Done with DPs, unmount them.
-        self.jss.distribution_points.umount()
-
-        self.summarize()
 
 
 if __name__ == "__main__":
