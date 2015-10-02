@@ -38,6 +38,7 @@ __version__ = "0.5.1"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("1.4.0")
 
 
+# pylint: disable=too-many-instance-attributes, too-many-public-methods
 class JSSImporter(Processor):
     """Uploads packages to configured Casper distribution points.
 
@@ -671,6 +672,7 @@ class JSSImporter(Processor):
                                                   self.env.get("prod_name"))
         self.replace_dict = replace_dict
 
+    # pylint: disable=too-many-arguments
     def update_or_create_new(self, obj_cls, template_path, name="",
                              added_env="", update_env=""):
         """Check for an existing object and update it, or create a new
@@ -735,6 +737,7 @@ class JSSImporter(Processor):
                 self.env["jss_changed_objects"][added_env].append(name)
 
         return recipe_object
+    # pylint: enable=too-many-arguments
 
     def get_templated_object(self, obj_cls, template_path):
         """Return an object based on a template located in search path.
@@ -832,7 +835,7 @@ class JSSImporter(Processor):
 
         return final_path
 
-    def replace_text(self, text, replace_dict):
+    def replace_text(self, text, replace_dict):   # pylint: disable=no-self-use
         """Substitute items in a text string.
 
         text: A string with embedded %tags%.
@@ -846,7 +849,7 @@ class JSSImporter(Processor):
             text = text.replace("%%%s%%" % key, value)
         return text
 
-    def validate_input_var(self, var):
+    def validate_input_var(self, var):   # pylint: disable=no-self-use
         """Validate the value before trying to add a group.
 
         Returns False if dictionary has invalid values, or True if it
@@ -945,13 +948,14 @@ class JSSImporter(Processor):
             return self.ensure_xml_structure(element.find(search), path)
         return element
 
-    def get_report_string(self, items):
+    def get_report_string(self, items):   # pylint: disable=no-self-use
         """Return a nice human-readable string from a list of JSS
         objects.
 
         """
         return ", ".join(set(items))
 
+# pylint: enable=too-many-instance-attributes, too-many-public-methods
 
 if __name__ == "__main__":
     processor = JSSImporter()   # pylint: disable=invalid-name
