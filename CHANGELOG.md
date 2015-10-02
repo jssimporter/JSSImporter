@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+### Changed
+- Reordered code.
+- Fixed some style issues.
+- Fixed some lint issues.
+
 ## [0.5.1] - 2015-09-30 - I've Got a Bike, You Can Ride it if You Like
 
 ### Fixed
