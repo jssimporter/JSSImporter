@@ -1,5 +1,4 @@
-JSSImporter
-=================
+
 
 This processor adds the ability for AutoPkg to create groups, upload packages and scripts, add extension attributes, and create policies for the Casper JSS, allowing you to fully-automate your software testing workflow. 
 
@@ -113,21 +112,38 @@ If you really want to, you can explicitly configure the required connection info
 	- username (rw user)
 	- password
 
-#### JDS: Jamf Distribution Servers
-Configuring a JDS is pretty easy too.
+#### CDP and JDS: Cloud Distribution Point and Jamf Distribution Servers
+Configuring a CDP or JDS is pretty easy too.
 
-There are some caveats to using a JDS. At this time, there is no officially documented way to upload files, or check for their existence on the JDS. python-jss works around this as best it can, but there is a possibility that a package object can be created, with no package file uploaded (for example, by CTRL-C'ing out of an AutoPkg run while an upload is happening). If things get crazy, or packages seem to be missing, just delete the package object with the web interface and run again.
+There are some caveats to using a CDP or JDS. At this time, there is no
+officially documented way to upload files, or check for their existence on the
+distribution server. python-jss works around this as best it can, but there is a possibility
+that a package object can be created, with no package file uploaded (for
+example, by CTRL-C'ing out of an AutoPkg run while an upload is happening). If
+things get crazy, or packages seem to be missing, just delete the package
+object with the web interface and run again.
 
 Required keys:
-- type='JDS'
+- type='JDS' or 'CDP'
 
 Your `JSS_REPOS` section should then simply look like this:
+JDS:
 ```
 	<key>JSS_REPOS</key>
 	<array>
 		<dict>
 			<key>type</key>
 			<string>JDS</string>
+		</dict>
+	</array>
+```
+CDP:
+```
+	<key>JSS_REPOS</key>
+	<array>
+		<dict>
+			<key>type</key>
+			<string>CDP</string>
 		</dict>
 	</array>
 ```
