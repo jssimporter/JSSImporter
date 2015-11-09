@@ -48,7 +48,7 @@ AFP and SMB distribution points are easy to configure. Each distribution point i
 - `name` is the name of your Distribution Point as specified in the JSS' "Computer Management => File Share Distribution Points" page.
 - `password` is the password for the user specified for the "Read/Write" account for this distribution point at "Computer Management => File Share Distribution Points => File Sharing => Read/Write Account => Password", NOT the API user's password (They are different, right?)
 
-### Example:
+##### Example:
 ```
 # Create our key and array
 /usr/libexec/PlistBuddy -c "Add :JSS_REPOS array" ~/Library/Preferences/com.github.autopkg.plist
@@ -146,6 +146,41 @@ CDP:
 			<string>CDP</string>
 		</dict>
 	</array>
+```
+
+#### Local Repository
+
+If you prefer to use a Local Repository, use these keys (all values should be of type string):
+
+- Local
+	- name (optional)
+	- mount_point
+	- type='Local'
+	- share_name (needed, but unused -- see https://github.com/sheagcraig/python-jss/issues/45)
+
+##### Example
+
+Note: Make sure you change the index number (here=0).
+
+```
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS array" ~/Library/Preferences/com.github.autopkg.plist
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0 dict" ~/Library/Preferences/com.github.autopkg.plist
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:name string local" ~/Library/Preferences/com.github.autopkg.plist
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:type string Local" ~/Library/Preferences/com.github.autopkg.plist
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:mount_point string /Users/Shared/JAMFDistrib" ~/Library/Preferences/com.github.autopkg.plist
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:share_name string JAMFDistrib" ~/Library/Preferences/com.github.autopkg.plist
+```
+
+Your `JSS_REPOS` section should then simply look like this:
+```
+    "JSS_REPOS" =     (
+                {
+            "mount_point" = "/Users/Shared/JAMFDistrib";
+            name = local;
+            "share_name" = JAMFDistrib;
+            type = Local;
+        }
+    );
 ```
 
 Manual Installation and Setup, and Developer Access
