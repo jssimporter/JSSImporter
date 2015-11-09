@@ -153,10 +153,9 @@ CDP:
 If you prefer to use a Local Repository, use these keys (all values should be of type string):
 
 - Local
-	- name (optional)
-	- mount_point
 	- type='Local'
-	- share_name (needed, but unused -- see https://github.com/sheagcraig/python-jss/issues/45)
+	- mount_point (use absolute path)
+	- share_name (use directory name)
 
 ##### Example
 
@@ -165,19 +164,17 @@ Note: Make sure you change the index number (here=0).
 ```
 /usr/libexec/PlistBuddy -c "Add :JSS_REPOS array" ~/Library/Preferences/com.github.autopkg.plist
 /usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0 dict" ~/Library/Preferences/com.github.autopkg.plist
-/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:name string local" ~/Library/Preferences/com.github.autopkg.plist
 /usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:type string Local" ~/Library/Preferences/com.github.autopkg.plist
-/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:mount_point string /Users/Shared/JAMFDistrib" ~/Library/Preferences/com.github.autopkg.plist
-/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:share_name string JAMFDistrib" ~/Library/Preferences/com.github.autopkg.plist
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:mount_point string /Users/Shared/JAMFdistrib" ~/Library/Preferences/com.github.autopkg.plist
+/usr/libexec/PlistBuddy -c "Add :JSS_REPOS:0:share_name string JAMFdistrib" ~/Library/Preferences/com.github.autopkg.plist
 ```
 
 Your `JSS_REPOS` section should then simply look like this:
 ```
     "JSS_REPOS" =     (
                 {
-            "mount_point" = "/Users/Shared/JAMFDistrib";
-            name = local;
-            "share_name" = JAMFDistrib;
+            "mount_point" = "/Users/Shared/JAMFdistrib";
+            "share_name" = JAMFdistrib;
             type = Local;
         }
     );
