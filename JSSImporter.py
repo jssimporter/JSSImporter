@@ -541,22 +541,30 @@ class JSSImporter(Processor):
             # Create a blank summary.
             self.env["jss_importer_summary_result"] = {
                 "summary_text": "The following changes were made to the JSS:",
-                "report_fields": ["Package", "Categories", "Groups", "Scripts",
-                                  "Extension Attributes", "Policy", "Icon"],
+                "report_fields": ["Name", "Package", "Categories", "Groups", "Scripts",
+                                  "Extension Attributes", "Policy", "Icon", "Version"],
                 "data": {
+                    "Name": "",
                     "Package": "",
                     "Categories": "",
                     "Groups": "",
                     "Scripts": "",
                     "Extension Attributes": "",
                     "Policy": "",
-                    "Icon": ""
+                    "Icon": "",
+                    "Version": ""
                 }
             }
 
             # Shortcut variables for lovely code conciseness
             changes = self.env["jss_changed_objects"]
             data = self.env["jss_importer_summary_result"]["data"]
+
+            if self.env['NAME']:
+                data["Name"] = self.env['NAME']
+
+            if self.env['version']:
+                data["Version"] = self.env['version']
 
             package = self.get_report_string(changes["jss_package_added"] +
                                              changes["jss_package_updated"])
