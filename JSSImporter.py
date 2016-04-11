@@ -542,13 +542,13 @@ class JSSImporter(Processor):
             self.env["jss_importer_summary_result"] = {
                 "summary_text": "The following changes were made to the JSS:",
                 "report_fields": ["Package", "Categories", "Groups", "Scripts",
-                                  "Extension Attributes", "Policy", "Icon"],
+                                  "Extension_Attributes", "Policy", "Icon"],
                 "data": {
                     "Package": "",
                     "Categories": "",
                     "Groups": "",
                     "Scripts": "",
-                    "Extension Attributes": "",
+                    "Extension_Attributes": "",
                     "Policy": "",
                     "Icon": ""
                 }
@@ -588,7 +588,7 @@ class JSSImporter(Processor):
             extattrs = changes["jss_extension_attribute_updated"] + (
                 changes["jss_extension_attribute_added"])
             if extattrs:
-                data["Extension Attributes"] = self.get_report_string(extattrs)
+                data["Extension_Attributes"] = self.get_report_string(extattrs)
 
     def update_object(self, data, obj, path, update):
         """Update an object if it differs.
