@@ -18,9 +18,9 @@ Prior to using the JSSImporter, You will need to add some preferences to your Au
 - The username and password of an API privileged user.
 	- It is recommended to create a user named something like "AutoPkg". It will need Create, Read, and Update privileges on:
 		- Categories
+		- Computer Extension Attributes
 		- Computer Groups
 		- Distribution Points (only needs "Read")
-		- Extension Attributes
 		- Packages
 		- Policies
 		- Scripts
