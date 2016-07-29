@@ -174,6 +174,27 @@ class JSSImporter(Processor):
             "description": "Text to apply to the package's Notes field.",
             "default": ""
         },
+         "package_priority": {
+            "required": False,
+            "description":
+                "Priority to use for deploying or uninstalling the "
+                "package. Value between 1-20. Defaults to '10'",
+            "default": "10"
+        },
+         "package_reboot": {
+            "required": False,
+            "description":
+                "Computers must be restarted after installing the package "
+                "Boolean. Defaults to 'False'",
+            "default": "False"
+        },
+         "package_boot_volume_required": {
+            "required": False,
+            "description":
+                "Ensure that the package is installed on the boot drive "
+                after imaging. Boolean. Defaults to 'True'",
+            "default": "True"
+        },        
         "groups": {
             "required": False,
             "description":
@@ -369,6 +390,10 @@ class JSSImporter(Processor):
             os_requirements = self.env.get("os_requirements")
             package_info = self.env.get("package_info")
             package_notes = self.env.get("package_notes")
+            package_priority = self.env.get("package_priority")
+            package_reboot =  self.env.get("package_reboot")
+            package_boot_volume_required = self.env.get(
+                "package_boot_volume_required")
             # See if the package is non-flat (requires zipping prior to
             # upload).
             if os.path.isdir(self.env["pkg_path"]):
@@ -397,6 +422,12 @@ class JSSImporter(Processor):
                                pkg_update)
             self.update_object(package_info, package, "info", pkg_update)
             self.update_object(package_notes, package, "notes", pkg_update)
+            self.update_object(package_priority, package, "priority", 
+                                pkg_update)
+            self.update_object(package_reboot, package, "reboot_required",
+                                pkg_update)
+            self.update_object(package_boot_volume_required, package, 
+                                "boot_volume_required", pkg_update)
 
             # Ensure packages are on distribution point(s)
 
