@@ -234,7 +234,7 @@ Also, a group template and a policy template are included with the project files
 
 Filenames and Paths
 ===================
-For any argument to JSSImporter that requires a filename, you may use *just* a filename, *or* a full path to that file. Since these values often contain substitution variables (e.g. `%RECIPE\_DIR%`) or may be overridden, JSSImporter follows a set series of search directories until it finds the filename specified.
+For any argument to JSSImporter that requires a filename, you may use *just* a filename, *or* a full path to that file. Since these values often contain substitution variables (e.g. `%RECIPE_DIR%`) or may be overridden, JSSImporter follows a set series of search directories until it finds the filename specified.
 
 These directories are:
 
