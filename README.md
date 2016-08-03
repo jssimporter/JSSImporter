@@ -237,6 +237,7 @@ Filenames and Paths
 For any argument to JSSImporter that requires a filename, you may use *just* a filename, *or* a full path to that file. Since these values often contain substitution variables (e.g. `%RECIPE\_DIR%`) or may be overridden, JSSImporter follows a set series of search directories until it finds the filename specified.
 
 These directories are:
+
 1. The path as specified.
 2. The parent folder of the path.
 3. First ParentRecipe's folder.
