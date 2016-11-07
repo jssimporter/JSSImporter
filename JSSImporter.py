@@ -184,6 +184,16 @@ class JSSImporter(Processor):
                 "template_path' (string: path to template file to use for "
                 "group, required for smart groups, invalid for static groups)",
         },
+        "exclusion_groups": {
+            "required": False,
+            "description":
+                "Array of group dictionaries. Wrap each group in a "
+                "dictionary. Group keys include 'name' (Name of the group to "
+                "use, required), 'smart' (Boolean: static group=False, smart "
+                "group=True, default is False, not required), and "
+                "template_path' (string: path to template file to use for "
+                "group, required for smart groups, invalid for static groups)",
+        },
         "scripts": {
             "required": False,
             "description":
@@ -303,6 +313,7 @@ class JSSImporter(Processor):
 
         self.extattrs = self.handle_extension_attributes()
         self.groups = self.handle_groups()
+        self.exclusion_groups = self.handle_exclusion_groups()
         self.scripts = self.handle_scripts()
         self.policy = self.handle_policy()
         self.handle_icon()
@@ -446,6 +457,24 @@ class JSSImporter(Processor):
     def handle_groups(self):
         """Manage group existence and creation."""
         groups = self.env.get("groups")
+        computer_groups = []
+        if groups:
+            for group in groups:
+                if self.validate_input_var(group):
+                    is_smart = group.get("smart", False)
+                    if is_smart:
+                        computer_group = self.add_or_update_smart_group(group)
+                    else:
+                        computer_group = (
+                            self.add_or_update_static_group(group))
+
+                    computer_groups.append(computer_group)
+
+        return computer_groups
+
+    def handle_exclusion_groups(self):
+        """Manage group existence and creation."""
+        groups = self.env.get("exclusion_groups")
         computer_groups = []
         if groups:
             for group in groups:
@@ -897,8 +926,12 @@ class JSSImporter(Processor):
         """Incorporate scoping groups into a policy."""
         computer_groups_element = self.ensure_xml_structure(
             policy_template, "scope/computer_groups")
+        exclusion_groups_element = self.ensure_xml_structure(
+            policy_template, "scope/exclusions/computer_groups")
         for group in self.groups:
             policy_template.add_object_to_path(group, computer_groups_element)
+        for group in self.exclusion_groups:
+            policy_template.add_object_to_path(group, exclusion_groups_element)
 
     def add_scripts_to_policy(self, policy_template):
         """Incorporate scripts into a policy."""
