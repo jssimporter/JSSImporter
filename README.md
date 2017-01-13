@@ -12,6 +12,15 @@ To install, download the latest package installer from the "releases" section. T
 
 python-jss is pulled from pypi.org using easy_install, so please ensure you have an active internet connection, and that if a proxy is involved, it is not interfering (hint: You'll see the package installer fail due to an inability to install requests).
 
+With newer versions of macOS, you will need to follow up the package install by updating some python dependencies. Apple ships out-of-date packages, which are protected by SIP, which prevent the full dependency chain from getting installed. The way to work around this is to install newer versions of the required packages to your user's python site-packages folder.
+
+To install `pip`, and then use pip to install the missing packages to your user's site-packages, running the following command (_without_ sudo!)
+
+```
+python -m ensurepip --user -U; pip install -I --user pyopenssl
+```
+
+
 ### Setup
 Prior to using the JSSImporter, You will need to add some preferences to your AutoPkg preferences file:
 - The URL to your jss
