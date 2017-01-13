@@ -17,7 +17,7 @@ With newer versions of macOS, you will need to follow up the package install by 
 To install `pip`, and then use pip to install the missing packages to your user's site-packages, running the following command (_without_ sudo!)
 
 ```
-python -m ensurepip --user -U; pip install -I --user pyopenssl
+python -m ensurepip --user -U && pip install -I --user pyopenssl
 ```
 
 
