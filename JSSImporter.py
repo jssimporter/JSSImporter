@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright 2014, 2015 Shea Craig
+# Copyright 2014-2017 Shea G. Craig
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -267,7 +267,7 @@ class JSSImporter(Processor):
         if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
             self.output("Requires python-jss version: %s. Installed: %s" %
                         (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
-            sys.exit()
+            raise ProcessorError
 
         # clear any pre-existing summary result
         if "jss_importer_summary_result" in self.env:
