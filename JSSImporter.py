@@ -314,20 +314,13 @@ class JSSImporter(Processor):
 
     def init_jss_changed_objects(self):
         """Build a dictionary to track changes to JSS objects."""
-        self.env["jss_changed_objects"] = {
-            "jss_repo_updated": [],
-            "jss_category_added": [],
-            "jss_package_added": [],
-            "jss_package_updated": [],
-            "jss_group_added": [],
-            "jss_group_updated": [],
-            "jss_script_added": [],
-            "jss_script_updated": [],
-            "jss_extension_attribute_added": [],
-            "jss_extension_attribute_updated": [],
-            "jss_policy_added": [],
-            "jss_policy_updated": [],
-            "jss_icon_uploaded": []}
+        keys = (
+            "jss_repo_updated", "jss_category_added", "jss_package_added",
+            "jss_package_updated", "jss_group_added", "jss_group_updated",
+            "jss_script_added", "jss_script_updated",
+            "jss_extension_attribute_added", "jss_extension_attribute_updated",
+            "jss_policy_added", "jss_policy_updated", "jss_icon_uploaded")
+        self.env["jss_changed_objects"] = dict.fromkeys(keys, [])
 
     def handle_category(self, category_type):
         """Ensure a category is present."""
