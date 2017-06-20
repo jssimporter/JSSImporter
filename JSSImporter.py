@@ -34,8 +34,8 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = "0.5.1"
-REQUIRED_PYTHON_JSS_VERSION = StrictVersion("1.4.0")
+__version__ = "1.0.0"
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.0")
 
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
@@ -273,18 +273,8 @@ class JSSImporter(Processor):
         if "jss_importer_summary_result" in self.env:
             del self.env["jss_importer_summary_result"]
 
-        # pull jss recipe-specific args, prep api auth
-        repo_url = self.env["JSS_URL"]
-        auth_user = self.env["API_USERNAME"]
-        auth_pass = self.env["API_PASSWORD"]
-        ssl_verify = self.env["JSS_VERIFY_SSL"]
-        jss_migrated = self.env["JSS_MIGRATED"]
-        suppress_warnings = self.env["JSS_SUPPRESS_WARNINGS"]
-        repos = self.env["JSS_REPOS"]
-        self.jss = jss.JSS(url=repo_url, user=auth_user, password=auth_pass,
-                           ssl_verify=ssl_verify, repo_prefs=repos,
-                           jss_migrated=jss_migrated,
-                           suppress_warnings=suppress_warnings)
+        self.create_jss()
+
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]
         self.version = self.env["version"]
@@ -310,6 +300,17 @@ class JSSImporter(Processor):
         self.jss.distribution_points.umount()
 
         self.summarize()
+
+    def create_jss(self):
+        """Create a JSS object for API calls"""
+        kwargs = {
+            'url': self.env['JSS_URL'],
+            'user': self.env['API_USERNAME'],
+            'password': self.env['API_PASSWORD'],
+            'ssl_verify': self.env["JSS_VERIFY_SSL"],
+            'jss_migrated': self.env["JSS_MIGRATED"],
+            'repo_prefs': self.env["JSS_REPOS"]}
+        self.jss = jss.JSS(**kwargs)
 
     def init_jss_changed_objects(self):
         """Build a dictionary to track changes to JSS objects."""
@@ -337,7 +338,7 @@ class JSSImporter(Processor):
                 self.output("Category type: %s-'%s' already exists "
                             "according to JSS, moving on..." %
                             (category_type, category_name))
-            except jss.JSSGetError:
+            except jss.GetError:
                 # Category doesn't exist
                 category = jss.Category(self.jss, category_name)
                 category.save()
@@ -382,7 +383,7 @@ class JSSImporter(Processor):
                 package = self.jss.Package(self.pkg_name)
                 self.output("Pkg-object already exists according to JSS, "
                             "moving on...")
-            except jss.JSSGetError:
+            except jss.GetError:
                 # Package doesn't exist
                 package = jss.Package(self.jss, self.pkg_name)
 
@@ -694,7 +695,7 @@ class JSSImporter(Processor):
         existing_object = None
         try:
             existing_object = self.jss.factory.get_object(obj_cls, name)
-        except jss.JSSGetError:
+        except jss.GetError:
             pass
 
         # If object is a Policy, we need to inject scope, scripts,
@@ -884,7 +885,7 @@ class JSSImporter(Processor):
             computer_group = self.jss.ComputerGroup(group["name"])
             self.output("Computer Group: %s already exists." %
                         computer_group.name)
-        except jss.JSSGetError:
+        except jss.GetError:
             computer_group = jss.ComputerGroup(self.jss, group["name"])
             computer_group.save()
             self.output("Computer Group: %s created." % computer_group.name)
