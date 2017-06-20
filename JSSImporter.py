@@ -530,8 +530,7 @@ class JSSImporter(Processor):
     def summarize(self):
         """If anything has been added or updated, report back."""
         # Only summarize if something has happened.
-        if [True for value in self.env["jss_changed_objects"].values()
-                if value]:
+        if any(value for value in self.env["jss_changed_objects"].values()):
             # Create a blank summary.
             self.env["jss_importer_summary_result"] = {
                 "summary_text": "The following changes were made to the JSS:",
@@ -547,6 +546,8 @@ class JSSImporter(Processor):
                     "Icon": ""
                 }
             }
+            # TODO: This is silly. Use a defaultdict for storing changes
+            # and just copy the stuff that changed.
 
             # Shortcut variables for lovely code conciseness
             changes = self.env["jss_changed_objects"]
@@ -686,8 +687,9 @@ class JSSImporter(Processor):
 
         # Check for an existing object with this name.
         existing_object = None
+        search_method = getattr(self.jss, obj_cls.__name__)
         try:
-            existing_object = self.jss.factory.get_object(obj_cls, name)
+            existing_object = search_method(name)
         except jss.GetError:
             pass
 
@@ -708,10 +710,9 @@ class JSSImporter(Processor):
 
         if existing_object is not None:
             # Update the existing object.
-            url = existing_object.get_object_url()
-            self.jss.put(url, recipe_object)
+            self.jss.put(existing_object.url, recipe_object)
             # Retrieve the updated XML.
-            recipe_object = self.jss.factory.get_object(obj_cls, name)
+            recipe_object = search_method(name)
             self.output("%s: %s updated." % (obj_cls.__name__, name))
             if update_env:
                 self.env["jss_changed_objects"][update_env].append(name)
