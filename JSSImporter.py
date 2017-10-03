@@ -320,7 +320,7 @@ class JSSImporter(Processor):
             "jss_script_added", "jss_script_updated",
             "jss_extension_attribute_added", "jss_extension_attribute_updated",
             "jss_policy_added", "jss_policy_updated", "jss_icon_uploaded")
-        self.env["jss_changed_objects"] = dict.fromkeys(keys, [])
+        self.env["jss_changed_objects"] = {key: [] for key in keys}
 
     def handle_category(self, category_type):
         """Ensure a category is present."""
