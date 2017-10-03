@@ -24,12 +24,14 @@ import shutil
 import sys
 from xml.etree import ElementTree
 
+sys.path.insert(0, '/Library/Application Support/JSSImporter')
 import jss
 # Ensure that python-jss dependency is at minimum version
 try:
     from jss import __version__ as PYTHON_JSS_VERSION
 except ImportError:
     PYTHON_JSS_VERSION = "0.0.0"
+
 from autopkglib import Processor, ProcessorError
 
 
