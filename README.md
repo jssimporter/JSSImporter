@@ -1,30 +1,51 @@
 
 
-This processor adds the ability for AutoPkg to create groups, upload packages and scripts, add extension attributes, and create policies for the Casper JSS, allowing you to fully-automate your software testing workflow. 
+This processor adds the ability for AutoPkg to create groups, upload packages and scripts, add extension attributes, and create policies for the Casper JSS, allowing you to fully-automate your software *testing* workflow. 
 
 This project began from Allister Banks' original [jss-autopkg-addon project](https://github.com/arubdesu/jss-autopkg-addon), but has since diverged ~~considerably~~ completely to add greater customization options while maintaining the existing functionality.
 
-Getting Started
-=================
+# Getting Started
+Getting your software testing workflow constructed using AutoPkg and JSSImporter can be daunting. This document will go over the various configuration and usage information you will need for success. There are, however, numerous helpful resources in the Macadmin community for best-practices in setting this up. A quick glance through previous years' session videos from any of the Mac Admin conferences (I attend Penn State MacAdmins most years, see what they have: [https://www.youtube.com/user/psumacconf]
 
-### Installation
-To install, download the latest package installer from the "releases" section. This will add the JSSImporter.py processor to your autopkglib folder, and the proper python-jss package to your system python's site-packages. This allows you to start using JSSImporter right away. Of course, you can also use the new (as of AutoPkg 0.4.0) shared processor system to include the JSSImporter in the same folder as your recipes, but you'll still need python-jss available to the system python.
+While JSSImporter has a lot of options for crafting the workflow best-suited for your organization's needs, there are best-practices expressed in the [AutoPkg organization's jss-recipes repo](https://github.com/autopkg/jss-recipes) that drive the design of JSSImporter.
 
-python-jss is pulled from pypi.org using easy_install, so please ensure you have an active internet connection, and that if a proxy is involved, it is not interfering (hint: You'll see the package installer fail due to an inability to install requests).
+The workflow used in the AutoPkg org's jss-recipes repo goes something like this:
 
-With newer versions of macOS, you will need to follow up the package install by updating some python dependencies. Apple ships out-of-date packages, which are protected by SIP, which prevent the full dependency chain from getting installed. The way to work around this is to install newer versions of the required packages to your user's python site-packages folder.
+JSS recipes use recipes that produce standard Apple package (pkg) files as parents. This ensures that a pkg can be uploaded to the distribution points.
+The resulting package file's name includes the software's name and version number (e.g. Firefox-38.0.5.pkg).
+The package file's metadata includes any OS version restrictions that govern that product's installation.
+The JSS recipe specifies the category for the package file itself, which is chosen from among a limited set of approved categories. (See the list of categories in the Style guide below.) If the category doesn't exist, it will be created.
+JSSImporter uploads the package file to all configured distribution points.
+The SmartGroupTemplate.xml file tells JSSImporter to create or update a smart group called [SoftwareName]-update-smart. The criteria of this group are:
+- the computer has the software in question installed
+- the version does not match the newest version that AutoPkg found
+- the computer is a member of a group called "Testing" (which is created and maintained manually by the Jamf admin)
+The PolicyTemplate.xml file tells JSSImporter to create a single Self Service policy for each product, called Install Latest [SoftwareName]. The policy:
+- installs the latest package file.
+- is scoped to the smart group mentioned above.
+- includes a Self Service icon and description.
+- category is Testing. This groups policies together under the Testing category on the Policies page of the JSS web interface to separate and distinguish them from other policies. If the Testing category doesn't exist, it will be created.
+- has an execution frequency of "Ongoing" to allow multiple runs should tests fail. However, following a successful installation, the Self Service policy performs a recon run, which will drop the computer out of the smart group, thus preventing further executions until the next update is made available. This also enables reuse of the same policy without needing to "Flush All" the policy logs.
 
-To install `pip`, and then use pip to install the missing packages to your user's site-packages, running the following command (_without_ sudo!)
+No groups other than the smart group mentioned above are created or modified.
 
-```
-python -m ensurepip --user -U && pip install -I --user pyopenssl
-```
+In the rare case of needing an extension attribute to determine whether a package is out-of-date, and thus used to determine membership in the smart group, extension attributes will be created and/or updated. A separate [SoftwareName]ExtensionAttribute.xml file is required for this. This is most commonly the case with apps that either don't live in /Applications or report different version numbers for CFBundleShortVersionString and CFBundleVersion (Jamf only uses CFBundleShortVersionString for inventory).
 
+One piece of advice: The [AutoPkg organization's jss-recipes repo](https://github.com/autopkg/jss-recipes) is a community project which adheres to the best-practices generally agreed upon by the community. If you are trying to do something beyond what these recipes or processor cover, you may need to step back and re-evaluate your goals. JSSImporter's goal is to allow you to, with AutoPkg, automate the drudgery of managing a *testing* workflow. It is not meant to deploy software straight to production machines. It is not meant as a way to bootstrap all of a JSS's policies. There is a lot you can do with the Jamf PRO API, and JSSImporter's code is an illustration of how to go about doing this. If JSSImporter and the jss-recipes still don't meet your needs, you have a couple of options. You can write your own jss-recipes. This usually involves establishing your own workflow, and writing the templates to support that. Implementing idividual recipes becomes largely editing a handful of values in copies of these templates, 90% of which end up being the same.
 
-### Setup
+Hint: many people have expressed a desire for JSSImporter to upload objects to multiple JSSs. The trick to doing this is to use your own jss recipes that have one JSSImporter processor for each JSS. You will need to override the `JSS_URL` and any other settings needed in-between JSSImporter invocations in the recipe.
+
+If this still does not meet your needs, it's time to dig into python-jss and write a solution that does.
+
+## Installation
+To install, download the latest package installer from the "releases" section. This will add the JSSImporter.py processor to your autopkglib folder, and the python-jss package to `/Library/Application Support/JSSImporter`.
+
+Note: This installation strategy is a change from past JSSImporter versions. See below if you're interested in how.
+
+## Setup
 Prior to using the JSSImporter, You will need to add some preferences to your AutoPkg preferences file:
 - The URL to your jss
-- The username and password of an API privileged user.
+- The username and password of an API privileged user. If you haven't done so already, you'll need to create a service account for JSSImporter to interact with the API as.
 	- It is recommended to create a user named something like "AutoPkg". It will need Create, Read, and Update privileges on:
 		- Categories
 		- Computer Extension Attributes
@@ -37,27 +58,41 @@ Prior to using the JSSImporter, You will need to add some preferences to your Au
 - Your distribution points.
 
 ### Example: Adding basic preferences.
+The preferences you will definitely need are `JSS_URL`, `API_USERNAME`, and `API_PASSWORD`. You will probably also want to configure distribution points so your packages can get synced to them. Distribution points are covered later.
+
 ```
 defaults write com.github.autopkg JSS_URL https://test.jss.private:8443
 defaults write com.github.autopkg API_USERNAME apiUser
 defaults write com.github.autopkg API_PASSWORD apiPassword
 ```
 
-### Additional Preferences
-In addition the URL, user, and password preferences, there are a few others you may want to use.
-- `JSS_VERIFY_SSL`: Boolean (True or False). Whether or not to verify SSL traffic. Defaults to `True`, and recommended. (See below).
-- `JSS_MIGRATED`: Boolean. If you have "migrated" your JSS (uses the web interface to edit scripts), set to `True`. Defaults to `False`. This only really comes into play if you have an AFP or SMB share *and* have migrated.
-- `JSS_SUPPRESS_WARNINGS`: Boolean. Determines whether to suppress urllib3 warnings.  If you choose not to verify SSL with JSS_VERIFY_SSL, urllib3 throws warnings for each of the numerous requests JSSImporter makes. If you would like to see them, set to `False`. Defaults to `True`.
+### SSL
 
-### Adding distribution points.
+If your JSS uses a self-signed certificate, please consider switching to a real certificate. Please.
+
+The bundled python-jss uses curl for HTTP requests if the [requests](http://python-requests.org/) python module is not available on the system; you can investigate adding the self-signed certificate to a curl.rc file for the user account autopkg runs as. This is left as an exercise for the non-security-minded admin. If you are testing or are running with scissors in YOLO mode, you can disable certificate verification by using the following preference:
+
+```
+defaults write com.github.autopkg JSS_VERIFY_SSL -bool false
+```
+
+This value defaults to true, because you should want to verify both where you're uploading to and that what you upload isn't harmed in transit. It's worth it before you push this to an installer that runs as root on all the computers you manage.
+
+## Additional Preferences
+In addition the URL, user, and password preferences, there are a few others you may want to use.
+- `JSS_VERIFY_SSL`: Boolean (True or False). Whether or not to verify SSL traffic. Defaults to `True`, and recommended. (See SSL section above).
+- `JSS_MIGRATED`: Boolean. If you have "migrated" your JSS (uses the web interface to edit scripts), set to `True`. Defaults to `False`. This only really comes into play if you have an AFP or SMB share *and* have migrated.
+- `JSS_SUPPRESS_WARNINGS`: Boolean. Determines whether to suppress urllib3 warnings *when* you are using python requests as the request handler. This has no effect on curl. If you choose not to verify SSL with JSS_VERIFY_SSL, urllib3 throws warnings for each of the numerous requests JSSImporter makes. If you would like to see them, set to `False`. Defaults to `True`.
+
+## Adding distribution points.
 You will need to specify your distribution points in the preferences as well. The JSSImporter will copy packages and scripts to all configured distribution points using the `JSS_REPOS` key. The value of this key is an array of dictionaries, which means you have to switch tools and use PlistBuddy. Of course, if you want to go all punk rock and edit this by hand like a savage, go for it. At least use vim.
 
-#### AFP/SMB Distribution Points
+### AFP/SMB Distribution Points
 AFP and SMB distribution points are easy to configure. Each distribution point is represented by a simple dictionary, with two keys: `name`, and `password`. The rest of the information is pulled automatically from the JSS.
 - `name` is the name of your Distribution Point as specified in the JSS' "Computer Management => File Share Distribution Points" page.
 - `password` is the password for the user specified for the "Read/Write" account for this distribution point at "Computer Management => File Share Distribution Points => File Sharing => Read/Write Account => Password", NOT the API user's password (They are different, right?)
 
-##### Example:
+#### Example:
 ```
 # Create our key and array
 /usr/libexec/PlistBuddy -c "Add :JSS_REPOS array" ~/Library/Preferences/com.github.autopkg.plist
@@ -121,7 +156,10 @@ If you really want to, you can explicitly configure the required connection info
 	- username (rw user)
 	- password
 
-#### CDP and JDS: Cloud Distribution Point and Jamf Distribution Servers
+#### Troubleshooting AFP and SMB distribution points
+If JSSImporter is having issues mounting your distribution points, the best troubleshooting step you can do is attempt to mount the share in question manually through the Finder or mount command.
+
+### CDP and JDS: Cloud Distribution Point and Jamf Distribution Servers
 Configuring a CDP or JDS is pretty easy too.
 
 There are some caveats to using a CDP or JDS. At this time, there is no
@@ -157,7 +195,7 @@ CDP:
 	</array>
 ```
 
-#### Local Repository
+### Local Repository
 
 If you prefer to use a Local Repository, use these keys (all values should be of type string):
 
@@ -166,7 +204,7 @@ If you prefer to use a Local Repository, use these keys (all values should be of
 	- mount_point (use absolute path)
 	- share_name (use directory name)
 
-##### Example
+#### Example
 
 Note: Make sure you change the index number (here=0).
 
@@ -189,60 +227,18 @@ Your `JSS_REPOS` section should then simply look like this:
     );
 ```
 
-Manual Installation and Setup, and Developer Access
-=================
-Developers should just fork and clone the project. The python-jss project will be required, and should be located wherever your python of choice can find it.
-
-If you're keen on manually installing for normal usage, follow these directions:
-
-1. Make sure you've already installed the most current autopkg tools (AND RECIPES) FIRST! (Sorry to yell.) Then use the releases tab, to the right above, to download the code.
-2. Unzip the download somewhere and copy or link the `JSSImporter.py` plugin file to your autopkglib folder, typically located at `/Library/AutoPkg/autopkglib`
-	- i.e. 
-	```
-	sudo cp ~/Downloads/jss-autopkg-addon/JSSImporter.py /Library/AutoPkg/autopkglib
-	```
-	or
-	```
-	sudo ln -s ~/Downloads/jss-autopkg-addon/JSSImporter.py /Library/AutoPkg/autopkglib/JSSImporter.py
-	```
-2. You will need to add some preferences to your AutoPkg preferences file.:
-
-	```
-	defaults write com.github.autopkg JSS_REPO /Volumes/JSS_Dist_Point
-	defaults write com.github.autopkg JSS_URL https://test.jss.private:8443
-	defaults write com.github.autopkg API_USERNAME apiUser
-	defaults write com.github.autopkg API_PASSWORD apiPassword
-	```
-
-3. This project relies on [python-jss](https://github.com/sheagcraig/python-jss), and includes a copy in the release. This is a work in progress, and AutoPkg does not currently have a way to import external dependencies, so python-jss must be added to a location available to your `PYTHONPATH`. You can either add the location of the module to your `PYTHONPATH` or copy/install the module to your site-packages folder.
-	- Add to `PYTHONPATH`:
-	  ```
-	  PYTHONPATH=$PYTHONPATH:~/Downloads/jss-autopkg-addon
-	  ```
-    	- Add to your .bash_profile if you want it to be set automatically.
-	- Copy python-jss to site-packages:
-	  This requires knowing where your python's site packages are... On the Apple python, it would look like this:
-	  ```
-	  sudo cp -R ~/Downloads/jss-autopkg-addon/jss /Library/Python/2.7/site-packages/
-	  ```
-	- Or just pip install it:
-	  ```
-	  pip install python-jss
-	  ```
-
-Basic Usage
-=================
+# Basic Usage
 
 To see a list of input variables, use `autopkg processor-info JSSImporter`.
 
 Ultimately, the JSSImporter is about crafting policies, which is Casper's method for installing software. However, policies require a number of other pieces of information: which groups to scope the policy to, what category the policy should be managed under, the category of the package, any scripts to include, and potentially many other policy settings, like whether to run a recon or not.
 
-Recipes may be somewhat confusing to put together at first. Have a look at [my JSS recipes](https://github.com/sheagcraig/jss-recipes) to see it all in action.
+Recipes may be somewhat confusing to put together at first. Have a look at [the AutoPkg org's JSS recipes](https://github.com/autopkg/jss-recipes) to see it all in action.
 
-Also, a group template and a policy template are included with the project files to give you a place to start. (Note: They're in `/usr/share/jss-autopkg-addon`)
+Also, a group template and a policy template are included in this project to give you a place to start. (Note: They're in the example_templates folder)
 
-Filenames and Paths
-===================
+## Filenames and Paths
+
 For any argument to JSSImporter that requires a filename, you may use *just* a filename, *or* a full path to that file. Since these values often contain substitution variables (e.g. `%RECIPE_DIR%`) or may be overridden, JSSImporter follows a set series of search directories until it finds the filename specified.
 
 These directories are:
@@ -266,8 +262,7 @@ each recipe. It also allows users to structure a repository of JSS recipes in
 subfolders, without having to copy shared support files into each product's
 subdirectory.
 
-Note on Objects
-=================
+## Note on Objects
 
 It is worth noting that some objects manipulated through the web interface will be overwritten with their templated values after the next AutoPkg run of relevent recipes. This is by design, but may be a surprise if you try to edit, say, a policy, by hand after the JSSImporter creates it.
 
@@ -279,8 +274,8 @@ Specifically, objects that get recreated every run:
 
 This way, you can ensure that what is specified in the recipe is what is on the JSS.
 
-Researching your JSS
-=================
+## Researching your JSS
+
 
 While setting this all up, you will probably want to see some valid XML straight from the horse's mouth. There are a few ways to look at the XML directly:
 
@@ -289,8 +284,7 @@ While setting this all up, you will probably want to see some valid XML straight
 3. [python-jss](https://github.com/sheagcraig/python-jss) is a python wrapper around the JSS API which will allow easy access to all objects on the JSS.
 
 
-Category & Policy Category
-=================
+## Category & Policy Category
 
 Categories are specified through the input variables `category` and `policy_category`. If they don't already exist, they will be created; otherwise, they're just left alone.
 
@@ -300,8 +294,8 @@ Categories are specified through the input variables `category` and `policy_cate
 
 If you don't specify a category when adding a package or a policy, the JSS will assign it the category of "Unknown", which therefore is JSSImporter's behavior as well.
 
-Packages
-=================
+## Packages
+
 
 Not surprisingly, packages are forwarded on from ParentRecipes seamlessly. However, if you need to specify an `os_requirements` setting, there's an input variable for that. The format follows that of the JSS: a comma-delimeted list of acceptable versions, with 'x' as a wildcard, e.g. `10.8.6, 10.9.x`.
 
@@ -314,8 +308,7 @@ For JDS DP's, packages are only uploaded if a package-object was created. To re-
 
 If you would like to _not_ upload a package and _not_ add a package install action to a Policy, specify a `pkg_path` with a blank value to let JSSImporter know to skip package handling. Chances are extremely good that a previous step in a Parent pkg recipe set `pkg_path`, so you need to *un*-set it. Why would this be useful? Some organizations are using AutoPkg and JSSImporter to automate the creation of multiple policies per product-one to actually install the product, and another to notify the user of an available update. This is a lot of work to go through to try to be [Munki](https://www.munki.org), but it may improve the experience for users, since Casper will happily install apps while a user is logged in. Regardless, you can simply specify a second JSSImporter processor in your jss recipe, making sure to set `pkg_path` to a blank value (e.g: `<string/>`), and crafting the arguments and templates appropriately.
 
-Groups
-=================
+## Groups
 
 You may specify any number of static and smart groups to scope your policy to (including none). The `groups` input variable should be an array of group dictionaries. Each group dictionary needs a name. Additionally, the optional `smart` property should be `True`, and you will need to include the path, `template_path`, to an XML template for your smart group.
 
@@ -368,15 +361,13 @@ _NOTE_: Applications that don't install into `/Applications` will not be availab
 
 You can of course *also*/*instead* set the Computer Management/Computer Inventory Collection/Software/Plug-ins setting in Casper to "Collect Plug-ins", which should already know the right path to check for Internet Plugins.
 
-Scripts
-=================
+## Scripts
 
 Scripts work the same way as groups. The `scripts` input variable should contain an array of one dictionary for each script. You can skip the `scripts` key entirely if you don't need any scripts. Each dictionary should contain a `name` key, which is the path to the script file itself. It should also have a `template_path` item which is a path to a script template. A script template is included with this project, although you'll probably only be interested in setting the priority ("After", or "Before")
 
 Unlike packages, scripts are uploaded every run, as presumably, they are signicantly smaller than even modestly-sized packages.
 
-Extension Attributes
-=================
+## Extension Attributes
 
 Extension attributes work just like scripts. You need a complete and valid XML file for the extension attribute (although it will do variable substitution). To experiment with XML for these, again, use the API page to look through the ones on your JSS. Included with this project there is a template for extension attributes as well, although you will need to edit it to add in your script. As the extension attribute is XML, you will need to properly HTML encode reserved characters; e.g. '<' becomes '&lt;', '>' becomes '%gt;'. Since the extension attributes value needs to be <result>Your Result</result> sent to stdout, you will need to do this manually for every extension attribute.
 
@@ -384,8 +375,7 @@ Solutions to handle this automatically are being considered, but at this moment,
 
 The `extension_attributes` input variable should contain an array of dictionaries. Each dictionary should contain an `ext_attribute_path` item which is a path to the extension attribute file. You may also skip this key entirely if you don't need extension attributes for your recipe.
 
-Policy
-=================
+## Policy
 
 Policies are generated on the fly by supplying the JSSImporter with a policy template. This is a simplified XML document-essentially an empty policy object from the API. The JSSImporter will handle substituting in the scope, category, and package information as specified in the other parts of the recipe. You may, if you wish, also include elements directly. Any groups mentioned in the input variables to the recipe, for example, would get added to the scoping groups hardcoded into the supplied policy template.
 
@@ -399,8 +389,7 @@ You can skip policy creation by leaving out the `policy_template` key, or specif
 <string></string>
 ```
 
-Self Service Icons
-=================
+## Self Service Icons
 
 Having icons is nice. That being said, they are kind of tricky to implement. There is no way to query the JSS for a list of available icons through the API. You can view them in the web interface, but this doesn't expose the ID number or name properties. Through the API, you can only upload and attach an icon to a specific policy. For more information, take a look at the source!
 
@@ -410,8 +399,8 @@ Then, to include in a recipe, use the `self_service_icon` key, with a string val
 
 If you don't want to worry about icons, just leave out the `self_service_icon` key and JSSImporter will skip it.
 
-Template Substitution Variables
-===============================
+## Template Substitution Variables
+
 All templates used in JSS recipes will perform text substitution before attempting to upload to the JSS. A text substitution variable is indicated by surrounding a variable name in "%"'s. Substitution will occur if an AutoPkg environement variable exists for that substition (i.e., if you put `%giant_burrito%` in your template, and there's no AutoPkg "giant_burrito", then nothing will happen).
 
 JSSImporter defines the following default substitution variables:
@@ -426,21 +415,41 @@ JSSImporter defines the following default substitution variables:
 
 However, any AutoPkg environment variable may be accessed in this manner. For example, `AUTOPKG_VERSION` can be substituted in a template by wrapping in "%", i.e. `%AUTOPKG_VERSION%`. 
 
-Using Overrides
-=================
+## Using Overrides
+
 All of my recipes are designed to allow you to use overrides to change the major input variables. However, if you *do* use overrides, you may experience unexpected difficulties. Since the override recipe lives in your `~/Library/AutoPkg/RecipeOverrides/` folder, the %RECIPE_DIR% substitution in those recipes now points to the RecipeOverrides folder rather than the base jss.recipe. You will probably need to copy all of the recipe's needed support files: templates, scripts, and icons, to the override directory. Hopefully some time soon AutoPkg can add a %PARENT_RECIPE_DIR% variable for overrides to use.
 
-SSL
-===
-If you have issues with certificate validation (either a self-signed certificate on a JSS instance, or issues due to Python's weak SSL support in 2.x on OS X), there is an additional boolean preference you can set to disable SSL verification:
+# Notes for Developers and the Intrigued
 
-    defaults write com.github.autopkg JSS_VERIFY_SSL -bool false
+## Developer Setup
 
-This value defaults to true.
+If you want to hack on the code, you will need to fork & clone the project. An easy way to work is to symlink JSSImporter.py into your autopkglib folder (i.e. `ln -sf /Library/AutoPkg/autopkglib/JSSImporter.py <this_repos_dir>`). If you are using a different python-jss release, replace the copy in /Library/Application Support/JSSImporter.
 
-Comments/Questions/Ideas
-=================
+If you want to build JSSImporter packages, you will need the following dependencies:
 
-Please send me feature requests or issues through the Github page.
+- [The Luggage](https://github.com/unixorn/luggage)
+- A copy of the python-jss you intend to package, placed in the JSSImporter repo folder 
+	- e.g. put the python-jss repo's `jss` folder in this folder.
 
-I'm working on a series of blog posts covering software testing best practices with Casper, and how to configure JSSImporter, and write recipes for it, on my [blog](http://labs.da.org/wordpress/sheagcraig/)
+Then you can do `make pkg` from the repo directory to generate an installer package.
+
+## How JSSImporter is Installed
+
+JSSImporter is available primarily as an Apple installer package, which installs two things:
+
+- JSSImporter.py is put into /Library/AutoPkg/autopkglib so AutoPkg can "find" it.
+- python-jss, which does all of the actual API calls, is put into /Library/Application Support/JSSImporter. JSSImporter inserts this path into the first entry of its python system path so that it will use the python-jss bundled in the installer package over any other instance.
+
+In the past, python-jss was installed from the Python Packaging Index like any other python package. This is a common practice for python developers, but can cause confusion when you're only interested in running AutoPkg. This made it easier to install python requests, which was a dependency prior to the 2.0 versions of python-jss.
+
+Therefore, the decision was made to make a dedicated support folder for JSSImporter and use it for storing a copy of python-jss. Also, python-jss 2.0+ can use the system curl when python-requests is not available, so there is no need to pip install requests any longer.
+
+This can complicate casually testing upcoming JSSImporter or python-jss releases, but fear not. Read below...
+
+## I want to test a newer python-jss or JSSImporter
+
+If you are interested in testing a newer version of either JSSImporter or python-jss, you can do so by cloning or downloading the testing branch desired from either project and copying them into the locations listed above in the "How JSSImporter is Installed" section.
+
+JSSImporter will output its version, and that of python-jss, so verbose invocations of AutoPkg will include confirmation of the versions in use.
+
+Python will look in the current working directory for imports before anything in the path, so if you're still seeing older versions listed, make sure you don't have a copy of python-jss in the /Library/AutoPkg/autopkglib folder.
