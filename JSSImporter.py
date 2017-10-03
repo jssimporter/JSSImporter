@@ -266,10 +266,14 @@ class JSSImporter(Processor):
         """Main processor code."""
         # Ensure we have the right version of python-jss
         python_jss_version = StrictVersion(PYTHON_JSS_VERSION)
+        self.output("python-jss version: %s." % python_jss_version)
         if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
-            self.output("Requires python-jss version: %s. Installed: %s" %
-                        (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
+            self.output(
+                "python-jss version is too old. Please update to version: %s."
+                % REQUIRED_PYTHON_JSS_VERSION)
             raise ProcessorError
+
+        self.output("JSSImporter version: %s." % __version__)
 
         # clear any pre-existing summary result
         if "jss_importer_summary_result" in self.env:
