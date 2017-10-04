@@ -15,6 +15,9 @@ All notable changes to this project will be documented in this file. This projec
 - Fixed some style issues.
 - Fixed some lint issues.
 
+### Added
+- If a mountable distribution point is mounted prior to the JSSImporter run, JSSImporter won't unmount at the conclusion of the run (#100).
+
 ## [0.5.1] - 2015-09-30 - I've Got a Bike, You Can Ride it if You Like
 
 ### Fixed

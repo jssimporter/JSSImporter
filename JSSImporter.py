@@ -292,7 +292,13 @@ class JSSImporter(Processor):
         self.policy_category = self.handle_category("policy_category")
 
         # Get our DPs read for copying.
+        for dp in self.jss.distribution_points:
+            if hasattr(dp, 'is_mounted') and dp.is_mounted():
+                dp.was_mounted = True
+            else:
+                dp.was_mounted = False
         self.jss.distribution_points.mount()
+
         self.package = self.handle_package()
         # Build our text replacement dictionary
         self.build_replace_dict()
@@ -302,8 +308,11 @@ class JSSImporter(Processor):
         self.scripts = self.handle_scripts()
         self.policy = self.handle_policy()
         self.handle_icon()
+
         # Done with DPs, unmount them.
-        self.jss.distribution_points.umount()
+        for dp in self.jss.distribution_points:
+            if not dp.was_mounted:
+                self.jss.distribution_points.umount()
 
         self.summarize()
 
