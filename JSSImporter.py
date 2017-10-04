@@ -211,6 +211,13 @@ class JSSImporter(Processor):
                 "missing or value is blank, policy creation will be skipped.",
             "default": "",
         },
+        "policy_action_type": {
+            "required": False,
+            "description":
+                "Type of policy 'package_configuration' to perform. Must be "
+                "one of 'Install', 'Cache', 'Install Cached'.",
+            "default": "Install",
+        },
         "self_service_description": {
             "required": False,
             "description":
@@ -951,7 +958,9 @@ class JSSImporter(Processor):
         if self.package is not None:
             self.ensure_xml_structure(policy_template,
                                       "package_configuration/packages")
-            policy_template.add_package(self.package)
+            action_type = self.env['policy_action_type']
+            self.output("Setting policy to '%s' package." % action_type)
+            policy_template.add_package(self.package, action_type=action_type)
 
     def add_icon_to_policy(self, policy_template, icon_xml):
         """Add an icon to a self service policy."""

@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Added
 - If a mountable distribution point is mounted prior to the JSSImporter run, JSSImporter won't unmount at the conclusion of the run (#100).
+- You can now set a `policy_action_type` to set the `package_configuration` section of a Policy to `Cache` or `Install Cached` in addition to the default value of `Install`. (#75).
 
 ## [0.5.1] - 2015-09-30 - I've Got a Bike, You Can Ride it if You Like
 
