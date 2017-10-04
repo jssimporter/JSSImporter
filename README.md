@@ -84,6 +84,9 @@ In addition the URL, user, and password preferences, there are a few others you 
 - `JSS_MIGRATED`: Boolean. If you have "migrated" your JSS (uses the web interface to edit scripts), set to `True`. Defaults to `False`. This only really comes into play if you have an AFP or SMB share *and* have migrated.
 - `JSS_SUPPRESS_WARNINGS`: Boolean. Determines whether to suppress urllib3 warnings *when* you are using python requests as the request handler. This has no effect on curl. If you choose not to verify SSL with JSS_VERIFY_SSL, urllib3 throws warnings for each of the numerous requests JSSImporter makes. If you would like to see them, set to `False`. Defaults to `True`.
 
+## A note on passwords
+These instructions walk you through setting preferences through bash commandline tools (PlistBuddy, defaults). JSSImporter is written in Python. JSSImporter is often used in AutoPkgr which adds Objective-C to the mix. And the templates are all XML. Each of these languages has reserved characters, some of which may be in your API user's or distribution point's password. If you are having weird issues with authentication errors, even though you *know* you are typing the password in correctly to `defaults`/AutoPkgr/etc, please sidestep the issue entirely and create a password that is truly secure and try again. "Special characters" do not automatically create password complexity. Just randomly generate a very long alphanumeric password and you'll be golden. You won't be typing it in pretty much ever, so the length is not going to be a nuisance, compared to the anxiety attacks you may experience trying to figure out the intracies of encoding and decoding passwords back and forth through all of these different languages. This is not to say that JSSImporter doesn't do its best job trying to handle these correctly; but rather that there are enough FAQ password issues that it makes sense to just call it out and spare yourself the mysterious issues introduced when bash expands the `!` or `$` in your password to something *mysterious*.
+
 ## Adding distribution points.
 You will need to specify your distribution points in the preferences as well. The JSSImporter will copy packages and scripts to all configured distribution points using the `JSS_REPOS` key. The value of this key is an array of dictionaries, which means you have to switch tools and use PlistBuddy. Of course, if you want to go all punk rock and edit this by hand like a savage, go for it. At least use vim.
 
@@ -276,7 +279,6 @@ This way, you can ensure that what is specified in the recipe is what is on the 
 
 ## Researching your JSS
 
-
 While setting this all up, you will probably want to see some valid XML straight from the horse's mouth. There are a few ways to look at the XML directly:
 
 1. The API documentation on your JSS includes a web interface for looking things up. Just add /api to your JSS's web address, i.e. https://yourcasperserver.org:8443/api
@@ -295,7 +297,6 @@ Categories are specified through the input variables `category` and `policy_cate
 If you don't specify a category when adding a package or a policy, the JSS will assign it the category of "Unknown", which therefore is JSSImporter's behavior as well.
 
 ## Packages
-
 
 Not surprisingly, packages are forwarded on from ParentRecipes seamlessly. However, if you need to specify an `os_requirements` setting, there's an input variable for that. The format follows that of the JSS: a comma-delimeted list of acceptable versions, with 'x' as a wildcard, e.g. `10.8.6, 10.9.x`.
 
