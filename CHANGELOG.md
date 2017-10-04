@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file. This projec
 - Fixed some style issues.
 - Fixed some lint issues.
 - JSSImporter now looks for categories used in templates, and creates them if they don't exist. This solves #55 (involving scripts). It does create a precedence situation for one case: if you have a `policy_category` input variable set will always win; even if there's no category tag in the policy template, even if it's not the same as `policy_category`. This should not be an issue for anybody, however.
+- `version` is no longer a required input variable. It will default to "0.0.0.0" when it's not present, and issue a warning in the output because this is probably not what you want. Solves #72.
 
 ### Added
 - If a mountable distribution point is mounted prior to the JSSImporter run, JSSImporter won't unmount at the conclusion of the run (#100).

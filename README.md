@@ -406,7 +406,7 @@ If you don't want to worry about icons, just leave out the `self_service_icon` k
 All templates used in JSS recipes will perform text substitution before attempting to upload to the JSS. A text substitution variable is indicated by surrounding a variable name in "%"'s. Substitution will occur if an AutoPkg environement variable exists for that substition (i.e., if you put `%giant_burrito%` in your template, and there's no AutoPkg "giant_burrito", then nothing will happen).
 
 JSSImporter defines the following default substitution variables:
-- `%VERSION%`: The AutoPkg version variable.
+- `%VERSION%`: The AutoPkg version variable. If this hasn't been provided anywhere, JSSImporter uses "0.0.0.0" (and outputs a warning) since the jss-recipes repo heavily uses `%VERSION%`.
 - `%PKG_NAME%`: The name of the package. Specifically, the display name that the JSS uses to represent that package. Usually the filename.
 - `%PROD_NAME%`: The value of the input variable `%prod_name%`. Note, `%prod_name%` is a required recipe input variable.
 - `%POLICY_CATEGORY%`: The value of `%policy_category%`, if specified, or "Unknown", if not-this is what the JSS will assign anyway.
