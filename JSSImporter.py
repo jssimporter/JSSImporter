@@ -337,15 +337,17 @@ class JSSImporter(Processor):
             "jss_policy_added", "jss_policy_updated", "jss_icon_uploaded")
         self.env["jss_changed_objects"] = {key: [] for key in keys}
 
-    def handle_category(self, category_type):
+    def handle_category(self, category_type, category_name=None):
         """Ensure a category is present."""
         if self.env.get(category_type):
             category_name = self.env.get(category_type)
+
+        if category_name:
             try:
                 category = self.jss.Category(category_name)
-                self.output("Category type: %s-'%s' already exists "
-                            "according to JSS, moving on..." %
-                            (category_type, category_name))
+                self.output(
+                    "Category type: %s-'%s' already exists according to JSS, "
+                    "moving on..." % (category_type, category_name))
             except jss.GetError:
                 # Category doesn't exist
                 category = jss.Category(self.jss, category_name)
@@ -697,6 +699,14 @@ class JSSImporter(Processor):
         # Create a new object from the template
         recipe_object = self.get_templated_object(obj_cls, template_path)
 
+        # Ensure categories exist prior to using them in an object.
+        try:
+            category_name = recipe_object.category
+        except AttributeError:
+            category_name = None
+        if category_name:
+            self.handle_category(obj_cls.root_tag, category_name)
+
         if not name:
             name = recipe_object.name
 
@@ -711,6 +721,16 @@ class JSSImporter(Processor):
         # If object is a Policy, we need to inject scope, scripts,
         # package, and an icon.
         if obj_cls is jss.Policy:
+            # If a policy_category has been given as an input variable,
+            # it wins. Replace whatever is in the template, and add in
+            # a category tag if it isn't there.
+            if self.env.get('policy_category'):
+                policy_category = recipe_object.find('category')
+                if not policy_category:
+                    policy_category = ElementTree.SubElement(
+                        recipe_object, "category")
+                    policy_category.text = self.env.get('policy_category')
+
             if existing_object is not None:
                 # If this policy already exists, and it has an icon set,
                 # copy its icon section to our template, as we have no

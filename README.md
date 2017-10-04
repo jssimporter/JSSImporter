@@ -381,6 +381,8 @@ Policies are generated on the fly by supplying the JSSImporter with a policy tem
 
 Indeed, the only input variables for policies are `policy_category`, discussed earlier, and `policy_template`, which should be a path to a policy template, an example of which is included with this project. Again, you can experiment with values in the web interface, and then get the XML data from either an API lookup through the API documentation for your server, https://yourcasperserver:8443/api/, or if you're feeling spicy, through [jss_helper](https://github.com/sheagcraig/jss_helper) or through the [python-jss](https://github.com/sheagcraig/python-jss) wrapper.
 
+If the `policy_category` value is set, it will be used to create a category, even if the policy template doesn't template that value into the policy's category spot using the `$POLICY_CATEGORY%` replacement variable. Likewise, if you set input variable `policy_category`, it will be used in the policy template even if it doesn't use the replacemement tag or doesn't have a category tag to begin with. If you make a mistake and specify `policy_category` and hardcode a category into the policy template, only the `policy_category` will be created, and the policy will use it, e.g. `policy_category` *wins*.
+
 See the "Template" section for a list of all of the string replacement variables.
 
 You can skip policy creation by leaving out the `policy_template` key, or specifying an empty value for the `policy_template`. I.e.:
