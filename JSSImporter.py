@@ -92,6 +92,7 @@ class JSSImporter(Processor):
                 "Version number of software to import - usually provided "
                 "by previous pkg recipe/processor, but if not, defaults to "
                 "'0.0.0.0'. ",
+            "default": "0.0.0.0"
         },
         "JSS_REPOS": {
             "required": False,
@@ -285,8 +286,7 @@ class JSSImporter(Processor):
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]
         self.version = self.env.get("version")
-        if not self.version:
-            self.version = "0.0.0.0"
+        if self.version == "0.0.0.0":
             self.output(
                 "Warning: No `version` was added to the AutoPkg env up to "
                 "this point. JSSImporter is defaulting to version %s!"
