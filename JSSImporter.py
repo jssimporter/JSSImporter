@@ -196,7 +196,7 @@ class JSSImporter(Processor):
             "required": False,
             "description":
                 "Ensure that the package is installed on the boot drive "
-                after imaging. Boolean. Defaults to 'True'",
+                "after imaging. Boolean. Defaults to 'True'",
             "default": "True"
         },
         "groups": {
@@ -349,8 +349,11 @@ class JSSImporter(Processor):
         self.build_replace_dict()
 
         self.extattrs = self.handle_extension_attributes()
-        self.groups = self.handle_groups()
-        self.exclusion_groups = self.handle_exclusion_groups()
+
+        self.groups = self.handle_groups(self.env.get("groups"))
+        self.exclusion_groups = self.handle_groups(
+            self.env.get("exclusion_groups"))
+
         self.scripts = self.handle_scripts()
         self.policy = self.handle_policy()
         self.handle_icon()
@@ -510,27 +513,8 @@ class JSSImporter(Processor):
                 results.append(extattr_object)
         return results
 
-    def handle_groups(self):
+    def handle_groups(self, groups):
         """Manage group existence and creation."""
-        groups = self.env.get("groups")
-        computer_groups = []
-        if groups:
-            for group in groups:
-                if self.validate_input_var(group):
-                    is_smart = group.get("smart", False)
-                    if is_smart:
-                        computer_group = self.add_or_update_smart_group(group)
-                    else:
-                        computer_group = (
-                            self.add_or_update_static_group(group))
-
-                    computer_groups.append(computer_group)
-
-        return computer_groups
-
-    def handle_exclusion_groups(self):
-        """Manage group existence and creation."""
-        groups = self.env.get("exclusion_groups")
         computer_groups = []
         if groups:
             for group in groups:

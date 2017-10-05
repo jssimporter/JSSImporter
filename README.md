@@ -317,11 +317,26 @@ For JDS DP's, packages are only uploaded if a package-object was created. To re-
 
 If you would like to _not_ upload a package and _not_ add a package install action to a Policy, specify a `pkg_path` with a blank value to let JSSImporter know to skip package handling. Chances are extremely good that a previous step in a Parent pkg recipe set `pkg_path`, so you need to *un*-set it. Why would this be useful? Some organizations are using AutoPkg and JSSImporter to automate the creation of multiple policies per product-one to actually install the product, and another to notify the user of an available update. This is a lot of work to go through to try to be [Munki](https://www.munki.org), but it may improve the experience for users, since Casper will happily install apps while a user is logged in. Regardless, you can simply specify a second JSSImporter processor in your jss recipe, making sure to set `pkg_path` to a blank value (e.g: `<string/>`), and crafting the arguments and templates appropriately.
 
-## Groups
+## Groups & Scope
 
 You may specify any number of static and smart groups to scope your policy to (including none). The `groups` input variable should be an array of group dictionaries. Each group dictionary needs a name. Additionally, the optional `smart` property should be `True`, and you will need to include the path, `template_path`, to an XML template for your smart group.
 
 Static groups need only a name.
+
+Here is an example `groups` array from the jss-recipes repo:
+```
+<key>groups</key>
+<array>
+	<dict>
+		<key>name</key>
+		<string>%GROUP_NAME%</string>
+		<key>smart</key>
+		<true/>
+		<key>template_path</key>
+		<string>%GROUP_TEMPLATE%</string>
+	</dict>
+</array>
+```
 
 Smart groups require an XML template, but, like for policies, the template can do some variable substitution, so you can often get away with a single template file for all of your recipes. The easiest way to see the correct XML structure for a smart gruop is to create one in the web interface, and then look it up with the api at https://yourcasperserver:8443/api/#!/computergroups/findComputerGroupsByName_get
 
@@ -369,6 +384,9 @@ See the "Template" section for a list of all of the string replacement variables
 _NOTE_: Applications that don't install into `/Applications` will not be available for "Application Title" criteria. The best solution is to create an extension attribute that returns the version number of the app in question and use that value in your smart group criteria. If you look at the Adobe Flash Player, Silverlight, or Oracle Java 7 recipes in [my jss recipe repo](https://github.com/sheagcraig/jss-recipes), there are examples of how to solve this problem.
 
 You can of course *also*/*instead* set the Computer Management/Computer Inventory Collection/Software/Plug-ins setting in Casper to "Collect Plug-ins", which should already know the right path to check for Internet Plugins.
+
+### Exclusion Groups
+JSSImporter can use group exclusions in its scope as well. Specify an `exclusion_groups` array of group dictionaries exactly as per groups above to do so.
 
 ## Scripts
 
