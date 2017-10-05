@@ -27,6 +27,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Fixed
 - An underscore was added to the report header for `Extension_Attributes` so AutoPkgr doesn't freak out. Thanks @homebysix (#83).
+- JSSImporter now takes scripts, reads them in, escapes them for XML, and adds them to the script object's `script_contents` tag and does not try to copy them ever. This was needed in the past, but now presumably all JSS have been "migrated" and need the script in the DB rather than on disk. (#116).
 
 ## [0.5.1] - 2015-09-30 - I've Got a Bike, You Can Ride it if You Like
 
