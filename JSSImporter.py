@@ -198,7 +198,7 @@ class JSSImporter(Processor):
                 "Ensure that the package is installed on the boot drive "
                 after imaging. Boolean. Defaults to 'True'",
             "default": "True"
-        },        
+        },
         "groups": {
             "required": False,
             "description":
@@ -447,11 +447,11 @@ class JSSImporter(Processor):
                                pkg_update)
             self.update_object(package_info, package, "info", pkg_update)
             self.update_object(package_notes, package, "notes", pkg_update)
-            self.update_object(package_priority, package, "priority", 
+            self.update_object(package_priority, package, "priority",
                                 pkg_update)
             self.update_object(package_reboot, package, "reboot_required",
                                 pkg_update)
-            self.update_object(package_boot_volume_required, package, 
+            self.update_object(package_boot_volume_required, package,
                                 "boot_volume_required", pkg_update)
 
             # Ensure packages are on distribution point(s)

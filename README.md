@@ -1,5 +1,3 @@
-
-
 This processor adds the ability for AutoPkg to create groups, upload packages and scripts, add extension attributes, and create policies for the Casper JSS, allowing you to fully-automate your software *testing* workflow. 
 
 This project began from Allister Banks' original [jss-autopkg-addon project](https://github.com/arubdesu/jss-autopkg-addon), but has since diverged ~~considerably~~ completely to add greater customization options while maintaining the existing functionality.
@@ -300,7 +298,17 @@ If you don't specify a category when adding a package or a policy, the JSS will 
 
 Not surprisingly, packages are forwarded on from ParentRecipes seamlessly. However, if you need to specify an `os_requirements` setting, there's an input variable for that. The format follows that of the JSS: a comma-delimeted list of acceptable versions, with 'x' as a wildcard, e.g. `10.8.6, 10.9.x`.
 
-Packages accept two other arguments: `package_notes` and `package_info` for specifying the corresponding fields on the package object. 
+Packages accept several other arguments: `package_notes` and `package_info` for specifying the corresponding fields on the package object, and `package_priority`, `package_reboot`, and `package_boot_volume_required` for controlling various installation settings.
+
+### Package input variables:
+|Variable|Description|Default|
+|--------|-----------|-------|
+|`os_requirements`|Comma-delimited list of acceptable versions, using `x` as a wildcard character|None|
+|`package_notes`|Notes field on package object|None|
+|`package_info`|Info field on package object|None|
+|`package_priority`|Priority to use for deploying or uninstalling the package. String value between 1 and 20.|"10"|
+|`package_reboot`|Specify whether computers must be restarted after installation. Accepts boolean values.|False|
+|`package_boot_volume_required`|Ensures that the package is installed on the boot volume after imaging. Accepts boolean values.|True|
 
 To save on time spent uploading, the JSSImporter processor only uploads a package to the distribution points when it think it is needed. Specifically, on AFP/SMB DP's, it compares the filename of the package just created with those on the DP, and uploads if it is missing. On a JDS, it only uploads a package if a new package-object was created.
 
