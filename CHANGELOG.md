@@ -21,7 +21,7 @@ All notable changes to this project will be documented in this file. This projec
 - If a mountable distribution point is mounted prior to the JSSImporter run, JSSImporter won't unmount at the conclusion of the run (#100).
 - You can now set a `policy_action_type` to set the `package_configuration` section of a Policy to `Cache` or `Install Cached` in addition to the default value of `Install`. (#75).
 - New Package input variables allow you to specify the priority, restart, and boot drive after imaging requirements (#87 - Thanks @jusmig!)
-- Ability to add `exclusion_groups` to the policy scope. This feature works exactly like the regular scoping groups. Thanks to @BadStreff for the contribution, #93.
+- Ability to add `exclusion_groups` to the policy scope. This feature works exactly like the regular scoping groups. Thanks to @BadStreff for the contribution, #93. Issue #92.
 - Added `Name` and `Version` to the AutoPkg summary. Thanks for the contribution @ChrOst (#71).
 
 ### Fixed
