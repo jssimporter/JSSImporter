@@ -23,6 +23,7 @@ import os
 import shutil
 import sys
 from xml.etree import ElementTree
+from xml.sax.saxutils import escape
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
 import jss
@@ -225,7 +226,7 @@ class JSSImporter(Processor):
                 "Array of script dictionaries. Wrap each script in "
                 "a dictionary. Script keys include 'name' (Name of the script "
                 "to use, required), 'template_path' (string: path to template "
-                "file to" " use for script, required)",
+                "file to use for script, required)",
         },
         "extension_attributes": {
             "required": False,
@@ -547,15 +548,23 @@ class JSSImporter(Processor):
             for script in scripts:
                 script_file = self.find_file_in_search_path(
                     script["name"])
+                try:
+                    with open(script_file) as script_handle:
+                        script_contents = script_handle.read()
+                except IOError:
+                    raise ProcessorError(
+                        "Script '%s' could not be read!" % script_file)
+
+                escaped_script_contents = escape(script_contents)
+
                 script_object = self.update_or_create_new(
                     jss.Script,
                     script["template_path"],
                     os.path.basename(script_file),
                     added_env="jss_script_added",
-                    update_env="jss_script_updated")
+                    update_env="jss_script_updated",
+                    script_contents=escaped_script_contents)
 
-                # Copy the script to the distribution points.
-                self.copy(script_file, id_=script_object.id)
                 results.append(script_object)
 
         return results
@@ -750,8 +759,9 @@ class JSSImporter(Processor):
         self.replace_dict = replace_dict
 
     # pylint: disable=too-many-arguments
-    def update_or_create_new(self, obj_cls, template_path, name="",
-                             added_env="", update_env=""):
+    def update_or_create_new(
+        self, obj_cls, template_path, name="", added_env="", update_env="",
+        script_contents=""):
         """Check for an existing object and update it, or create a new
         object.
 
@@ -765,6 +775,7 @@ class JSSImporter(Processor):
                 added.
             update_env: The environment var to update if an object is
                 updated.
+            script_contents (str): XML escaped script.
 
         Returns:
             The recipe object after updating.
@@ -815,6 +826,12 @@ class JSSImporter(Processor):
             self.add_scope_to_policy(recipe_object)
             self.add_scripts_to_policy(recipe_object)
             self.add_package_to_policy(recipe_object)
+
+        # If object is a script, add the passed contents to the object.
+        # throw it into the `script_contents` tag of the object.
+        if obj_cls is jss.Script and script_contents:
+            tag = ElementTree.SubElement(recipe_object, "script_contents")
+            tag.text = script_contents
 
         if existing_object is not None:
             # Update the existing object.
