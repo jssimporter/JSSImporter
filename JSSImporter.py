@@ -342,7 +342,9 @@ class JSSImporter(Processor):
                 dp.was_mounted = True
             else:
                 dp.was_mounted = False
-        self.jss.distribution_points.mount()
+        # Don't bother mounting the DPs if there's no package.
+        if self.env["pkg_path"]:
+            self.jss.distribution_points.mount()
 
         self.package = self.handle_package()
         # Build our text replacement dictionary
