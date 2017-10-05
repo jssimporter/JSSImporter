@@ -425,7 +425,12 @@ class JSSImporter(Processor):
         first.
         """
         # Skip package handling if there is no package or repos.
-        if self.env["JSS_REPOS"] and self.env["pkg_path"] != "":
+        pkg_path = self.env["pkg_path"]
+        if self.env["JSS_REPOS"] and pkg_path != "":
+            # Ensure that `pkg_path` is valid.
+            if not os.path.exists(pkg_path):
+                raise ProcessorError(
+                    "JSSImporter can't find a package at '%s'!" % pkg_path)
             os_requirements = self.env.get("os_requirements")
             package_info = self.env.get("package_info")
             package_notes = self.env.get("package_notes")
@@ -435,11 +440,13 @@ class JSSImporter(Processor):
                 "package_boot_volume_required")
             # See if the package is non-flat (requires zipping prior to
             # upload).
-            if os.path.isdir(self.env["pkg_path"]):
-                shutil.make_archive(self.env["pkg_path"], "zip",
-                                    os.path.dirname(self.env["pkg_path"]),
-                                    self.pkg_name)
-                self.env["pkg_path"] += ".zip"
+            if os.path.isdir(pkg_path):
+                shutil.make_archive(
+                    pkg_path, "zip", os.path.dirname(pkg_path), self.pkg_name)
+                pkg_path += ".zip"
+                # Make sure our change gets added back into the env for
+                # visibility.
+                self.env["pkg_path"] = pkg_path
                 self.pkg_name += ".zip"
 
             try:
@@ -483,12 +490,12 @@ class JSSImporter(Processor):
             # will upload to the correct package object. Ignored by
             # AFP/SMB.
             if self.env["jss_changed_objects"]["jss_package_added"]:
-                self.copy(self.env["pkg_path"], id_=package.id)
+                self.copy(pkg_path, id_=package.id)
             # For AFP/SMB shares, we still want to see if the package
             # exists.  If it's missing, copy it!
             elif not self.jss.distribution_points.exists(
-                    os.path.basename(self.env["pkg_path"])):
-                self.copy(self.env["pkg_path"])
+                    os.path.basename(pkg_path)):
+                self.copy(pkg_path)
             else:
                 self.output("Package upload not needed.")
         else:
