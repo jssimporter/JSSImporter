@@ -23,6 +23,9 @@ All notable changes to this project will be documented in this file. This projec
 - New Package input variables allow you to specify the priority, restart, and boot drive after imaging requirements (#87 - Thanks @jusmig!)
 - Ability to add `exclusion_groups` to the policy scope. This feature works exactly like the regular scoping groups. Thanks to @BadStreff for the contribution, #93.
 
+### Fixed
+- An underscore was added to the report header for `Extension_Attributes` so AutoPkgr doesn't freak out. Thanks @homebysix (#83).
+
 ## [0.5.1] - 2015-09-30 - I've Got a Bike, You Can Ride it if You Like
 
 ### Fixed
