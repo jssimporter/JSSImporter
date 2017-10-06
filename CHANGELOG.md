@@ -31,7 +31,7 @@ All notable changes to this project will be documented in this file. This projec
 - JSSImporter now takes scripts, reads them in, escapes them for XML, and adds them to the script object's `script_contents` tag and does not try to copy them ever. This was needed in the past, but now presumably all JSS have been "migrated" and need the script in the DB rather than on disk. (#116).
 
 ### Removed
-- The `JSS_MIGRATED` preference has been removed. If you have it in your config, it will be ignored, but there is no need for this with version 9+ of the JSS.
+- The `JSS_MIGRATED` preference has been removed. If you have it in your config, it will be ignored, but there is no need for this with version 9+ of the JSS. (#118).
 
 ## [0.5.1] - 2015-09-30 - I've Got a Bike, You Can Ride it if You Like
 
