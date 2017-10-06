@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. This projec
 ## [Unreleased][unreleased]
 
 ### Changed
+- JSSImporter and JSS now support version 9 and newer of the JSS.
 - Installation package Makefile is included in project repo.
 - python-jss is now bundled with JSSImporter, and JSSImporter will use /Library/Application Support/JSSImporter/jss.
 - Bundled python-jss is the 2.0.0 release, which overhauls a number of things including HTTP requests. JSSImporter has been updated to use the (very slightly-changed) API.
@@ -28,6 +29,9 @@ All notable changes to this project will be documented in this file. This projec
 ### Fixed
 - An underscore was added to the report header for `Extension_Attributes` so AutoPkgr doesn't freak out. Thanks @homebysix (#83).
 - JSSImporter now takes scripts, reads them in, escapes them for XML, and adds them to the script object's `script_contents` tag and does not try to copy them ever. This was needed in the past, but now presumably all JSS have been "migrated" and need the script in the DB rather than on disk. (#116).
+
+### Removed
+- The `JSS_MIGRATED` preference has been removed. If you have it in your config, it will be ignored, but there is no need for this with version 9+ of the JSS.
 
 ## [0.5.1] - 2015-09-30 - I've Got a Bike, You Can Ride it if You Like
 

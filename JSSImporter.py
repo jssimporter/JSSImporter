@@ -131,13 +131,6 @@ class JSSImporter(Processor):
                 " with the JSS will be skipped. Defaults to 'True'.",
             "default": True,
         },
-        "JSS_MIGRATED": {
-            "required": False,
-            "description":
-                "Set to True if you use an AFP or SMB share *and* "
-                "you have migrated your JSS. Defaults to 'False'.",
-            "default": False,
-        },
         "JSS_SUPPRESS_WARNINGS": {
             "required": False,
             "description":
@@ -375,7 +368,6 @@ class JSSImporter(Processor):
             'user': self.env['API_USERNAME'],
             'password': self.env['API_PASSWORD'],
             'ssl_verify': self.env["JSS_VERIFY_SSL"],
-            'jss_migrated': self.env["JSS_MIGRATED"],
             'repo_prefs': self.env["JSS_REPOS"]}
         self.jss = jss.JSS(**kwargs)
 

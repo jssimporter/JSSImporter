@@ -79,7 +79,6 @@ This value defaults to true, because you should want to verify both where you're
 ## Additional Preferences
 In addition the URL, user, and password preferences, there are a few others you may want to use.
 - `JSS_VERIFY_SSL`: Boolean (True or False). Whether or not to verify SSL traffic. Defaults to `True`, and recommended. (See SSL section above).
-- `JSS_MIGRATED`: Boolean. If you have "migrated" your JSS (uses the web interface to edit scripts), set to `True`. Defaults to `False`. This only really comes into play if you have an AFP or SMB share *and* have migrated.
 - `JSS_SUPPRESS_WARNINGS`: Boolean. Determines whether to suppress urllib3 warnings *when* you are using python requests as the request handler. This has no effect on curl. If you choose not to verify SSL with JSS_VERIFY_SSL, urllib3 throws warnings for each of the numerous requests JSSImporter makes. If you would like to see them, set to `False`. Defaults to `True`.
 
 ## A note on passwords
