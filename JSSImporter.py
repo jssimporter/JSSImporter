@@ -332,6 +332,8 @@ class JSSImporter(Processor):
         self.policy_category = self.handle_category("policy_category")
 
         # Get our DPs read for copying.
+        if len(self.jss.distribution_points) == 0:
+            self.output("Warning: No distribution points configured!")
         for dp in self.jss.distribution_points:
             if hasattr(dp, 'is_mounted') and dp.is_mounted():
                 dp.was_mounted = True
