@@ -314,6 +314,7 @@ class JSSImporter(Processor):
             del self.env["jss_importer_summary_result"]
 
         self.create_jss()
+        self.output("JSS version: '{}'".format(self.jss.version()))
 
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]

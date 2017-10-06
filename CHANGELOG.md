@@ -18,7 +18,7 @@ JSSImporter, and really python-jss now uses the system `curl` to do all requests
 - python-jss is now bundled with JSSImporter, and JSSImporter will use /Library/Application Support/JSSImporter/jss.
 - Bundled python-jss is the 2.0.0 release, which overhauls a number of things including HTTP requests. JSSImporter has been updated to use the (very slightly-changed) API.
 	- python-jss now uses curl unless python requests is available. This avoids the need for working around Apple's ancient python and OpenSSL situation.
-- JSSImporter outputs its version and python-jss's version during a verbose run.
+- JSSImporter outputs its version, python-jss's version, and the JSS's version, during a verbose run.
 - Reordered code.
 - Fixed some style issues.
 - Fixed some lint issues.
