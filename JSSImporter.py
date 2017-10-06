@@ -830,7 +830,10 @@ class JSSImporter(Processor):
 
         if existing_object is not None:
             # Update the existing object.
-            self.jss.put(existing_object.url, recipe_object)
+            # Copy the ID from the existing object to the new one so
+            # that it knows how to save itself.
+            recipe_object._basic_identity["id"] = existing_object.id
+            recipe_object.save()
             # Retrieve the updated XML.
             recipe_object = search_method(name)
             self.output("%s: %s updated." % (obj_cls.__name__, name))
