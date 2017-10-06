@@ -15,5 +15,6 @@ pack-Library-AutoPkg-autopkglib-JSSImporter: l_Library
 pack-Library-JSSImporter: l_Library
 	@sudo mkdir -p ${WORK_D}/Library/Application\ Support/JSSImporter
 	@sudo rm -rf jss/*.pyc
+	@sudo rm -rf jss/contrib/*.pyc
 	@sudo cp -R jss ${WORK_D}/Library/Application\ Support/JSSImporter
 
