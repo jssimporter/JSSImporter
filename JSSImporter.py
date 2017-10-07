@@ -389,9 +389,10 @@ class JSSImporter(Processor):
         if self.env.get(category_type):
             category_name = self.env.get(category_type)
 
-        if category_name:
+        if category_name is not None:
             try:
                 category = self.jss.Category(category_name)
+                category_name = category.name
                 self.output(
                     "Category type: %s-'%s' already exists according to JSS, "
                     "moving on..." % (category_type, category_name))
@@ -779,11 +780,13 @@ class JSSImporter(Processor):
         recipe_object = self.get_templated_object(obj_cls, template_path)
 
         # Ensure categories exist prior to using them in an object.
+        # Text replacement has already happened, so categories should
+        # be in place.
         try:
-            category_name = recipe_object.category
+            category_name = recipe_object.category.text
         except AttributeError:
             category_name = None
-        if category_name:
+        if category_name is not None:
             self.handle_category(obj_cls.root_tag, category_name)
 
         if not name:
@@ -805,7 +808,7 @@ class JSSImporter(Processor):
             # a category tag if it isn't there.
             if self.env.get('policy_category'):
                 policy_category = recipe_object.find('category')
-                if not policy_category:
+                if policy_category is None:
                     policy_category = ElementTree.SubElement(
                         recipe_object, "category")
                     policy_category.text = self.env.get('policy_category')
