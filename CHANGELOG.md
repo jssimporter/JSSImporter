@@ -33,6 +33,7 @@ JSSImporter, and really python-jss now uses the system `curl` to do all requests
 - Ability to add `exclusion_groups` to the policy scope. This feature works exactly like the regular scoping groups. Thanks to @BadStreff for the contribution, #93. Issue #92.
 - Added `Name` and `Version` to the AutoPkg summary. Thanks for the contribution @ChrOst (#71).
 - JSSImporter will warn you that no distribution points are configured (and python-jss will fail if you configure a DP that doesn't configure correctly). (#85).
+- JSSImporter will enable python-jss's verbose output when AutoPkg has a verbosity of 4 or more (i.e. `autopkg run -vvvv yo.jss`.
 
 ### Fixed
 - An underscore was added to the report header for `Extension_Attributes` so AutoPkgr doesn't freak out. Thanks @homebysix (#83).

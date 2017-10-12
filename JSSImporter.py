@@ -373,6 +373,8 @@ class JSSImporter(Processor):
             'ssl_verify': self.env["JSS_VERIFY_SSL"],
             'repo_prefs': self.env["JSS_REPOS"]}
         self.jss = jss.JSS(**kwargs)
+        if self.env.get('verbose', 1) >= 4:
+            self.jss.verbose = True
 
     def init_jss_changed_objects(self):
         """Build a dictionary to track changes to JSS objects."""
