@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [1.0.0] - 2017-12-02 - Hammer Pants
+
 This release changes a lot about how JSSImporter is packaged and delivered to users, largely in response to the changes in the Python (or lack thereof) that Apple ships with macOS. Please read the changes below very carefully prior to updating, as there may be some surprises that you were not expecting otherwise.
 
 The brief form is that the JSSImporter package now installs the actual processor into your autopkglib, *and* it will create a `/Library/Application Support/JSSImporter` folder and drop a copy of python-jss there. This python-jss is bundled into the package, so there won't be any pip updates or anything. What's bundled with JSSImporter is what you get. Also, JSSImporter will prioritize using that python-jss over any others.
