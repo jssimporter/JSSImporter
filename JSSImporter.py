@@ -159,7 +159,7 @@ class JSSImporter(Processor):
                 "If set to False JSSImporter will not override the policy "
                 "enabled state. This allows creating new policies in a default "
                 "state and then going and manually enabling them in the JSS "
-                "Boolean, defaults to 'True',
+                "Boolean, defaults to 'True'",
             "default": True,
         },
         "os_requirements": {
