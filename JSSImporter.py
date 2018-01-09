@@ -153,6 +153,15 @@ class JSSImporter(Processor):
                 "Category to create/associate policy with. Defaults"
                 " to 'No category assigned'.",
         },
+        "force_policy_state": {
+            "required": False,
+            "description":
+                "If set to False JSSImporter will not override the policy "
+                "enabled state. This allows creating new policies in a default "
+                "state and then going and manually enabling them in the JSS "
+                "Boolean, defaults to 'True',
+            "default": True,
+        },
         "os_requirements": {
             "required": False,
             "description":
@@ -823,6 +832,9 @@ class JSSImporter(Processor):
                     "self_service/self_service_icon")
                 if icon_xml is not None:
                     self.add_icon_to_policy(recipe_object, icon_xml)
+                if not self.env.get('force_policy_state'):
+                    state = existing_object.find('general/enabled').text
+                    recipe_object.find('general/enabled').text = state
             self.add_scope_to_policy(recipe_object)
             self.add_scripts_to_policy(recipe_object)
             self.add_package_to_policy(recipe_object)
