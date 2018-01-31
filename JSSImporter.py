@@ -490,7 +490,7 @@ class JSSImporter(Processor):
             # Passes the id of the newly created package object so JDS'
             # will upload to the correct package object. Ignored by
             # AFP/SMB.
-            if self.env["jss_changed_objects"]["jss_package_added"]:
+            if self.env["jss_changed_objects"]["jss_package_updated"]:
                 self.copy(pkg_path, id_=package.id)
             # For AFP/SMB shares, we still want to see if the package
             # exists.  If it's missing, copy it!
