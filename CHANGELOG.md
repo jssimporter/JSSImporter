@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+### Changed
+- Added updated python-jss (2.0.1) to fix issues with CDP/JCDS uploads.
+
 ## [1.0.0] - 2017-12-02 - Hammer Pants
 
 This release changes a lot about how JSSImporter is packaged and delivered to users, largely in response to the changes in the Python (or lack thereof) that Apple ships with macOS. Please read the changes below very carefully prior to updating, as there may be some surprises that you were not expecting otherwise.
