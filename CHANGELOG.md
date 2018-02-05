@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Changed
 - Added updated python-jss (2.0.1) to fix issues with CDP/JCDS uploads.
+- Use `zipfile` module instead of `shutil` for archive creation to allow larger files. (Thanks @grahamrpugh)
+
+### Fixed
+- @mosen contributed (#125) a fix for an oversight where `jss_package_added` was never getting populated, which prevented packages from uploading.
 
 ## [1.0.0] - 2017-12-02 - Hammer Pants
 
