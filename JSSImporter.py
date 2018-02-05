@@ -21,7 +21,7 @@ from collections import OrderedDict
 from distutils.version import StrictVersion
 import os
 import shutil
-import zipfile
+from zipfile import ZipFile, ZIP_DEFLATED
 import zlib
 import sys
 from xml.etree import ElementTree
@@ -429,12 +429,6 @@ class JSSImporter(Processor):
 
         return category
 
-    def zipdir(self, path, ziph):
-        # ziph is zipfile handle
-        for root, dirs, files in os.walk(path):
-            for file in files:
-                ziph.write(os.path.join(root, file))
-
     def handle_package(self):
         """Creates or updates, and copies a package object.
 
@@ -458,20 +452,7 @@ class JSSImporter(Processor):
             # See if the package is non-flat (requires zipping prior to
             # upload).
             if os.path.isdir(pkg_path):
-                # shutil doesn't allow files over 2GB so commenting this out
-                # shutil.make_archive(
-                #     pkg_path, "zip", os.path.dirname(pkg_path), self.pkg_name)
-                # pkg_path += ".zip"
-
-                # Use zipfile instead
-                zf = zipfile.ZipFile(pkg_path + '.zip',
-                                     "w",
-                                     zipfile.ZIP_DEFLATED,
-                                     allowZip64=True)
-                self.zipdir(pkg_path,zf)
-                self.output("Closing: %s.zip" % pkg_path)
-                zf.close()
-                pkg_path += ".zip"
+                pkg_path = self.zip_pkg_path(pkg_path)
 
                 # Make sure our change gets added back into the env for
                 # visibility.
@@ -548,6 +529,28 @@ class JSSImporter(Processor):
             self.output("Package upload and object update skipped. If this is "
                         "a mistake, ensure you have JSS_REPOS configured.")
         return package
+
+    def zip_pkg_path(self, path):
+        """Add files from path to a zip file handle.
+
+        Args:
+            path (str): Path to folder to zip.
+
+        Returns:
+            (str) name of resulting zip file.
+        """
+        zip_name = "{}.zip".format(path)
+
+        with ZipFile(
+            zip_name, "w", ZIP_DEFLATED, allowZip64=True) as zip_handle:
+
+            for root, _, files in os.walk(path):
+                for member in files:
+                    zip_handle.write(os.path.join(root, member))
+
+            self.output("Closing: %s" % zip_name)
+
+        return zip_name
 
     def handle_extension_attributes(self):
         """Add extension attributes if needed."""
