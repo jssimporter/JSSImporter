@@ -20,9 +20,7 @@
 from collections import OrderedDict
 from distutils.version import StrictVersion
 import os
-import shutil
 from zipfile import ZipFile, ZIP_DEFLATED
-import zlib
 import sys
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
@@ -174,21 +172,21 @@ class JSSImporter(Processor):
             "description": "Text to apply to the package's Notes field.",
             "default": ""
         },
-         "package_priority": {
+        "package_priority": {
             "required": False,
             "description":
                 "Priority to use for deploying or uninstalling the "
                 "package. Value between 1-20. Defaults to '10'",
             "default": "10"
         },
-         "package_reboot": {
+        "package_reboot": {
             "required": False,
             "description":
                 "Computers must be restarted after installing the package "
                 "Boolean. Defaults to 'False'",
             "default": "False"
         },
-         "package_boot_volume_required": {
+        "package_boot_volume_required": {
             "required": False,
             "description":
                 "Ensure that the package is installed on the boot drive "
@@ -303,6 +301,7 @@ class JSSImporter(Processor):
         self.replace_dict = {}
         self.extattrs = None
         self.groups = None
+        self.exclusion_groups = None
         self.scripts = None
         self.policy = None
         self.upload_needed = True
@@ -346,10 +345,7 @@ class JSSImporter(Processor):
         if len(self.jss.distribution_points) == 0:
             self.output("Warning: No distribution points configured!")
         for dp in self.jss.distribution_points:
-            if hasattr(dp, 'is_mounted') and dp.is_mounted():
-                dp.was_mounted = True
-            else:
-                dp.was_mounted = False
+            dp.was_mounted = hasattr(dp, 'is_mounted') and dp.is_mounted()
         # Don't bother mounting the DPs if there's no package.
         if self.env["pkg_path"]:
             self.jss.distribution_points.mount()
@@ -809,9 +805,8 @@ class JSSImporter(Processor):
         self.replace_dict = replace_dict
 
     # pylint: disable=too-many-arguments
-    def update_or_create_new(
-        self, obj_cls, template_path, name="", added_env="", update_env="",
-        script_contents=""):
+    def update_or_create_new(self, obj_cls, template_path, name="",
+                             added_env="", update_env="", script_contents=""):
         """Check for an existing object and update it, or create a new
         object.
 
