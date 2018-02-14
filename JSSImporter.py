@@ -693,7 +693,7 @@ class JSSImporter(Processor):
             json_to_post = {
                 "id":self.prod_name,
                 "name":self.prod_name,
-                "currentVersion":self.ve rsion,
+                "currentVersion":self.version,
                 "requirements":[],
                 "patches":[],
                 "extensionAttributes":[],
