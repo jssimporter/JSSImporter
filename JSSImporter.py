@@ -25,6 +25,11 @@ import sys
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
+#### ADDED FOR BRYSON'S PATCH SERVER
+import requests
+import json
+import datetime
+
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
 import jss
 # Ensure that python-jss dependency is at minimum version
@@ -37,7 +42,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.0")
 
 
@@ -331,6 +336,7 @@ class JSSImporter(Processor):
         self.category = self.handle_category("category")
         self.policy_category = self.handle_category("policy_category")
 
+
         # Get our DPs read for copying.
         if len(self.jss.distribution_points) == 0:
             self.output("Warning: No distribution points configured!")
@@ -476,6 +482,7 @@ class JSSImporter(Processor):
             self.update_object(package_boot_volume_required, package,
                                 "boot_volume_required", pkg_update)
 
+
             # Ensure packages are on distribution point(s)
 
             # If we had to make a new package object, we know we need to
@@ -505,7 +512,7 @@ class JSSImporter(Processor):
                         "a mistake, ensure you have JSS_REPOS configured.")
 
         return package
-
+        
     def handle_extension_attributes(self):
         """Add extension attributes if needed."""
         extattrs = self.env.get("extension_attributes")
@@ -681,7 +688,47 @@ class JSSImporter(Processor):
                 changes["jss_extension_attribute_added"])
             if extattrs:
                 data["Extension_Attributes"] = self.get_report_string(extattrs)
+            
+            #### ADDED FOR BRYSON'S PATCH SERVER
+            json_to_post = {
+                "id":self.prod_name,
+                "name":self.prod_name,
+                "currentVersion":self.ve rsion,
+                "requirements":[],
+                "patches":[],
+                "extensionAttributes":[],
+                "publisher":"Google",
+                "appName":self.pkg_name,
+                "bundleId":"com.google.chrome",
+                "lastModified":datetime.datetime.now().isoformat()
+                }
+            resp = requests.post('http://localhost:5000/api/v1/title',
+                json=json_to_post)
 
+            json_to_post = {"items": [{
+                        "id":self.prod_name,
+                        "version":self.version,
+                        "name":self.prod_name,
+                        "requirements":[],
+                        "standalone":True,
+                        "appName":self.pkg_name,
+                        "bundleId":"com.google.chrome",
+                        "minimumOperatingSystem":"10.9",
+                        "reboot":False,
+                        "killApps":[],
+                        "components":[],
+                        "capabilities":[],
+                        "dependancies":[],
+                        "releaseDate":datetime.datetime.now().isoformat()
+                    }]}
+
+            update = requests.post(
+                'http://localhost:5000/api/v1/title/{}/version'.format(self.prod_name),
+                json = json_to_post)
+
+            # text_file = open("/tmp/output.txt", "w")
+            # text_file.write(update.text)
+            # text_file.close()
     def update_object(self, data, obj, path, update):
         """Update an object if it differs.
 
