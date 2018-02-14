@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright 2014, 2015 Shea Craig
+# Copyright 2014-2017 Shea G. Craig
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,19 +23,22 @@ import os
 import shutil
 import sys
 from xml.etree import ElementTree
+from xml.sax.saxutils import escape
 
+sys.path.insert(0, '/Library/Application Support/JSSImporter')
 import jss
 # Ensure that python-jss dependency is at minimum version
 try:
     from jss import __version__ as PYTHON_JSS_VERSION
 except ImportError:
     PYTHON_JSS_VERSION = "0.0.0"
+
 from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = "0.5.1"
-REQUIRED_PYTHON_JSS_VERSION = StrictVersion("1.4.0")
+__version__ = "1.0.0"
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.0")
 
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
@@ -85,10 +88,12 @@ class JSSImporter(Processor):
                 "previous pkg recipe/processor.",
         },
         "version": {
-            "required": True,
+            "required": False,
             "description":
-                "Version number of software to import - provided "
-                "by previous pkg recipe/processor.",
+                "Version number of software to import - usually provided "
+                "by previous pkg recipe/processor, but if not, defaults to "
+                "'0.0.0.0'. ",
+            "default": "0.0.0.0"
         },
         "JSS_REPOS": {
             "required": False,
@@ -125,13 +130,6 @@ class JSSImporter(Processor):
                 "If set to False, SSL verification in communication"
                 " with the JSS will be skipped. Defaults to 'True'.",
             "default": True,
-        },
-        "JSS_MIGRATED": {
-            "required": False,
-            "description":
-                "Set to True if you use an AFP or SMB share *and* "
-                "you have migrated your JSS. Defaults to 'False'.",
-            "default": False,
         },
         "JSS_SUPPRESS_WARNINGS": {
             "required": False,
@@ -174,7 +172,38 @@ class JSSImporter(Processor):
             "description": "Text to apply to the package's Notes field.",
             "default": ""
         },
+         "package_priority": {
+            "required": False,
+            "description":
+                "Priority to use for deploying or uninstalling the "
+                "package. Value between 1-20. Defaults to '10'",
+            "default": "10"
+        },
+         "package_reboot": {
+            "required": False,
+            "description":
+                "Computers must be restarted after installing the package "
+                "Boolean. Defaults to 'False'",
+            "default": "False"
+        },
+         "package_boot_volume_required": {
+            "required": False,
+            "description":
+                "Ensure that the package is installed on the boot drive "
+                "after imaging. Boolean. Defaults to 'True'",
+            "default": "True"
+        },
         "groups": {
+            "required": False,
+            "description":
+                "Array of group dictionaries. Wrap each group in a "
+                "dictionary. Group keys include 'name' (Name of the group to "
+                "use, required), 'smart' (Boolean: static group=False, smart "
+                "group=True, default is False, not required), and "
+                "template_path' (string: path to template file to use for "
+                "group, required for smart groups, invalid for static groups)",
+        },
+        "exclusion_groups": {
             "required": False,
             "description":
                 "Array of group dictionaries. Wrap each group in a "
@@ -190,7 +219,7 @@ class JSSImporter(Processor):
                 "Array of script dictionaries. Wrap each script in "
                 "a dictionary. Script keys include 'name' (Name of the script "
                 "to use, required), 'template_path' (string: path to template "
-                "file to" " use for script, required)",
+                "file to use for script, required)",
         },
         "extension_attributes": {
             "required": False,
@@ -206,6 +235,13 @@ class JSSImporter(Processor):
                 "Filename of policy template file. If key is "
                 "missing or value is blank, policy creation will be skipped.",
             "default": "",
+        },
+        "policy_action_type": {
+            "required": False,
+            "description":
+                "Type of policy 'package_configuration' to perform. Must be "
+                "one of 'Install', 'Cache', 'Install Cached'.",
+            "default": "Install",
         },
         "self_service_description": {
             "required": False,
@@ -264,30 +300,30 @@ class JSSImporter(Processor):
         """Main processor code."""
         # Ensure we have the right version of python-jss
         python_jss_version = StrictVersion(PYTHON_JSS_VERSION)
+        self.output("python-jss version: %s." % python_jss_version)
         if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
-            self.output("Requires python-jss version: %s. Installed: %s" %
-                        (REQUIRED_PYTHON_JSS_VERSION, python_jss_version))
-            sys.exit()
+            self.output(
+                "python-jss version is too old. Please update to version: %s."
+                % REQUIRED_PYTHON_JSS_VERSION)
+            raise ProcessorError
+
+        self.output("JSSImporter version: %s." % __version__)
 
         # clear any pre-existing summary result
         if "jss_importer_summary_result" in self.env:
             del self.env["jss_importer_summary_result"]
 
-        # pull jss recipe-specific args, prep api auth
-        repo_url = self.env["JSS_URL"]
-        auth_user = self.env["API_USERNAME"]
-        auth_pass = self.env["API_PASSWORD"]
-        ssl_verify = self.env["JSS_VERIFY_SSL"]
-        jss_migrated = self.env["JSS_MIGRATED"]
-        suppress_warnings = self.env["JSS_SUPPRESS_WARNINGS"]
-        repos = self.env["JSS_REPOS"]
-        self.jss = jss.JSS(url=repo_url, user=auth_user, password=auth_pass,
-                           ssl_verify=ssl_verify, repo_prefs=repos,
-                           jss_migrated=jss_migrated,
-                           suppress_warnings=suppress_warnings)
+        self.create_jss()
+        self.output("JSS version: '{}'".format(self.jss.version()))
+
         self.pkg_name = os.path.basename(self.env["pkg_path"])
         self.prod_name = self.env["prod_name"]
-        self.version = self.env["version"]
+        self.version = self.env.get("version")
+        if self.version == "0.0.0.0":
+            self.output(
+                "Warning: No `version` was added to the AutoPkg env up to "
+                "this point. JSSImporter is defaulting to version %s!"
+                % self.version)
 
         # Build and init jss_changed_objects
         self.init_jss_changed_objects()
@@ -296,48 +332,73 @@ class JSSImporter(Processor):
         self.policy_category = self.handle_category("policy_category")
 
         # Get our DPs read for copying.
-        self.jss.distribution_points.mount()
+        if len(self.jss.distribution_points) == 0:
+            self.output("Warning: No distribution points configured!")
+        for dp in self.jss.distribution_points:
+            if hasattr(dp, 'is_mounted') and dp.is_mounted():
+                dp.was_mounted = True
+            else:
+                dp.was_mounted = False
+        # Don't bother mounting the DPs if there's no package.
+        if self.env["pkg_path"]:
+            self.jss.distribution_points.mount()
+
         self.package = self.handle_package()
         # Build our text replacement dictionary
         self.build_replace_dict()
 
         self.extattrs = self.handle_extension_attributes()
-        self.groups = self.handle_groups()
+
+        self.groups = self.handle_groups(self.env.get("groups"))
+        self.exclusion_groups = self.handle_groups(
+            self.env.get("exclusion_groups"))
+
         self.scripts = self.handle_scripts()
         self.policy = self.handle_policy()
         self.handle_icon()
+
         # Done with DPs, unmount them.
-        self.jss.distribution_points.umount()
+        for dp in self.jss.distribution_points:
+            if not dp.was_mounted:
+                self.jss.distribution_points.umount()
 
         self.summarize()
 
+    def create_jss(self):
+        """Create a JSS object for API calls"""
+        kwargs = {
+            'url': self.env['JSS_URL'],
+            'user': self.env['API_USERNAME'],
+            'password': self.env['API_PASSWORD'],
+            'ssl_verify': self.env["JSS_VERIFY_SSL"],
+            'repo_prefs': self.env["JSS_REPOS"]}
+        self.jss = jss.JSS(**kwargs)
+        if self.env.get('verbose', 1) >= 4:
+            self.jss.verbose = True
+
     def init_jss_changed_objects(self):
         """Build a dictionary to track changes to JSS objects."""
-        self.env["jss_changed_objects"] = {
-            "jss_repo_updated": [],
-            "jss_category_added": [],
-            "jss_package_added": [],
-            "jss_package_updated": [],
-            "jss_group_added": [],
-            "jss_group_updated": [],
-            "jss_script_added": [],
-            "jss_script_updated": [],
-            "jss_extension_attribute_added": [],
-            "jss_extension_attribute_updated": [],
-            "jss_policy_added": [],
-            "jss_policy_updated": [],
-            "jss_icon_uploaded": []}
+        keys = (
+            "jss_repo_updated", "jss_category_added", "jss_package_added",
+            "jss_package_updated", "jss_group_added", "jss_group_updated",
+            "jss_script_added", "jss_script_updated",
+            "jss_extension_attribute_added", "jss_extension_attribute_updated",
+            "jss_policy_added", "jss_policy_updated", "jss_icon_uploaded")
+        self.env["jss_changed_objects"] = {key: [] for key in keys}
 
-    def handle_category(self, category_type):
+    def handle_category(self, category_type, category_name=None):
         """Ensure a category is present."""
         if self.env.get(category_type):
             category_name = self.env.get(category_type)
+
+        if category_name is not None:
             try:
                 category = self.jss.Category(category_name)
-                self.output("Category type: %s-'%s' already exists "
-                            "according to JSS, moving on..." %
-                            (category_type, category_name))
-            except jss.JSSGetError:
+                category_name = category.name
+                self.output(
+                    "Category type: %s-'%s' already exists according to JSS, "
+                    "moving on..." % (category_type, category_name))
+            except jss.GetError:
                 # Category doesn't exist
                 category = jss.Category(self.jss, category_name)
                 category.save()
@@ -365,24 +426,35 @@ class JSSImporter(Processor):
         first.
         """
         # Skip package handling if there is no package or repos.
-        if self.env["JSS_REPOS"] and self.env["pkg_path"] != "":
+        pkg_path = self.env["pkg_path"]
+        if self.env["JSS_REPOS"] and pkg_path != "":
+            # Ensure that `pkg_path` is valid.
+            if not os.path.exists(pkg_path):
+                raise ProcessorError(
+                    "JSSImporter can't find a package at '%s'!" % pkg_path)
             os_requirements = self.env.get("os_requirements")
             package_info = self.env.get("package_info")
             package_notes = self.env.get("package_notes")
+            package_priority = self.env.get("package_priority")
+            package_reboot =  self.env.get("package_reboot")
+            package_boot_volume_required = self.env.get(
+                "package_boot_volume_required")
             # See if the package is non-flat (requires zipping prior to
             # upload).
-            if os.path.isdir(self.env["pkg_path"]):
-                shutil.make_archive(self.env["pkg_path"], "zip",
-                                    os.path.dirname(self.env["pkg_path"]),
-                                    self.pkg_name)
-                self.env["pkg_path"] += ".zip"
+            if os.path.isdir(pkg_path):
+                shutil.make_archive(
+                    pkg_path, "zip", os.path.dirname(pkg_path), self.pkg_name)
+                pkg_path += ".zip"
+                # Make sure our change gets added back into the env for
+                # visibility.
+                self.env["pkg_path"] = pkg_path
                 self.pkg_name += ".zip"
 
             try:
                 package = self.jss.Package(self.pkg_name)
                 self.output("Pkg-object already exists according to JSS, "
                             "moving on...")
-            except jss.JSSGetError:
+            except jss.GetError:
                 # Package doesn't exist
                 package = jss.Package(self.jss, self.pkg_name)
 
@@ -397,6 +469,12 @@ class JSSImporter(Processor):
                                pkg_update)
             self.update_object(package_info, package, "info", pkg_update)
             self.update_object(package_notes, package, "notes", pkg_update)
+            self.update_object(package_priority, package, "priority",
+                                pkg_update)
+            self.update_object(package_reboot, package, "reboot_required",
+                                pkg_update)
+            self.update_object(package_boot_volume_required, package,
+                                "boot_volume_required", pkg_update)
 
             # Ensure packages are on distribution point(s)
 
@@ -413,12 +491,12 @@ class JSSImporter(Processor):
             # will upload to the correct package object. Ignored by
             # AFP/SMB.
             if self.env["jss_changed_objects"]["jss_package_added"]:
-                self.copy(self.env["pkg_path"], id_=package.id)
+                self.copy(pkg_path, id_=package.id)
             # For AFP/SMB shares, we still want to see if the package
             # exists.  If it's missing, copy it!
             elif not self.jss.distribution_points.exists(
-                    os.path.basename(self.env["pkg_path"])):
-                self.copy(self.env["pkg_path"])
+                    os.path.basename(pkg_path)):
+                self.copy(pkg_path)
             else:
                 self.output("Package upload not needed.")
         else:
@@ -443,9 +521,8 @@ class JSSImporter(Processor):
                 results.append(extattr_object)
         return results
 
-    def handle_groups(self):
+    def handle_groups(self, groups):
         """Manage group existence and creation."""
-        groups = self.env.get("groups")
         computer_groups = []
         if groups:
             for group in groups:
@@ -469,15 +546,23 @@ class JSSImporter(Processor):
             for script in scripts:
                 script_file = self.find_file_in_search_path(
                     script["name"])
+                try:
+                    with open(script_file) as script_handle:
+                        script_contents = script_handle.read()
+                except IOError:
+                    raise ProcessorError(
+                        "Script '%s' could not be read!" % script_file)
+
+                escaped_script_contents = escape(script_contents)
+
                 script_object = self.update_or_create_new(
                     jss.Script,
                     script["template_path"],
                     os.path.basename(script_file),
                     added_env="jss_script_added",
-                    update_env="jss_script_updated")
+                    update_env="jss_script_updated",
+                    script_contents=escaped_script_contents)
 
-                # Copy the script to the distribution points.
-                self.copy(script_file, id_=script_object.id)
                 results.append(script_object)
 
         return results
@@ -536,27 +621,34 @@ class JSSImporter(Processor):
     def summarize(self):
         """If anything has been added or updated, report back."""
         # Only summarize if something has happened.
-        if [True for value in self.env["jss_changed_objects"].values()
-                if value]:
+        if any(value for value in self.env["jss_changed_objects"].values()):
             # Create a blank summary.
             self.env["jss_importer_summary_result"] = {
                 "summary_text": "The following changes were made to the JSS:",
-                "report_fields": ["Package", "Categories", "Groups", "Scripts",
-                                  "Extension Attributes", "Policy", "Icon"],
+                "report_fields": [
+                    "Name", "Package", "Categories", "Groups", "Scripts",
+                    "Extension_Attributes", "Policy", "Icon", "Version"],
                 "data": {
+                    "Name": "",
                     "Package": "",
                     "Categories": "",
                     "Groups": "",
                     "Scripts": "",
-                    "Extension Attributes": "",
+                    "Extension_Attributes": "",
                     "Policy": "",
-                    "Icon": ""
+                    "Icon": "",
+                    "Version": ""
                 }
             }
+            # TODO: This is silly. Use a defaultdict for storing changes
+            # and just copy the stuff that changed.
 
             # Shortcut variables for lovely code conciseness
             changes = self.env["jss_changed_objects"]
             data = self.env["jss_importer_summary_result"]["data"]
+
+            data["Name"] = self.env.get('NAME', '')
+            data["Version"] = self.env.get('version', '')
 
             package = self.get_report_string(changes["jss_package_added"] +
                                              changes["jss_package_updated"])
@@ -588,7 +680,7 @@ class JSSImporter(Processor):
             extattrs = changes["jss_extension_attribute_updated"] + (
                 changes["jss_extension_attribute_added"])
             if extattrs:
-                data["Extension Attributes"] = self.get_report_string(extattrs)
+                data["Extension_Attributes"] = self.get_report_string(extattrs)
 
     def update_object(self, data, obj, path, update):
         """Update an object if it differs.
@@ -665,8 +757,9 @@ class JSSImporter(Processor):
         self.replace_dict = replace_dict
 
     # pylint: disable=too-many-arguments
-    def update_or_create_new(self, obj_cls, template_path, name="",
-                             added_env="", update_env=""):
+    def update_or_create_new(
+        self, obj_cls, template_path, name="", added_env="", update_env="",
+        script_contents=""):
         """Check for an existing object and update it, or create a new
         object.
 
@@ -680,6 +773,7 @@ class JSSImporter(Processor):
                 added.
             update_env: The environment var to update if an object is
                 updated.
+            script_contents (str): XML escaped script.
 
         Returns:
             The recipe object after updating.
@@ -687,19 +781,40 @@ class JSSImporter(Processor):
         # Create a new object from the template
         recipe_object = self.get_templated_object(obj_cls, template_path)
 
+        # Ensure categories exist prior to using them in an object.
+        # Text replacement has already happened, so categories should
+        # be in place.
+        try:
+            category_name = recipe_object.category.text
+        except AttributeError:
+            category_name = None
+        if category_name is not None:
+            self.handle_category(obj_cls.root_tag, category_name)
+
         if not name:
             name = recipe_object.name
 
         # Check for an existing object with this name.
         existing_object = None
+        search_method = getattr(self.jss, obj_cls.__name__)
         try:
-            existing_object = self.jss.factory.get_object(obj_cls, name)
-        except jss.JSSGetError:
+            existing_object = search_method(name)
+        except jss.GetError:
             pass
 
         # If object is a Policy, we need to inject scope, scripts,
         # package, and an icon.
         if obj_cls is jss.Policy:
+            # If a policy_category has been given as an input variable,
+            # it wins. Replace whatever is in the template, and add in
+            # a category tag if it isn't there.
+            if self.env.get('policy_category'):
+                policy_category = recipe_object.find('category')
+                if policy_category is None:
+                    policy_category = ElementTree.SubElement(
+                        recipe_object, "category")
+                    policy_category.text = self.env.get('policy_category')
+
             if existing_object is not None:
                 # If this policy already exists, and it has an icon set,
                 # copy its icon section to our template, as we have no
@@ -712,12 +827,20 @@ class JSSImporter(Processor):
             self.add_scripts_to_policy(recipe_object)
             self.add_package_to_policy(recipe_object)
 
+        # If object is a script, add the passed contents to the object.
+        # throw it into the `script_contents` tag of the object.
+        if obj_cls is jss.Script and script_contents:
+            tag = ElementTree.SubElement(recipe_object, "script_contents")
+            tag.text = script_contents
+
         if existing_object is not None:
             # Update the existing object.
-            url = existing_object.get_object_url()
-            self.jss.put(url, recipe_object)
+            # Copy the ID from the existing object to the new one so
+            # that it knows how to save itself.
+            recipe_object._basic_identity["id"] = existing_object.id
+            recipe_object.save()
             # Retrieve the updated XML.
-            recipe_object = self.jss.factory.get_object(obj_cls, name)
+            recipe_object = search_method(name)
             self.output("%s: %s updated." % (obj_cls.__name__, name))
             if update_env:
                 self.env["jss_changed_objects"][update_env].append(name)
@@ -884,7 +1007,7 @@ class JSSImporter(Processor):
             computer_group = self.jss.ComputerGroup(group["name"])
             self.output("Computer Group: %s already exists." %
                         computer_group.name)
-        except jss.JSSGetError:
+        except jss.GetError:
             computer_group = jss.ComputerGroup(self.jss, group["name"])
             computer_group.save()
             self.output("Computer Group: %s created." % computer_group.name)
@@ -897,8 +1020,12 @@ class JSSImporter(Processor):
         """Incorporate scoping groups into a policy."""
         computer_groups_element = self.ensure_xml_structure(
             policy_template, "scope/computer_groups")
+        exclusion_groups_element = self.ensure_xml_structure(
+            policy_template, "scope/exclusions/computer_groups")
         for group in self.groups:
             policy_template.add_object_to_path(group, computer_groups_element)
+        for group in self.exclusion_groups:
+            policy_template.add_object_to_path(group, exclusion_groups_element)
 
     def add_scripts_to_policy(self, policy_template):
         """Incorporate scripts into a policy."""
@@ -914,7 +1041,9 @@ class JSSImporter(Processor):
         if self.package is not None:
             self.ensure_xml_structure(policy_template,
                                       "package_configuration/packages")
-            policy_template.add_package(self.package)
+            action_type = self.env['policy_action_type']
+            self.output("Setting policy to '%s' package." % action_type)
+            policy_template.add_package(self.package, action_type=action_type)
 
     def add_icon_to_policy(self, policy_template, icon_xml):
         """Add an icon to a self service policy."""

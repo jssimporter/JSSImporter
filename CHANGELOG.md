@@ -5,10 +5,44 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased][unreleased]
 
+## [1.0.0] - 2017-12-02 - Hammer Pants
+
+This release changes a lot about how JSSImporter is packaged and delivered to users, largely in response to the changes in the Python (or lack thereof) that Apple ships with macOS. Please read the changes below very carefully prior to updating, as there may be some surprises that you were not expecting otherwise.
+
+The brief form is that the JSSImporter package now installs the actual processor into your autopkglib, *and* it will create a `/Library/Application Support/JSSImporter` folder and drop a copy of python-jss there. This python-jss is bundled into the package, so there won't be any pip updates or anything. What's bundled with JSSImporter is what you get. Also, JSSImporter will prioritize using that python-jss over any others.
+
+JSSImporter, and really python-jss now uses the system `curl` to do all requests, so all SSL issues can be compared directly to normal `curl` requests.
+
+
 ### Changed
+- JSSImporter and JSS now support version 9 and newer of the JSS.
+- Installation package Makefile is included in project repo.
+- python-jss is now bundled with JSSImporter, and JSSImporter will use /Library/Application Support/JSSImporter/jss.
+- Bundled python-jss is the 2.0.0 release, which overhauls a number of things including HTTP requests. JSSImporter has been updated to use the (very slightly-changed) API.
+	- python-jss now uses curl unless python requests is available. This avoids the need for working around Apple's ancient python and OpenSSL situation.
+- JSSImporter outputs its version, python-jss's version, and the JSS's version, during a verbose run.
 - Reordered code.
 - Fixed some style issues.
 - Fixed some lint issues.
+- JSSImporter now looks for categories used in templates, and creates them if they don't exist. This solves #55 (involving scripts). It does create a precedence situation for one case: if you have a `policy_category` input variable set will always win; even if there's no category tag in the policy template, even if it's not the same as `policy_category`. This should not be an issue for anybody, however.
+- `version` is no longer a required input variable. It will default to "0.0.0.0" when it's not present, and issue a warning in the output because this is probably not what you want. (Solves #72).
+- JSSImporter won't mount any of your configured distribution points if your `pkg_path` is empty (falsy). (#104).
+
+### Added
+- If a mountable distribution point is mounted prior to the JSSImporter run, JSSImporter won't unmount at the conclusion of the run (#100).
+- You can now set a `policy_action_type` to set the `package_configuration` section of a Policy to `Cache` or `Install Cached` in addition to the default value of `Install`. (#75).
+- New Package input variables allow you to specify the priority, restart, and boot drive after imaging requirements (#87 - Thanks @jusmig!)
+- Ability to add `exclusion_groups` to the policy scope. This feature works exactly like the regular scoping groups. Thanks to @BadStreff for the contribution, #93. Issue #92.
+- Added `Name` and `Version` to the AutoPkg summary. Thanks for the contribution @ChrOst (#71).
+- JSSImporter will warn you that no distribution points are configured (and python-jss will fail if you configure a DP that doesn't configure correctly). (#85).
+- JSSImporter will enable python-jss's verbose output when AutoPkg has a verbosity of 4 or more (i.e. `autopkg run -vvvv yo.jss`.
+
+### Fixed
+- An underscore was added to the report header for `Extension_Attributes` so AutoPkgr doesn't freak out. Thanks @homebysix (#83).
+- JSSImporter now takes scripts, reads them in, escapes them for XML, and adds them to the script object's `script_contents` tag and does not try to copy them ever. This was needed in the past, but now presumably all JSS have been "migrated" and need the script in the DB rather than on disk. (#116).
+
+### Removed
+- The `JSS_MIGRATED` preference has been removed. If you have it in your config, it will be ignored, but there is no need for this with version 9+ of the JSS. (#118).
 
 ## [0.5.1] - 2015-09-30 - I've Got a Bike, You Can Ride it if You Like
 
