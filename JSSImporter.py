@@ -690,6 +690,7 @@ class JSSImporter(Processor):
                 data["Extension_Attributes"] = self.get_report_string(extattrs)
             
             #### ADDED FOR BRYSON'S PATCH SERVER
+            #### https://github.com/brysontyrrell/PatchServer
             json_to_post = {
                 "id":self.prod_name,
                 "name":self.prod_name,
