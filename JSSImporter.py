@@ -18,17 +18,15 @@
 
 
 from collections import OrderedDict
+import datetime
 from distutils.version import StrictVersion
+import json
 import os
+import subprocess
 from zipfile import ZipFile, ZIP_DEFLATED
 import sys
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
-
-#### ADDED FOR BRYSON'S PATCH SERVER
-import requests
-import json
-import datetime
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
 import jss
@@ -162,9 +160,9 @@ class JSSImporter(Processor):
             "required": False,
             "description":
                 "If set to False JSSImporter will not override the policy "
-                "enabled state. This allows creating new policies in a default "
-                "state and then going and manually enabling them in the JSS "
-                "Boolean, defaults to 'True'",
+                "enabled state. This allows creating new policies in a "
+                "default state and then going and manually enabling "
+                "them in the JSS. Boolean, defaults to 'True'",
             "default": True,
         },
         "os_requirements": {
@@ -282,6 +280,12 @@ class JSSImporter(Processor):
         "site_name": {
             "required": False,
             "description": "Name of the target Site",
+        },
+        "patch_server_url": {
+            "required": False,
+            "description":
+                "URL to your patch server, including protocol and port.",
+            "default": "",
         },
     }
     output_variables = {
@@ -717,47 +721,77 @@ class JSSImporter(Processor):
             if extattrs:
                 data["Extension_Attributes"] = self.get_report_string(extattrs)
 
-            #### ADDED FOR BRYSON'S PATCH SERVER
-            #### https://github.com/brysontyrrell/PatchServer
-            json_to_post = {
-                "id":self.prod_name,
-                "name":self.prod_name,
-                "currentVersion":self.version,
-                "requirements":[],
-                "patches":[],
-                "extensionAttributes":[],
-                "publisher":"Google",
-                "appName":self.pkg_name,
-                "bundleId":"com.google.chrome",
-                "lastModified":datetime.datetime.now().isoformat()
-                }
-            resp = requests.post('http://localhost:5000/api/v1/title',
-                json=json_to_post)
+            if self.env['patch_server_url']:
+                self.update_patch_server()
 
-            json_to_post = {"items": [{
-                        "id":self.prod_name,
-                        "version":self.version,
-                        "name":self.prod_name,
-                        "requirements":[],
-                        "standalone":True,
-                        "appName":self.pkg_name,
-                        "bundleId":"com.google.chrome",
-                        "minimumOperatingSystem":"10.9",
-                        "reboot":False,
-                        "killApps":[],
-                        "components":[],
-                        "capabilities":[],
-                        "dependancies":[],
-                        "releaseDate":datetime.datetime.now().isoformat()
-                    }]}
+    def update_patch_server(self):
+        """Post changes to Patch Server."""
+        time = datetime.datetime.now().isoformat()
+        patch_server_url = self.env["patch_server_url"].rstrip("/")
+        # Current code is for updating:
+        # https://github.com/brysontyrrell/PatchServer
+        data = {
+            "id": self.prod_name,
+            "name": self.prod_name,
+            "currentVersion": self.version,
+            "requirements": [],
+            "patches": [],
+            "extensionAttributes": [],
+            "publisher": "",
+            "appName": self.pkg_name,
+            "bundleId": "",
+            "lastModified": time}
+        response = self._curl_post(
+            '{}/api/v1/title'.format(
+                patch_server_url, json_to_post))
 
-            update = requests.post(
-                'http://localhost:5000/api/v1/title/{}/version'.format(self.prod_name),
-                json = json_to_post)
+        # TODO: No idea what a response looks like, so we'll just do a truth
+        # test.
+        if response:
+            self.output("Patch server title '{}' updated successfully.".format(
+                self.prod_name))
 
-            # text_file = open("/tmp/output.txt", "w")
-            # text_file.write(update.text)
-            # text_file.close()
+        data = {
+            "items": [{
+                "id": self.prod_name,
+                "version": self.version,
+                "name": self.prod_name,
+                "requirements": [],
+                "standalone": True,
+                "appName": self.pkg_name,
+                "bundleId": "",
+                "minimumOperatingSystem": "",
+                "reboot": False,
+                "killApps": [],
+                "components": [],
+                "capabilities": [],
+                "dependancies": [],
+                "releaseDate": time}]}
+
+        response = self._curl.post(
+            '{}/api/v1/title/{}/version'.format(
+                patch_server_url, self.prod_name), data)
+
+        # TODO: No idea what a response looks like, so we'll just do a truth
+        # test.
+        if response:
+            self.output("Patch server '{}' items updated successfully.".format(
+                self.prod_name))
+
+    def _curl_post(self, url, json_data):
+        # json.dumps implicitly encodes unicode to UTF-8 bytes.
+        command = [
+            "curl", "--silent", "--header", "Content-Type: application/json",
+            "--data", json.dumps(json_data), url]
+        try:
+            response = subprocess.check_output(command)
+        except subprocess.CalledProcessError as err:
+            self.output(
+                "Failed to post to URL: {} with error: {}".format(url, err))
+            response = None
+
+        return response
+
     def update_object(self, data, obj, path, update):
         """Update an object if it differs.
 
