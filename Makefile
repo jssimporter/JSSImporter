@@ -1,22 +1,42 @@
-include /usr/local/share/luggage/luggage.make
+CURDIR := $(shell pwd)
+MUNKIPKG := /usr/local/bin/munkipkg
+PKG_ROOT := $(CURDIR)/pkg/jssimporter/payload
+PKG_BUILD := $(CURDIR)/pkg/jssimporter/build
+VERSION := $(shell defaults read $(CURDIR)/pkg/jssimporter/build-info.plist version)
 
-TITLE=jssimporter
-REVERSE_DOMAIN=com.github.sheagcraig
-PAYLOAD=\
-		pack-Library-AutoPkg-autopkglib-JSSImporter \
-		pack-Library-JSSImporter \
+objects = $(PKG_ROOT)/Library/Application\ Support/JSSImporter/requests \
+	$(PKG_ROOT)/Library/Application\ Support/JSSImporter/boto \
+	$(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py
 
-PACKAGE_VERSION=$(shell awk -F\" '/__version__ =/ { print $$2 }' JSSImporter.py)
 
-pack-Library-AutoPkg-autopkglib-JSSImporter: l_Library
-	@sudo mkdir -p ${WORK_D}/Library/AutoPkg/autopkglib
-	@sudo ${INSTALL} -m 755 -g wheel -o root JSSImporter.py ${WORK_D}/Library/AutoPkg/autopkglib/
+default : $(PKG_BUILD)/jssimporter-$(VERSION).pkg
 
-pack-Library-JSSImporter: l_Library clean_jss
-	@sudo mkdir -p ${WORK_D}/Library/Application\ Support/JSSImporter
-	@sudo cp -R jss ${WORK_D}/Library/Application\ Support/JSSImporter
 
-clean_jss:
-	find jss -name '*.pyc' -exec rm -f {} \;
-	find jss -name '*.swp' -exec rm -f {} \;
-	echo 'Do a double-check to make sure there are no old bytecode files in the package! The luggage seems to want to include them if they are in the cache.'
+$(PKG_BUILD)/jssimporter-$(VERSION).pkg: $(objects)
+	cd $(CURDIR)/pkg && $(MUNKIPKG) jssimporter
+
+
+$(PKG_ROOT)/Library/Application\ Support/JSSImporter/boto:
+	echo "Installing boto into JSSImporter support directory"
+	#pip install --install-option="--prefix=$(PKG_ROOT)/Library/Application Support/JSSImporter/boto" --ignore-installed boto
+	pip install --target "$(PKG_ROOT)/Library/Application Support/JSSImporter" --ignore-installed boto
+
+
+$(PKG_ROOT)/Library/Application\ Support/JSSImporter/requests:
+	echo "Installing requests into JSSImporter support directory"
+	#pip install --install-option="--prefix=$(PKG_ROOT)/Library/Application Support/JSSImporter/requests" --ignore-installed requests
+	pip install --target "$(PKG_ROOT)/Library/Application Support/JSSImporter" --ignore-installed requests
+
+
+$(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py:
+	echo "Copying JSSImporter.py into autopkglib"
+	cp $(CURDIR)/JSSImporter.py $(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py
+
+
+.PHONY : clean
+clean :
+	echo "Cleaning up package root"
+	rm $(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py
+	rm -rf "$(PKG_ROOT)/Library/Application Support/JSSImporter/boto"
+	rm -rf "$(PKG_ROOT)/Library/Application Support/JSSImporter/requests"
+	rm $(CURDIR)/pkg/jssimporter/build/*.pkg
