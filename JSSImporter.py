@@ -23,7 +23,6 @@ import os
 from zipfile import ZipFile, ZIP_DEFLATED
 import sys
 from xml.etree import ElementTree
-from xml.sax.saxutils import escape
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
 import jss
