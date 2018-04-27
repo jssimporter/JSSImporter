@@ -573,15 +573,13 @@ class JSSImporter(Processor):
                     raise ProcessorError(
                         "Script '%s' could not be read!" % script_file)
 
-                escaped_script_contents = escape(script_contents)
-
                 script_object = self.update_or_create_new(
                     jss.Script,
                     script["template_path"],
                     os.path.basename(script_file),
                     added_env="jss_script_added",
                     update_env="jss_script_updated",
-                    script_contents=escaped_script_contents)
+                    script_contents=script_contents)
 
                 results.append(script_object)
 
@@ -647,7 +645,7 @@ class JSSImporter(Processor):
                 "summary_text": "The following changes were made to the JSS:",
                 "report_fields": [
                     "Name", "Package", "Categories", "Groups", "Scripts",
-                    "Extension_Attributes", "Policy", "Icon", "Version", 
+                    "Extension_Attributes", "Policy", "Icon", "Version",
                     "Package_Uploaded"],
                 "data": {
                     "Name": "",
