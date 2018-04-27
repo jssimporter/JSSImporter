@@ -23,7 +23,6 @@ import os
 from zipfile import ZipFile, ZIP_DEFLATED
 import sys
 from xml.etree import ElementTree
-from xml.sax.saxutils import escape
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
 import jss
@@ -581,15 +580,13 @@ class JSSImporter(Processor):
                     raise ProcessorError(
                         "Script '%s' could not be read!" % script_file)
 
-                escaped_script_contents = escape(script_contents)
-
                 script_object = self.update_or_create_new(
                     jss.Script,
                     script["template_path"],
                     os.path.basename(script_file),
                     added_env="jss_script_added",
                     update_env="jss_script_updated",
-                    script_contents=escaped_script_contents)
+                    script_contents=script_contents)
 
                 results.append(script_object)
 
@@ -655,7 +652,8 @@ class JSSImporter(Processor):
                 "summary_text": "The following changes were made to the JSS:",
                 "report_fields": [
                     "Name", "Package", "Categories", "Groups", "Scripts",
-                    "Extension_Attributes", "Policy", "Icon", "Version"],
+                    "Extension_Attributes", "Policy", "Icon", "Version",
+                    "Package_Uploaded"],
                 "data": {
                     "Name": "",
                     "Package": "",
@@ -665,7 +663,8 @@ class JSSImporter(Processor):
                     "Extension_Attributes": "",
                     "Policy": "",
                     "Icon": "",
-                    "Version": ""
+                    "Version": "",
+                    "Package_Uploaded": ""
                 }
             }
             # TODO: This is silly. Use a defaultdict for storing changes
@@ -709,6 +708,10 @@ class JSSImporter(Processor):
                 changes["jss_extension_attribute_added"])
             if extattrs:
                 data["Extension_Attributes"] = self.get_report_string(extattrs)
+
+            jss_package_uploaded = self.get_report_string(changes["jss_repo_updated"])
+            if jss_package_uploaded:
+                data["Package_Uploaded"] = "True"
 
     def update_object(self, data, obj, path, update):
         """Update an object if it differs.
