@@ -647,7 +647,8 @@ class JSSImporter(Processor):
                 "summary_text": "The following changes were made to the JSS:",
                 "report_fields": [
                     "Name", "Package", "Categories", "Groups", "Scripts",
-                    "Extension_Attributes", "Policy", "Icon", "Version"],
+                    "Extension_Attributes", "Policy", "Icon", "Version", 
+                    "Package_Uploaded"],
                 "data": {
                     "Name": "",
                     "Package": "",
@@ -657,7 +658,8 @@ class JSSImporter(Processor):
                     "Extension_Attributes": "",
                     "Policy": "",
                     "Icon": "",
-                    "Version": ""
+                    "Version": "",
+                    "Package_Uploaded": ""
                 }
             }
             # TODO: This is silly. Use a defaultdict for storing changes
@@ -701,6 +703,10 @@ class JSSImporter(Processor):
                 changes["jss_extension_attribute_added"])
             if extattrs:
                 data["Extension_Attributes"] = self.get_report_string(extattrs)
+
+            jss_package_uploaded = self.get_report_string(changes["jss_repo_updated"])
+            if jss_package_uploaded:
+                data["Package_Uploaded"] = "True"
 
     def update_object(self, data, obj, path, update):
         """Update an object if it differs.
