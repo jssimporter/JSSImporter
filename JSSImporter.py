@@ -21,6 +21,8 @@ from collections import OrderedDict
 from distutils.version import StrictVersion
 import os
 import shutil
+import zipfile
+import zlib
 import sys
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
@@ -412,6 +414,12 @@ class JSSImporter(Processor):
 
         return category
 
+    def zipdir(self, path, ziph):
+        # ziph is zipfile handle
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                ziph.write(os.path.join(root, file))
+
     def handle_package(self):
         """Creates or updates, and copies a package object.
 
@@ -442,9 +450,21 @@ class JSSImporter(Processor):
             # See if the package is non-flat (requires zipping prior to
             # upload).
             if os.path.isdir(pkg_path):
-                shutil.make_archive(
-                    pkg_path, "zip", os.path.dirname(pkg_path), self.pkg_name)
+                # shutil doesn't allow files over 2GB so commenting this out
+                # shutil.make_archive(
+                #     pkg_path, "zip", os.path.dirname(pkg_path), self.pkg_name)
+                # pkg_path += ".zip"
+
+                # Use zipfile instead
+                zf = zipfile.ZipFile(pkg_path + '.zip',
+                                     "w",
+                                     zipfile.ZIP_DEFLATED,
+                                     allowZip64=True)
+                self.zipdir(pkg_path,zf)
+                self.output("Closing: %s.zip" % pkg_path)
+                zf.close()
                 pkg_path += ".zip"
+
                 # Make sure our change gets added back into the env for
                 # visibility.
                 self.env["pkg_path"] = pkg_path
@@ -553,15 +573,13 @@ class JSSImporter(Processor):
                     raise ProcessorError(
                         "Script '%s' could not be read!" % script_file)
 
-                escaped_script_contents = escape(script_contents)
-
                 script_object = self.update_or_create_new(
                     jss.Script,
                     script["template_path"],
                     os.path.basename(script_file),
                     added_env="jss_script_added",
                     update_env="jss_script_updated",
-                    script_contents=escaped_script_contents)
+                    script_contents=script_contents)
 
                 results.append(script_object)
 
@@ -627,7 +645,7 @@ class JSSImporter(Processor):
                 "summary_text": "The following changes were made to the JSS:",
                 "report_fields": [
                     "Name", "Package", "Categories", "Groups", "Scripts",
-                    "Extension_Attributes", "Policy", "Icon", "Version", 
+                    "Extension_Attributes", "Policy", "Icon", "Version",
                     "Package_Uploaded"],
                 "data": {
                     "Name": "",
