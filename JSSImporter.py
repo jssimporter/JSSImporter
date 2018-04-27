@@ -20,7 +20,7 @@
 from collections import OrderedDict
 from distutils.version import StrictVersion
 import os
-import shutil
+from zipfile import ZipFile, ZIP_DEFLATED
 import sys
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
@@ -37,7 +37,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.0")
 
 
@@ -153,6 +153,15 @@ class JSSImporter(Processor):
                 "Category to create/associate policy with. Defaults"
                 " to 'No category assigned'.",
         },
+        "force_policy_state": {
+            "required": False,
+            "description":
+                "If set to False JSSImporter will not override the policy "
+                "enabled state. This allows creating new policies in a default "
+                "state and then going and manually enabling them in the JSS "
+                "Boolean, defaults to 'True'",
+            "default": True,
+        },
         "os_requirements": {
             "required": False,
             "description":
@@ -172,21 +181,21 @@ class JSSImporter(Processor):
             "description": "Text to apply to the package's Notes field.",
             "default": ""
         },
-         "package_priority": {
+        "package_priority": {
             "required": False,
             "description":
                 "Priority to use for deploying or uninstalling the "
                 "package. Value between 1-20. Defaults to '10'",
             "default": "10"
         },
-         "package_reboot": {
+        "package_reboot": {
             "required": False,
             "description":
                 "Computers must be restarted after installing the package "
                 "Boolean. Defaults to 'False'",
             "default": "False"
         },
-         "package_boot_volume_required": {
+        "package_boot_volume_required": {
             "required": False,
             "description":
                 "Ensure that the package is installed on the boot drive "
@@ -293,6 +302,7 @@ class JSSImporter(Processor):
         self.replace_dict = {}
         self.extattrs = None
         self.groups = None
+        self.exclusion_groups = None
         self.scripts = None
         self.policy = None
 
@@ -335,10 +345,7 @@ class JSSImporter(Processor):
         if len(self.jss.distribution_points) == 0:
             self.output("Warning: No distribution points configured!")
         for dp in self.jss.distribution_points:
-            if hasattr(dp, 'is_mounted') and dp.is_mounted():
-                dp.was_mounted = True
-            else:
-                dp.was_mounted = False
+            dp.was_mounted = hasattr(dp, 'is_mounted') and dp.is_mounted()
         # Don't bother mounting the DPs if there's no package.
         if self.env["pkg_path"]:
             self.jss.distribution_points.mount()
@@ -436,15 +443,14 @@ class JSSImporter(Processor):
             package_info = self.env.get("package_info")
             package_notes = self.env.get("package_notes")
             package_priority = self.env.get("package_priority")
-            package_reboot =  self.env.get("package_reboot")
+            package_reboot = self.env.get("package_reboot")
             package_boot_volume_required = self.env.get(
                 "package_boot_volume_required")
             # See if the package is non-flat (requires zipping prior to
             # upload).
             if os.path.isdir(pkg_path):
-                shutil.make_archive(
-                    pkg_path, "zip", os.path.dirname(pkg_path), self.pkg_name)
-                pkg_path += ".zip"
+                pkg_path = self.zip_pkg_path(pkg_path)
+
                 # Make sure our change gets added back into the env for
                 # visibility.
                 self.env["pkg_path"] = pkg_path
@@ -470,11 +476,11 @@ class JSSImporter(Processor):
             self.update_object(package_info, package, "info", pkg_update)
             self.update_object(package_notes, package, "notes", pkg_update)
             self.update_object(package_priority, package, "priority",
-                                pkg_update)
+                               pkg_update)
             self.update_object(package_reboot, package, "reboot_required",
-                                pkg_update)
+                               pkg_update)
             self.update_object(package_boot_volume_required, package,
-                                "boot_volume_required", pkg_update)
+                               "boot_volume_required", pkg_update)
 
             # Ensure packages are on distribution point(s)
 
@@ -490,7 +496,7 @@ class JSSImporter(Processor):
             # Passes the id of the newly created package object so JDS'
             # will upload to the correct package object. Ignored by
             # AFP/SMB.
-            if self.env["jss_changed_objects"]["jss_package_added"]:
+            if self.env["jss_changed_objects"]["jss_package_updated"]:
                 self.copy(pkg_path, id_=package.id)
             # For AFP/SMB shares, we still want to see if the package
             # exists.  If it's missing, copy it!
@@ -505,6 +511,28 @@ class JSSImporter(Processor):
                         "a mistake, ensure you have JSS_REPOS configured.")
 
         return package
+
+    def zip_pkg_path(self, path):
+        """Add files from path to a zip file handle.
+
+        Args:
+            path (str): Path to folder to zip.
+
+        Returns:
+            (str) name of resulting zip file.
+        """
+        zip_name = "{}.zip".format(path)
+
+        with ZipFile(
+            zip_name, "w", ZIP_DEFLATED, allowZip64=True) as zip_handle:
+
+            for root, _, files in os.walk(path):
+                for member in files:
+                    zip_handle.write(os.path.join(root, member))
+
+            self.output("Closing: %s" % zip_name)
+
+        return zip_name
 
     def handle_extension_attributes(self):
         """Add extension attributes if needed."""
@@ -763,9 +791,8 @@ class JSSImporter(Processor):
         self.replace_dict = replace_dict
 
     # pylint: disable=too-many-arguments
-    def update_or_create_new(
-        self, obj_cls, template_path, name="", added_env="", update_env="",
-        script_contents=""):
+    def update_or_create_new(self, obj_cls, template_path, name="",
+                             added_env="", update_env="", script_contents=""):
         """Check for an existing object and update it, or create a new
         object.
 
@@ -829,6 +856,9 @@ class JSSImporter(Processor):
                     "self_service/self_service_icon")
                 if icon_xml is not None:
                     self.add_icon_to_policy(recipe_object, icon_xml)
+                if not self.env.get('force_policy_state'):
+                    state = existing_object.find('general/enabled').text
+                    recipe_object.find('general/enabled').text = state
             self.add_scope_to_policy(recipe_object)
             self.add_scripts_to_policy(recipe_object)
             self.add_package_to_policy(recipe_object)
