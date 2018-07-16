@@ -26,6 +26,7 @@ from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
+
 import jss
 # Ensure that python-jss dependency is at minimum version
 try:
@@ -460,12 +461,12 @@ class JSSImporter(Processor):
                 package = self.jss.Package(self.pkg_name)
                 self.output("Pkg-object already exists according to JSS, "
                             "moving on...")
+                pkg_update = (self.env["jss_changed_objects"]["jss_package_updated"])
             except jss.GetError:
                 # Package doesn't exist
                 package = jss.Package(self.jss, self.pkg_name)
+                pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
 
-            pkg_update = (self.env[
-                "jss_changed_objects"]["jss_package_updated"])
             if self.category is not None:
                 cat_name = self.category.name
             else:
@@ -496,7 +497,7 @@ class JSSImporter(Processor):
             # Passes the id of the newly created package object so JDS'
             # will upload to the correct package object. Ignored by
             # AFP/SMB.
-            if self.env["jss_changed_objects"]["jss_package_updated"]:
+            if self.env["jss_changed_objects"]["jss_package_added"]:
                 self.copy(pkg_path, id_=package.id)
             # For AFP/SMB shares, we still want to see if the package
             # exists.  If it's missing, copy it!
