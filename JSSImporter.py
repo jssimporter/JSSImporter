@@ -26,6 +26,7 @@ from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
+
 import jss
 # Ensure that python-jss dependency is at minimum version
 try:
@@ -468,10 +469,31 @@ class JSSImporter(Processor):
                 package = self.jss.Package(self.pkg_name)
                 self.output("Pkg-object already exists according to JSS, "
                             "moving on...")
+                pkg_update = (self.env["jss_changed_objects"]["jss_package_updated"])
             except jss.GetError:
                 # Package doesn't exist
                 package = jss.Package(self.jss, self.pkg_name)
+                pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
 
+<<<<<<< HEAD
+=======
+            if self.category is not None:
+                cat_name = self.category.name
+            else:
+                cat_name = ""
+            self.update_object(cat_name, package, "category", pkg_update)
+            self.update_object(os_requirements, package, "os_requirements",
+                               pkg_update)
+            self.update_object(package_info, package, "info", pkg_update)
+            self.update_object(package_notes, package, "notes", pkg_update)
+            self.update_object(package_priority, package, "priority",
+                               pkg_update)
+            self.update_object(package_reboot, package, "reboot_required",
+                               pkg_update)
+            self.update_object(package_boot_volume_required, package,
+                               "boot_volume_required", pkg_update)
+
+>>>>>>> 9998819... Correct the usage of jss_package_added in jssimporter
             # Ensure packages are on distribution point(s)
 
             # If we had to make a new package object, we know we need to
@@ -486,7 +508,7 @@ class JSSImporter(Processor):
             # Passes the id of the newly created package object so JDS'
             # will upload to the correct package object. Ignored by
             # AFP/SMB.
-            if self.env["jss_changed_objects"]["jss_package_updated"]:
+            if self.env["jss_changed_objects"]["jss_package_added"]:
                 self.copy(pkg_path, id_=package.id)
                 self.upload_needed = True
             # For AFP/SMB shares, we still want to see if the package
