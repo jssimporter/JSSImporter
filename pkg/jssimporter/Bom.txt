@@ -1,0 +1,8 @@
+.	40755	0/0
+./Library	41775	0/80
+./Library/Application Support	40755	0/80
+./Library/Application Support/JSSImporter	40755	0/80
+./Library/Application Support/JSSImporter/jss	40755	0/80
+./Library/AutoPkg	40755	0/80
+./Library/AutoPkg/autopkglib	40755	0/80
+
