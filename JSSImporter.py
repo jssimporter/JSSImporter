@@ -529,10 +529,6 @@ class JSSImporter(Processor):
                         "a mistake, ensure you have JSS_REPOS configured.")
         return package
 
-    def update_pkg_obj(pkg_update):
-        """updates the package object"""
-
-
     def handle_extension_attributes(self):
         """Add extension attributes if needed."""
         extattrs = self.env.get("extension_attributes")
