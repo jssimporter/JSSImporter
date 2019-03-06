@@ -23,7 +23,6 @@ import os
 from zipfile import ZipFile, ZIP_DEFLATED
 import sys
 from xml.etree import ElementTree
-from xml.sax.saxutils import escape
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
 
@@ -38,7 +37,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.0.1"
+__version__ = "1.0.2b2"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.0")
 
 
@@ -607,15 +606,13 @@ class JSSImporter(Processor):
                     raise ProcessorError(
                         "Script '%s' could not be read!" % script_file)
 
-                escaped_script_contents = escape(script_contents)
-
                 script_object = self.update_or_create_new(
                     jss.Script,
                     script["template_path"],
                     os.path.basename(script_file),
                     added_env="jss_script_added",
                     update_env="jss_script_updated",
-                    script_contents=escaped_script_contents)
+                    script_contents=script_contents)
 
                 results.append(script_object)
 
