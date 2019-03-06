@@ -269,6 +269,14 @@ class JSSImporter(Processor):
             "required": False,
             "description": "Name of the target Site",
         },
+        "STOP_IF_NO_JSS_UPLOAD": {
+            "required": False,
+            "default": False,
+            "description":
+                ("If True, the processor will stop after verifying that "
+                 "a PKG upload was not required since a PKG of the same name "
+                 "is already present on the server"),
+        },
     }
     output_variables = {
         "jss_changed_objects": {
@@ -295,6 +303,7 @@ class JSSImporter(Processor):
         self.groups = None
         self.scripts = None
         self.policy = None
+        self.upload_needed = True
 
     def main(self):
         """Main processor code."""
@@ -331,7 +340,7 @@ class JSSImporter(Processor):
         self.category = self.handle_category("category")
         self.policy_category = self.handle_category("policy_category")
 
-        # Get our DPs read for copying.
+        # Get our DPs ready for copying.
         if len(self.jss.distribution_points) == 0:
             self.output("Warning: No distribution points configured!")
         for dp in self.jss.distribution_points:
@@ -344,6 +353,12 @@ class JSSImporter(Processor):
             self.jss.distribution_points.mount()
 
         self.package = self.handle_package()
+
+        # stop if no package was uploaded and STOP_IF_NO_JSS_UPLOAD is True
+        if self.upload_needed == False and self.env["STOP_IF_NO_JSS_UPLOAD"] == True:
+            self.summarize()
+            return
+
         # Build our text replacement dictionary
         self.build_replace_dict()
 
@@ -432,13 +447,6 @@ class JSSImporter(Processor):
             if not os.path.exists(pkg_path):
                 raise ProcessorError(
                     "JSSImporter can't find a package at '%s'!" % pkg_path)
-            os_requirements = self.env.get("os_requirements")
-            package_info = self.env.get("package_info")
-            package_notes = self.env.get("package_notes")
-            package_priority = self.env.get("package_priority")
-            package_reboot =  self.env.get("package_reboot")
-            package_boot_volume_required = self.env.get(
-                "package_boot_volume_required")
             # See if the package is non-flat (requires zipping prior to
             # upload).
             if os.path.isdir(pkg_path):
@@ -458,24 +466,6 @@ class JSSImporter(Processor):
                 # Package doesn't exist
                 package = jss.Package(self.jss, self.pkg_name)
 
-            pkg_update = (self.env[
-                "jss_changed_objects"]["jss_package_updated"])
-            if self.category is not None:
-                cat_name = self.category.name
-            else:
-                cat_name = ""
-            self.update_object(cat_name, package, "category", pkg_update)
-            self.update_object(os_requirements, package, "os_requirements",
-                               pkg_update)
-            self.update_object(package_info, package, "info", pkg_update)
-            self.update_object(package_notes, package, "notes", pkg_update)
-            self.update_object(package_priority, package, "priority",
-                                pkg_update)
-            self.update_object(package_reboot, package, "reboot_required",
-                                pkg_update)
-            self.update_object(package_boot_volume_required, package,
-                                "boot_volume_required", pkg_update)
-
             # Ensure packages are on distribution point(s)
 
             # If we had to make a new package object, we know we need to
@@ -492,19 +482,56 @@ class JSSImporter(Processor):
             # AFP/SMB.
             if self.env["jss_changed_objects"]["jss_package_added"]:
                 self.copy(pkg_path, id_=package.id)
+                self.upload_needed = True
             # For AFP/SMB shares, we still want to see if the package
             # exists.  If it's missing, copy it!
             elif not self.jss.distribution_points.exists(
                     os.path.basename(pkg_path)):
                 self.copy(pkg_path)
+                self.upload_needed = True
             else:
                 self.output("Package upload not needed.")
+                self.upload_needed = False
+
+            # only update the package object if an upload was carried out
+            if self.upload_needed == False and self.env["STOP_IF_NO_JSS_UPLOAD"] == True:
+                return
+
+            pkg_update = (self.env[
+                "jss_changed_objects"]["jss_package_updated"])
+            os_requirements = self.env.get("os_requirements")
+            package_info = self.env.get("package_info")
+            package_notes = self.env.get("package_notes")
+            package_priority = self.env.get("package_priority")
+            package_reboot =  self.env.get("package_reboot")
+            package_boot_volume_required = self.env.get(
+                "package_boot_volume_required")
+
+            if self.category is not None:
+                cat_name = self.category.name
+            else:
+                cat_name = ""
+            self.update_object(cat_name, package, "category", pkg_update)
+            self.update_object(os_requirements, package, "os_requirements",
+                               pkg_update)
+            self.update_object(package_info, package, "info", pkg_update)
+            self.update_object(package_notes, package, "notes", pkg_update)
+            self.update_object(package_priority, package, "priority",
+                                pkg_update)
+            self.update_object(package_reboot, package, "reboot_required",
+                                pkg_update)
+            self.update_object(package_boot_volume_required, package,
+                                "boot_volume_required", pkg_update)
+
         else:
             package = None
             self.output("Package upload and object update skipped. If this is "
                         "a mistake, ensure you have JSS_REPOS configured.")
-
         return package
+
+    def update_pkg_obj(pkg_update):
+        """updates the package object"""
+
 
     def handle_extension_attributes(self):
         """Add extension attributes if needed."""
@@ -627,7 +654,7 @@ class JSSImporter(Processor):
                 "summary_text": "The following changes were made to the JSS:",
                 "report_fields": [
                     "Name", "Package", "Categories", "Groups", "Scripts",
-                    "Extension_Attributes", "Policy", "Icon", "Version", 
+                    "Extension_Attributes", "Policy", "Icon", "Version",
                     "Package_Uploaded"],
                 "data": {
                     "Name": "",
