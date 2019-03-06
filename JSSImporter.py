@@ -23,6 +23,7 @@ import os
 from zipfile import ZipFile, ZIP_DEFLATED
 import sys
 from xml.etree import ElementTree
+from xml.sax.saxutils import escape
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
 
@@ -37,7 +38,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.0.2b2"
+__version__ = "1.0.1"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.0")
 
 
@@ -474,25 +475,6 @@ class JSSImporter(Processor):
                 package = jss.Package(self.jss, self.pkg_name)
                 pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
 
-<<<<<<< HEAD
-=======
-            if self.category is not None:
-                cat_name = self.category.name
-            else:
-                cat_name = ""
-            self.update_object(cat_name, package, "category", pkg_update)
-            self.update_object(os_requirements, package, "os_requirements",
-                               pkg_update)
-            self.update_object(package_info, package, "info", pkg_update)
-            self.update_object(package_notes, package, "notes", pkg_update)
-            self.update_object(package_priority, package, "priority",
-                               pkg_update)
-            self.update_object(package_reboot, package, "reboot_required",
-                               pkg_update)
-            self.update_object(package_boot_volume_required, package,
-                               "boot_volume_required", pkg_update)
-
->>>>>>> 9998819... Correct the usage of jss_package_added in jssimporter
             # Ensure packages are on distribution point(s)
 
             # If we had to make a new package object, we know we need to
@@ -625,13 +607,15 @@ class JSSImporter(Processor):
                     raise ProcessorError(
                         "Script '%s' could not be read!" % script_file)
 
+                escaped_script_contents = escape(script_contents)
+
                 script_object = self.update_or_create_new(
                     jss.Script,
                     script["template_path"],
                     os.path.basename(script_file),
                     added_env="jss_script_added",
                     update_env="jss_script_updated",
-                    script_contents=script_contents)
+                    script_contents=escaped_script_contents)
 
                 results.append(script_object)
 
