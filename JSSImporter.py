@@ -503,6 +503,7 @@ class JSSImporter(Processor):
 
             # only update the package object if an upload was carried out
             if self.upload_needed == False and self.env["STOP_IF_NO_JSS_UPLOAD"] == True:
+                self.output("Not overwriting policy as STOP_IF_NO_JSS_UPLOAD is set to True.")
                 return
 
             pkg_update = (self.env[
