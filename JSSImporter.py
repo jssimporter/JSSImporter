@@ -280,7 +280,7 @@ class JSSImporter(Processor):
         },
         "STOP_IF_NO_JSS_UPLOAD": {
             "required": False,
-            "default": False,
+            "default": True,
             "description":
                 ("If True, the processor will stop after verifying that "
                  "a PKG upload was not required since a PKG of the same name "
