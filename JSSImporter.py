@@ -364,7 +364,8 @@ class JSSImporter(Processor):
         self.package = self.handle_package()
 
         # stop if no package was uploaded and STOP_IF_NO_JSS_UPLOAD is True
-        if self.env["STOP_IF_NO_JSS_UPLOAD"] and not self.upload_needed:
+        if (self.env["STOP_IF_NO_JSS_UPLOAD"] == True
+            and not self.upload_needed):
             self.summarize()
             return
 
@@ -504,7 +505,8 @@ class JSSImporter(Processor):
                 self.upload_needed = False
 
             # only update the package object if an upload was carried out
-            if self.env["STOP_IF_NO_JSS_UPLOAD"] and not self.upload_needed:
+            if (self.env["STOP_IF_NO_JSS_UPLOAD"] == True
+                and not self.upload_needed):
                 self.output("Not overwriting policy as STOP_IF_NO_JSS_UPLOAD "
                             "is set to True.")
                 self.env["stop_processing_recipe"] = True
