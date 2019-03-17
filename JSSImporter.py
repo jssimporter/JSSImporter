@@ -17,11 +17,12 @@
 """See docstring for JSSImporter class."""
 
 
+import os
+import sys
+import time
 from collections import OrderedDict
 from distutils.version import StrictVersion
-import os
 from zipfile import ZipFile, ZIP_DEFLATED
-import sys
 from xml.etree import ElementTree
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
@@ -459,10 +460,10 @@ class JSSImporter(Processor):
             # upload).
             if os.path.isdir(pkg_path):
                 pkg_path = self.zip_pkg_path(pkg_path)
+                self.env["pkg_path"] = pkg_path
 
                 # Make sure our change gets added back into the env for
                 # visibility.
-                self.env["pkg_path"] = pkg_path
                 self.pkg_name += ".zip"
 
             try:
@@ -504,13 +505,22 @@ class JSSImporter(Processor):
 
             # only update the package object if an upload was carried out
             if self.env["STOP_IF_NO_JSS_UPLOAD"] and not self.upload_needed:
-                self.output("Not overwriting policy as STOP_IF_NO_JSS_UPLOAD"
+                self.output("Not overwriting policy as STOP_IF_NO_JSS_UPLOAD "
                             "is set to True.")
                 self.env["stop_processing_recipe"] = True
                 return
 
-            pkg_update = (self.env[
-                "jss_changed_objects"]["jss_package_updated"])
+            # wait for feedback that the package is there
+            while True:
+                try:
+                    package = self.jss.Package(self.pkg_name)
+                    break
+                except:
+                    pass
+            self.output("Uploaded package id: {}".format(package.id))
+
+            pkg_update = (
+                self.env["jss_changed_objects"]["jss_package_updated"])
             os_requirements = self.env.get("os_requirements")
             package_info = self.env.get("package_info")
             package_notes = self.env.get("package_notes")
