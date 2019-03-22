@@ -513,12 +513,15 @@ class JSSImporter(Processor):
                 return
 
             # wait for feedback that the package is there
+            timeout = time.time() + 60
             while True:
                 try:
                     package = self.jss.Package(self.pkg_name)
                     break
                 except:
-                    pass
+                    time.sleep(1)
+                    if time.time() > timeout:
+                        break
             self.output("Uploaded package id: {}".format(package.id))
 
             pkg_update = (
