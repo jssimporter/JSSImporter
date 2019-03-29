@@ -520,7 +520,7 @@ class JSSImporter(Processor):
                     break
                 except:
                     self.output("Waiting for package id from server...")
-                    time.sleep(1)
+                    time.sleep(5)
             self.output("Uploaded package id: {}".format(package.id))
 
             pkg_update = (
