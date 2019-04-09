@@ -366,6 +366,10 @@ class JSSImporter(Processor):
         # stop if no package was uploaded and STOP_IF_NO_JSS_UPLOAD is True
         if (self.env["STOP_IF_NO_JSS_UPLOAD"] == True
             and not self.upload_needed):
+            # Done with DPs, unmount them.
+            for dp in self.jss.distribution_points:
+                if not dp.was_mounted:
+                    self.jss.distribution_points.umount()
             self.summarize()
             return
 
@@ -512,16 +516,20 @@ class JSSImporter(Processor):
                 self.env["stop_processing_recipe"] = True
                 return
 
-            # wait for feedback that the package is there
-            timeout = time.time() + 60
-            while time.time() < timeout:
-                try:
-                    package = self.jss.Package(self.pkg_name)
-                    break
-                except:
-                    self.output("Waiting for package id from server...")
-                    time.sleep(5)
-            self.output("Uploaded package id: {}".format(package.id))
+            # wait for feedback that the package is there (only for cloud repos)
+            try:
+                self.env["JSS_REPOS"][0]["type"]
+                timeout = time.time() + 60
+                while time.time() < timeout:
+                    try:
+                        package = self.jss.Package(self.pkg_name)
+                        break
+                    except:
+                        self.output("Waiting for package id from server...")
+                        time.sleep(5)
+                self.output("Uploaded package id: {}".format(package.id))
+            except:
+                pass
 
             pkg_update = (
                 self.env["jss_changed_objects"]["jss_package_updated"])
