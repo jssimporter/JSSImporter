@@ -17,11 +17,12 @@
 """See docstring for JSSImporter class."""
 
 
+import os
+import sys
+import time
 from collections import OrderedDict
 from distutils.version import StrictVersion
-import os
 from zipfile import ZipFile, ZIP_DEFLATED
-import sys
 from xml.etree import ElementTree
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
@@ -82,10 +83,11 @@ class JSSImporter(Processor):
                 "variable.",
         },
         "pkg_path": {
-            "required": True,
+            "required": False,
             "description":
                 "Path to a pkg or dmg to import - provided by "
                 "previous pkg recipe/processor.",
+            "default": "",
         },
         "version": {
             "required": False,
@@ -280,7 +282,7 @@ class JSSImporter(Processor):
         },
         "STOP_IF_NO_JSS_UPLOAD": {
             "required": False,
-            "default": False,
+            "default": True,
             "description":
                 ("If True, the processor will stop after verifying that "
                  "a PKG upload was not required since a PKG of the same name "
@@ -362,7 +364,12 @@ class JSSImporter(Processor):
         self.package = self.handle_package()
 
         # stop if no package was uploaded and STOP_IF_NO_JSS_UPLOAD is True
-        if self.upload_needed == False and self.env["STOP_IF_NO_JSS_UPLOAD"] == True:
+        if (self.env["STOP_IF_NO_JSS_UPLOAD"] == True
+            and not self.upload_needed):
+            # Done with DPs, unmount them.
+            for dp in self.jss.distribution_points:
+                if not dp.was_mounted:
+                    self.jss.distribution_points.umount()
             self.summarize()
             return
 
@@ -458,10 +465,10 @@ class JSSImporter(Processor):
             # upload).
             if os.path.isdir(pkg_path):
                 pkg_path = self.zip_pkg_path(pkg_path)
+                self.env["pkg_path"] = pkg_path
 
                 # Make sure our change gets added back into the env for
                 # visibility.
-                self.env["pkg_path"] = pkg_path
                 self.pkg_name += ".zip"
 
             try:
@@ -502,11 +509,30 @@ class JSSImporter(Processor):
                 self.upload_needed = False
 
             # only update the package object if an upload was carried out
-            if self.upload_needed == False and self.env["STOP_IF_NO_JSS_UPLOAD"] == True:
+            if (self.env["STOP_IF_NO_JSS_UPLOAD"] == True
+                and not self.upload_needed):
+                self.output("Not overwriting policy as STOP_IF_NO_JSS_UPLOAD "
+                            "is set to True.")
+                self.env["stop_processing_recipe"] = True
                 return
 
-            pkg_update = (self.env[
-                "jss_changed_objects"]["jss_package_updated"])
+            # wait for feedback that the package is there (only for cloud repos)
+            try:
+                self.env["JSS_REPOS"][0]["type"]
+                timeout = time.time() + 60
+                while time.time() < timeout:
+                    try:
+                        package = self.jss.Package(self.pkg_name)
+                        break
+                    except:
+                        self.output("Waiting for package id from server...")
+                        time.sleep(5)
+                self.output("Uploaded package id: {}".format(package.id))
+            except:
+                pass
+
+            pkg_update = (
+                self.env["jss_changed_objects"]["jss_package_updated"])
             os_requirements = self.env.get("os_requirements")
             package_info = self.env.get("package_info")
             package_notes = self.env.get("package_notes")
