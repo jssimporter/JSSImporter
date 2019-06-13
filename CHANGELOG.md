@@ -3,7 +3,29 @@
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## [Unreleased][unreleased]
+## [1.0.2b3] - 2019-06-13 - A brave new world (with just a handful of men)
+
+There are a bunch of small fixes and improvements in this release, plus a few known issues - we'll update this file as time allows.
+
+### Added
+
+- @grahamrpugh added a feature that prevents policies from being overwritten if there is no new package to upload, called `STOP_IF_NO_JSS_UPLOAD`. It is enabled by default. To override this behaviour and force the processor to continue and overwrite policies etc., run your autopkg recipe with the `--key STOP_IF_NO_JSS_UPLOAD=False` parameter.
+
+### Fixed
+
+- @grahamrpugh contributed (#135) which prevents uploaded scripts from having certain special characters incorrectly escaped, namely `>`, `<` and `&`.
+
+### Known issues
+
+- `JCDS` mode remains "experimental" only. JCDS users may wish to continue to use the CDP mode if they encounter problems.
+- Jamf cloud users may see intermittent failures of upload of packages, icons or other objects. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
+
+
+## [1.0.2b2] - 2018-09-22 - Bundled Dependency Testing
+
+This release bundles dependencies to allow us to use requests again.
+It also pulls in the boto library for connection to AWS S3 directly in future.
+It supports a new Distribution Point Type, `JCDS`, for direct upload to JCDS. The `CDP` type will always remain for backwards compatibility.
 
 ### Changed
 - Added updated python-jss (2.0.1) to fix issues with CDP/JCDS uploads.
