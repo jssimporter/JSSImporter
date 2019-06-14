@@ -35,6 +35,7 @@ $(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py:
 	@echo "Copying JSSImporter.py into autopkglib"
 	mkdir -p "$(PKG_ROOT)/Library/AutoPkg/autopkglib"
 	cp $(CURDIR)/JSSImporter.py $(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py
+	chmod 755 "$(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py"
 
 
 "$(PKG_ROOT)/Library/Application Support/JSSImporter/jss":
