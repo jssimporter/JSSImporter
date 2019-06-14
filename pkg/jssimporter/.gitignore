@@ -1,0 +1,9 @@
+# .DS_Store files!
+.DS_Store
+
+# our build directory
+build/
+
+# package products
+payload/Library/Application Support/JSSImporter/*
+payload/Library/AutoPkg/autopkglib/*
