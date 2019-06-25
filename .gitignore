@@ -2,3 +2,4 @@
 *.swp
 .ropeproject
 *.pkg
+*.DS_Store

@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## [1.0.2b4] - 2019-06-25 - 1.0.2b4
+
+### Fixed
+
+ - Minor update to embedded python-jss, which fixes a `urllib` problem when running in python2 (#151)
+
+### Known issues
+
+ - `JCDS` mode remains "experimental" only. JCDS users may wish to continue to use the CDP mode if they encounter problems.
+ - Jamf cloud users may see intermittent failures of upload of packages, icons or other objects. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
+
+
 ## [1.0.2b3] - 2019-06-13 - A brave new world (with just a handful of men)
 
 There are a bunch of small fixes and improvements in this release, plus a few known issues - we'll update this file as time allows.
@@ -14,11 +26,6 @@ There are a bunch of small fixes and improvements in this release, plus a few kn
 ### Fixed
 
 - @grahamrpugh contributed (#135) which prevents uploaded scripts from having certain special characters incorrectly escaped, namely `>`, `<` and `&`.
-
-### Known issues
-
-- `JCDS` mode remains "experimental" only. JCDS users may wish to continue to use the CDP mode if they encounter problems.
-- Jamf cloud users may see intermittent failures of upload of packages, icons or other objects. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
 
 
 ## [1.0.2b2] - 2018-09-22 - Bundled Dependency Testing
