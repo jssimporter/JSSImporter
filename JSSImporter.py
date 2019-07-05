@@ -210,9 +210,10 @@ class JSSImporter(Processor):
                 "Array of group dictionaries. Wrap each group in a "
                 "dictionary. Group keys include 'name' (Name of the group to "
                 "use, required), 'smart' (Boolean: static group=False, smart "
-                "group=True, default is False, not required), and "
+                "group=True, default is False, not required), "
                 "template_path' (string: path to template file to use for "
-                "group, required for smart groups, invalid for static groups)",
+                "group, required for smart groups, invalid for static groups), "
+                "and 'do_update' (Boolean: default is True, not required)",
         },
         "exclusion_groups": {
             "required": False,
@@ -222,7 +223,8 @@ class JSSImporter(Processor):
                 "use, required), 'smart' (Boolean: static group=False, smart "
                 "group=True, default is False, not required), and "
                 "template_path' (string: path to template file to use for "
-                "group, required for smart groups, invalid for static groups)",
+                "group, required for smart groups, invalid for static groups), "
+                "and 'do_update' (Boolean: default is True, not required)",
         },
         "scripts": {
             "required": False,
@@ -605,6 +607,7 @@ class JSSImporter(Processor):
         computer_groups = []
         if groups:
             for group in groups:
+                self.output("Computer Group to process: %s" % group["name"])
                 if self.validate_input_var(group):
                     is_smart = group.get("smart", False)
                     if is_smart:
@@ -856,6 +859,8 @@ class JSSImporter(Processor):
             update_env: The environment var to update if an object is
                 updated.
             script_contents (str): XML escaped script.
+            do_update (Boolean): Do not overwrite an existing group if
+                set to False.
 
         Returns:
             The recipe object after updating.
@@ -943,7 +948,7 @@ class JSSImporter(Processor):
         """Return an object based on a template located in search path.
 
         Args:
-            obj_cls: JSSObject class (for the purposes of JSSIMporter a
+            obj_cls: JSSObject class (for the purposes of JSSImporter a
                 Policy or a ComputerGroup)
             template_path: String filename or path to template file.
                 See find_file_in_search_path() for more information on
@@ -1067,8 +1072,9 @@ class JSSImporter(Processor):
         # Does the group have a blank value? (A blank value isn't really
         # invalid, but there's no need to process it further.)
         invalid = [False for value in var.values() if isinstance(value, str)
-                   and (value.startswith("%") and value.endswith("%")) or not
-                   value]
+                   and (value.startswith("%") and value.endswith("%"))]
+        if not var.get('name') or not var.get('template_path'):
+            invalid = True
         return False if invalid else True
 
     def add_or_update_smart_group(self, group):
@@ -1079,9 +1085,25 @@ class JSSImporter(Processor):
             self.replace_dict["site_id"] = group.get("site_id")
         if group.get("site_name"):
             self.replace_dict["site_name"] = group.get("site_name")
+
+        # If do_update is set to False, do not update this object
+        do_update = group.get("do_update", True)
+        if not do_update:
+            try:
+                computer_group = self.jss.ComputerGroup(group["name"])
+                self.output("Computer Group: %s already exists "
+                            "and set not to update." %
+                            computer_group.name)
+                return computer_group
+            except jss.GetError:
+                self.output("Computer Group: %s does not already exist. "
+                            "Creating from template." %
+                            group["name"])
+                pass
+
         computer_group = self.update_or_create_new(
             jss.ComputerGroup, group["template_path"],
-            update_env="jss_group_updated", added_env="jss_group_added")
+            update_env="jss_group_updated", added_env="jss_group_added", script_contents="")
 
         return computer_group
 
