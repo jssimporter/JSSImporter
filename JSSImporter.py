@@ -1103,7 +1103,7 @@ class JSSImporter(Processor):
 
         computer_group = self.update_or_create_new(
             jss.ComputerGroup, group["template_path"],
-            update_env="jss_group_updated", added_env="jss_group_added")
+            update_env="jss_group_updated", added_env="jss_group_added", script_contents="")
 
         return computer_group
 
