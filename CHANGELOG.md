@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file. This projec
 
 - @grahamrpugh added a `do_update` feature to prevent overwriting a computer group if it already exists on the server, while continuing to create the group if it is not there.
 - @nstrauss added a `skip_scope` feature to allow the upload of a policy without changing any existing scope.
+- @nstrauss added a `skip_scripts` feature to allow the upload of a policy without changing any existing script objects in the script.
 
 ### Fixed
 
