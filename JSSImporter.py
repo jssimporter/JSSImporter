@@ -290,6 +290,14 @@ class JSSImporter(Processor):
                  "a PKG upload was not required since a PKG of the same name "
                  "is already present on the server"),
         },
+        "skip_scope": {
+            "required": False,
+            "default": False,
+            "description":
+                ("If True, policy scope will not be updated. By default group "
+                 "and policy updates are coupled together. This allows group "
+                 "updates without updating or overwriting policy scope."),
+        },
     }
     output_variables = {
         "jss_changed_objects": {
@@ -913,7 +921,10 @@ class JSSImporter(Processor):
                 if not self.env.get('force_policy_state'):
                     state = existing_object.find('general/enabled').text
                     recipe_object.find('general/enabled').text = state
-            self.add_scope_to_policy(recipe_object)
+
+            # If skip_scope is True then don't include scope data.
+            if self.env["skip_scope"] is not True:
+                self.add_scope_to_policy(recipe_object)
             self.add_scripts_to_policy(recipe_object)
             self.add_package_to_policy(recipe_object)
 
