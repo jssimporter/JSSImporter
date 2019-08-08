@@ -298,6 +298,11 @@ class JSSImporter(Processor):
                  "and policy updates are coupled together. This allows group "
                  "updates without updating or overwriting policy scope."),
         },
+        "skip_scripts": {
+            "required": False,
+            "default": False,
+            "description": "If True, policy scripts will not be updated.",
+        },
     }
     output_variables = {
         "jss_changed_objects": {
@@ -936,7 +941,8 @@ class JSSImporter(Processor):
             # If skip_scope is True then don't include scope data.
             if self.env["skip_scope"] is not True:
                 self.add_scope_to_policy(recipe_object)
-            self.add_scripts_to_policy(recipe_object)
+            if self.env["skip_scripts"] is not True:
+                self.add_scripts_to_policy(recipe_object)
             self.add_package_to_policy(recipe_object)
 
         # If object is a script, add the passed contents to the object.
