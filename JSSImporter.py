@@ -441,9 +441,8 @@ class JSSImporter(Processor):
                 # Category doesn't exist
                 category = jss.Category(self.jss, category_name)
                 category.save()
-                # wait for feedback that the category is there (only for cloud repos)
+                # wait for feedback that the category is there
                 try:
-                    self.env["JSS_REPOS"][0]["type"]
                     timeout = time.time() + 60
                     while time.time() < timeout:
                         try:
@@ -545,9 +544,8 @@ class JSSImporter(Processor):
             # will upload to the correct package object. Ignored by
             # AFP/SMB.
             if self.env["jss_changed_objects"]["jss_package_added"]:
-                # wait for feedback that the package is there (only for cloud repos)
+                # wait for feedback that the package is there
                 try:
-                    self.env["JSS_REPOS"][0]["type"]
                     timeout = time.time() + 60
                     while time.time() < timeout:
                         try:
