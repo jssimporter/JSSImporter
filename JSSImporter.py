@@ -431,6 +431,20 @@ class JSSImporter(Processor):
                 # Category doesn't exist
                 category = jss.Category(self.jss, category_name)
                 category.save()
+                # wait for feedback that the category is there (only for cloud repos)
+                try:
+                    self.env["JSS_REPOS"][0]["type"]
+                    timeout = time.time() + 60
+                    while time.time() < timeout:
+                        try:
+                            category = self.jss.Category(category_name)
+                            self.output("Category id: {}".format(category.id))
+                            break
+                        except:
+                            self.output("Waiting for category id from server...")
+                            time.sleep(5)
+                except:
+                    pass
                 self.output(
                     "Category type: %s-'%s' created." % (category_type,
                                                          category_name))
@@ -478,61 +492,10 @@ class JSSImporter(Processor):
                 pkg_update = (self.env["jss_changed_objects"]["jss_package_updated"])
             except jss.GetError:
                 # Package doesn't exist
+                self.output("Pkg-object does not exist according to JSS.")
                 package = jss.Package(self.jss, self.pkg_name)
                 pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
 
-            # Ensure packages are on distribution point(s)
-
-            # If we had to make a new package object, we know we need to
-            # copy the package file, regardless of DP type. This solves
-            # the issue regarding the JDS.exists() method: See
-            # python-jss docs for info.  The problem with this method is
-            # that if you cancel an AutoPkg run and the package object
-            # has been created, but not uploaded, you will need to
-            # delete the package object from the JSS before running a
-            # recipe again or it won't upload the package file.
-            #
-            # Passes the id of the newly created package object so JDS'
-            # will upload to the correct package object. Ignored by
-            # AFP/SMB.
-            if self.env["jss_changed_objects"]["jss_package_added"]:
-                self.copy(pkg_path, id_=package.id)
-                self.upload_needed = True
-            # For AFP/SMB shares, we still want to see if the package
-            # exists.  If it's missing, copy it!
-            elif not self.jss.distribution_points.exists(
-                    os.path.basename(pkg_path)):
-                self.copy(pkg_path)
-                self.upload_needed = True
-            else:
-                self.output("Package upload not needed.")
-                self.upload_needed = False
-
-            # only update the package object if an upload was carried out
-            if (self.env["STOP_IF_NO_JSS_UPLOAD"] == True
-                and not self.upload_needed):
-                self.output("Not overwriting policy as STOP_IF_NO_JSS_UPLOAD "
-                            "is set to True.")
-                self.env["stop_processing_recipe"] = True
-                return
-
-            # wait for feedback that the package is there (only for cloud repos)
-            try:
-                self.env["JSS_REPOS"][0]["type"]
-                timeout = time.time() + 60
-                while time.time() < timeout:
-                    try:
-                        package = self.jss.Package(self.pkg_name)
-                        break
-                    except:
-                        self.output("Waiting for package id from server...")
-                        time.sleep(5)
-                self.output("Uploaded package id: {}".format(package.id))
-            except:
-                pass
-
-            pkg_update = (
-                self.env["jss_changed_objects"]["jss_package_updated"])
             os_requirements = self.env.get("os_requirements")
             package_info = self.env.get("package_info")
             package_notes = self.env.get("package_notes")
@@ -557,6 +520,56 @@ class JSSImporter(Processor):
             self.update_object(package_boot_volume_required, package,
                                 "boot_volume_required", pkg_update)
 
+            # Ensure packages are on distribution point(s)
+
+            # If we had to make a new package object, we know we need to
+            # copy the package file, regardless of DP type. This solves
+            # the issue regarding the JDS.exists() method: See
+            # python-jss docs for info.  The problem with this method is
+            # that if you cancel an AutoPkg run and the package object
+            # has been created, but not uploaded, you will need to
+            # delete the package object from the JSS before running a
+            # recipe again or it won't upload the package file.
+            #
+            # Passes the id of the newly created package object so JDS'
+            # will upload to the correct package object. Ignored by
+            # AFP/SMB.
+            if self.env["jss_changed_objects"]["jss_package_added"]:
+                # wait for feedback that the package is there (only for cloud repos)
+                try:
+                    self.env["JSS_REPOS"][0]["type"]
+                    timeout = time.time() + 60
+                    while time.time() < timeout:
+                        try:
+                            package.id
+                            self.output("Uploaded package id: {}".format(package.id))
+                            break
+                        except:
+                            self.output("Waiting for package id from server...")
+                            time.sleep(5)
+                except:
+                    pass
+                self.copy(pkg_path, id_=package.id)
+
+                self.upload_needed = True
+
+            # For AFP/SMB shares, we still want to see if the package
+            # exists.  If it's missing, copy it!
+            elif not self.jss.distribution_points.exists(
+                    os.path.basename(pkg_path)):
+                self.copy(pkg_path)
+                self.upload_needed = True
+            else:
+                self.output("Package upload not needed.")
+                self.upload_needed = False
+
+            # only update the package object if an upload was carried out
+            if (self.env["STOP_IF_NO_JSS_UPLOAD"] == True
+                and not self.upload_needed):
+                self.output("Not overwriting policy as STOP_IF_NO_JSS_UPLOAD "
+                            "is set to True.")
+                self.env["stop_processing_recipe"] = True
+                return
         else:
             package = None
             self.output("Package upload and object update skipped. If this is "
