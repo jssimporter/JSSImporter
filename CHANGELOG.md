@@ -3,16 +3,29 @@
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+### Known issues in latest version
+
+ - `JCDS` mode remains "experimental" only. JCDS users may wish to continue to use the CDP mode if they encounter problems.
+ - Jamf cloud users may see intermittent failures of upload of packages, icons or other objects. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
+
+
+## [1.0.2b5] - 2019-08-08 - 1.0.2b5
+
+### Added
+
+- @grahamrpugh added a `do_update` feature to prevent overwriting a computer group if it already exists on the server, while continuing to create the group if it is not there.
+- @nstrauss added a `skip_scope` feature to allow the upload of a policy without changing any existing scope.
+
+### Fixed
+
+ - Changed the order of the code which waits for the creation of a package id, and added a wait for the creation of a category id, to fix problems with package objects not yet existing when uploading a package.
+
+
 ## [1.0.2b4] - 2019-06-25 - 1.0.2b4
 
 ### Fixed
 
  - Minor update to embedded python-jss, which fixes a `urllib` problem when running in python2 (#151)
-
-### Known issues
-
- - `JCDS` mode remains "experimental" only. JCDS users may wish to continue to use the CDP mode if they encounter problems.
- - Jamf cloud users may see intermittent failures of upload of packages, icons or other objects. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
 
 
 ## [1.0.2b3] - 2019-06-13 - A brave new world (with just a handful of men)
