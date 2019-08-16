@@ -24,6 +24,7 @@ from collections import OrderedDict
 from distutils.version import StrictVersion
 from zipfile import ZipFile, ZIP_DEFLATED
 from xml.etree import ElementTree
+from xml.sax.saxutils import escape
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
 
@@ -924,7 +925,7 @@ class JSSImporter(Processor):
                 if policy_category is None:
                     policy_category = ElementTree.SubElement(
                         recipe_object, "category")
-                    policy_category.text = self.env.get('policy_category')
+                policy_category.text = self.env.get('policy_category')
 
             if existing_object is not None:
                 # If this policy already exists, and it has an icon set,
@@ -1069,7 +1070,8 @@ class JSSImporter(Processor):
         return final_path
 
     def replace_text(self, text, replace_dict):   # pylint: disable=no-self-use
-        """Substitute items in a text string.
+        """Substitute items in a text string. Also escapes for XML,
+        as this is the only use for this definition
 
         Args:
             text: A string with embedded %tags%.
@@ -1082,7 +1084,9 @@ class JSSImporter(Processor):
         """
         for key, value in replace_dict.iteritems():
             # Wrap our keys in % to match template tags.
+            value = escape(value)
             text = text.replace("%%%s%%" % key, value)
+
         return text
 
     def validate_input_var(self, var):   # pylint: disable=no-self-use
