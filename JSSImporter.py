@@ -331,7 +331,7 @@ class JSSImporter(Processor):
         self.exclusion_groups = None
         self.scripts = None
         self.policy = None
-        self.upload_needed = True
+        self.upload_needed = False
 
     def main(self):
         """Main processor code."""
@@ -431,6 +431,17 @@ class JSSImporter(Processor):
             "jss_policy_added", "jss_policy_updated", "jss_icon_uploaded")
         self.env["jss_changed_objects"] = {key: [] for key in keys}
 
+    def repo_type(self):
+        """returns the type of repo"""
+        if self.env["JSS_REPOS"]:
+            try:
+                repo = self.env["JSS_REPOS"][0]["type"]
+            except KeyError:
+                repo = "DP"
+        else:
+            return
+        return repo
+
     def handle_category(self, category_type, category_name=None):
         """Ensure a category is present."""
         if self.env.get(category_type):
@@ -485,7 +496,7 @@ class JSSImporter(Processor):
         """
         # Skip package handling if there is no package or repos.
         pkg_path = self.env["pkg_path"]
-        if self.env["JSS_REPOS"] and pkg_path != "":
+        if self.repo_type() is not None and pkg_path != "":
             # Ensure that `pkg_path` is valid.
             if not os.path.exists(pkg_path):
                 raise ProcessorError(
@@ -495,27 +506,91 @@ class JSSImporter(Processor):
             if os.path.isdir(pkg_path):
                 pkg_path = self.zip_pkg_path(pkg_path)
                 self.env["pkg_path"] = pkg_path
-
                 # Make sure our change gets added back into the env for
                 # visibility.
                 self.pkg_name += ".zip"
-
+            # now check if the package object already exists
             try:
                 package = self.jss.Package(self.pkg_name)
-                self.output("Pkg-object already exists according to JSS, "
-                            "moving on...")
+                self.output("Pkg-object already exists according to JSS.")
+                self.output("Package id: {}".format(package.id))
                 pkg_update = (self.env["jss_changed_objects"]["jss_package_updated"])
+                # for cloud DPs we assume that the package object means there is an associated package
             except jss.GetError:
                 # Package doesn't exist
                 self.output("Pkg-object does not exist according to JSS.")
-                package = jss.Package(self.jss, self.pkg_name)
-                pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
 
+                # for CDP or JDS types, the package has to be uploaded first to generate a package object
+                # then we wait for the package ID, then we can continue to assign attributes to the package
+                # object.
+                if self.repo_type() == "JDS" or self.repo_type() == "CDP" or self.repo_type() == "JCDS":
+                    self.copy(pkg_path)
+                    self.output("Package uploaded to {}.".format(self.repo_type()))
+                    self.upload_needed = True
+
+                    # wait for feedback that the package is there
+                    timeout = time.time() + 120
+                    while time.time() < timeout:
+                        try:
+                            package = self.jss.Package(self.pkg_name)
+                            if package.id != 0:
+                                self.output("Package id reported: {}".format(package.id))
+                                time.sleep(10)
+                                break
+                            else:
+                                self.output("Waiting to get package id from cloud server (reported: {})...".format(
+                                    package.id))
+                                time.sleep(10)
+                        except:
+                            self.output("Waiting to get package id from cloud server (none reported)...")
+                            time.sleep(10)
+                    try:
+                        package.id
+                    except ValueError:
+                        self.output("Failed to get package id from cloud server.")
+                        self.env["stop_processing_recipe"] = True
+                        return
+                    pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
+                elif self.repo_type() == "DP":
+                    # for AFP/SMB shares, we create the package object first and then copy the package
+                    # if it is not already there
+                    package = jss.Package(self.jss, self.pkg_name)
+                else:
+                    # no repo, or type that is not supported
+                    self.output("Package not uploaded (repo type: {}).".format(
+                        self.repo_type()))
+                    self.upload_needed = False
+
+            # For local DPs we check that the package is already on the distribution point and upload it if not
+            if self.repo_type() == "DP":
+                if not self.jss.distribution_points.exists(
+                os.path.basename(pkg_path)):
+                    self.copy(pkg_path)
+                    self.output("Package {} uploaded to distribution point.".format(self.pkg_name))
+                    self.upload_needed = True
+                else:
+                    self.output("Package upload not required.")
+                    self.upload_needed = False
+
+            # only update the package object if an uploand ad was carried out
+            if (self.env["STOP_IF_NO_JSS_UPLOAD"] is True
+                and not self.upload_needed):
+                self.output("Not overwriting policy as upload requirement is determined as {} "
+                            "and STOP_IF_NO_JSS_UPLOAD is set to {}.".format(self.upload_needed,
+                            self.env["STOP_IF_NO_JSS_UPLOAD"]))
+                self.env["stop_processing_recipe"] = True
+                return
+            elif (self.env["STOP_IF_NO_JSS_UPLOAD"] is False
+                    and not self.upload_needed):
+                self.output("Overwriting policy although upload requirement is determined as {} "
+                            "because STOP_IF_NO_JSS_UPLOAD is set to {}.".format(self.upload_needed,
+                            self.env["STOP_IF_NO_JSS_UPLOAD"]))
+            # now update the package object
             os_requirements = self.env.get("os_requirements")
             package_info = self.env.get("package_info")
             package_notes = self.env.get("package_notes")
             package_priority = self.env.get("package_priority")
-            package_reboot =  self.env.get("package_reboot")
+            package_reboot = self.env.get("package_reboot")
             package_boot_volume_required = self.env.get(
                 "package_boot_volume_required")
 
@@ -535,55 +610,7 @@ class JSSImporter(Processor):
             self.update_object(package_boot_volume_required, package,
                                 "boot_volume_required", pkg_update)
 
-            # Ensure packages are on distribution point(s)
 
-            # If we had to make a new package object, we know we need to
-            # copy the package file, regardless of DP type. This solves
-            # the issue regarding the JDS.exists() method: See
-            # python-jss docs for info.  The problem with this method is
-            # that if you cancel an AutoPkg run and the package object
-            # has been created, but not uploaded, you will need to
-            # delete the package object from the JSS before running a
-            # recipe again or it won't upload the package file.
-            #
-            # Passes the id of the newly created package object so JDS'
-            # will upload to the correct package object. Ignored by
-            # AFP/SMB.
-            if self.env["jss_changed_objects"]["jss_package_added"]:
-                # wait for feedback that the package is there
-                try:
-                    timeout = time.time() + 60
-                    while time.time() < timeout:
-                        try:
-                            package.id
-                            self.output("Uploaded package id: {}".format(package.id))
-                            break
-                        except:
-                            self.output("Waiting for package id from server...")
-                            time.sleep(5)
-                except:
-                    pass
-                self.copy(pkg_path, id_=package.id)
-
-                self.upload_needed = True
-
-            # For AFP/SMB shares, we still want to see if the package
-            # exists.  If it's missing, copy it!
-            elif not self.jss.distribution_points.exists(
-                    os.path.basename(pkg_path)):
-                self.copy(pkg_path)
-                self.upload_needed = True
-            else:
-                self.output("Package upload not needed.")
-                self.upload_needed = False
-
-            # only update the package object if an upload was carried out
-            if (self.env["STOP_IF_NO_JSS_UPLOAD"] == True
-                and not self.upload_needed):
-                self.output("Not overwriting policy as STOP_IF_NO_JSS_UPLOAD "
-                            "is set to True.")
-                self.env["stop_processing_recipe"] = True
-                return
         else:
             package = None
             self.output("Package upload and object update skipped. If this is "
@@ -632,7 +659,7 @@ class JSSImporter(Processor):
         computer_groups = []
         if groups:
             for group in groups:
-                self.output("Computer Group to process: %s" % group["name"])
+                self.output("Computer Group to process: {}".format(group["name"]))
                 if self.validate_input_var(group):
                     is_smart = group.get("smart", False)
                     if is_smart:
@@ -679,10 +706,10 @@ class JSSImporter(Processor):
             policy = self.update_or_create_new(
                 jss.Policy, template_filename, update_env="jss_policy_updated",
                 added_env="jss_policy_added")
+            self.output("Policy id: {}".format(policy.id))
         else:
             self.output("Policy creation not desired, moving on...")
             policy = None
-
         return policy
 
     def handle_icon(self):
@@ -705,7 +732,6 @@ class JSSImporter(Processor):
             # Search through search-paths for icon file.
             icon_path = self.find_file_in_search_path(
                 self.env["self_service_icon"])
-
             icon_filename = os.path.basename(icon_path)
 
             # Compare the filename in the policy to the one provided by
@@ -714,6 +740,7 @@ class JSSImporter(Processor):
             policy_filename = self.policy.findtext(
                 "self_service/self_service_icon/filename")
             if not policy_filename == icon_filename:
+                self.output("Icon name in existing policy: {}".format(policy_filename))
                 icon = jss.FileUpload(self.jss, "policies", "id",
                                       self.policy.id, icon_path)
                 icon.save()
@@ -942,8 +969,14 @@ class JSSImporter(Processor):
             # If skip_scope is True then don't include scope data.
             if self.env["skip_scope"] is not True:
                 self.add_scope_to_policy(recipe_object)
+            else:
+                self.output("Skipping assignment of scope as skip_scope is set to {}".format(self.env["skip_scope"]))
+            # If skip_scripts is True then don't include scripts data.
             if self.env["skip_scripts"] is not True:
                 self.add_scripts_to_policy(recipe_object)
+            else:
+                self.output("Skipping assignment of scripts as skip_scripts is set to {}".format(self.env["skip_scripts"]))
+            # add package to policy if there is one
             self.add_package_to_policy(recipe_object)
 
         # If object is a script, add the passed contents to the object.
@@ -971,8 +1004,8 @@ class JSSImporter(Processor):
                 self.env["jss_changed_objects"][added_env].append(name)
 
         return recipe_object
-    # pylint: enable=too-many-arguments
 
+    # pylint: enable=too-many-arguments
     def get_templated_object(self, obj_cls, template_path):
         """Return an object based on a template located in search path.
 
@@ -1014,7 +1047,7 @@ class JSSImporter(Processor):
         to copy templates, icons, etc, to the override directory.
 
         Args:
-            obj_cls: JSSObject class (for the purposes of JSSIMporter a
+            obj_cls: JSSObject class (for the purposes of JSSImporter a
                 Policy or a ComputerGroup)
             path: String filename or path to file.
 
@@ -1086,7 +1119,6 @@ class JSSImporter(Processor):
             # Wrap our keys in % to match template tags.
             value = escape(value)
             text = text.replace("%%%s%%" % key, value)
-
         return text
 
     def validate_input_var(self, var):   # pylint: disable=no-self-use
