@@ -16,7 +16,6 @@
 # limitations under the License.
 """See docstring for JSSImporter class."""
 
-
 import os
 import sys
 import time
@@ -337,14 +336,14 @@ class JSSImporter(Processor):
         """Main processor code."""
         # Ensure we have the right version of python-jss
         python_jss_version = StrictVersion(PYTHON_JSS_VERSION)
-        self.output("python-jss version: %s." % python_jss_version)
+        self.output("python-jss version: {}.".format(python_jss_version))
         if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
             self.output(
-                "python-jss version is too old. Please update to version: %s."
-                % REQUIRED_PYTHON_JSS_VERSION)
+                "python-jss version is too old. Please update to version: {}."
+                    .format(REQUIRED_PYTHON_JSS_VERSION))
             raise ProcessorError
 
-        self.output("JSSImporter version: %s." % __version__)
+        self.output("JSSImporter version: {}.".format(__version__))
 
         # clear any pre-existing summary result
         if "jss_importer_summary_result" in self.env:
@@ -359,8 +358,8 @@ class JSSImporter(Processor):
         if self.version == "0.0.0.0":
             self.output(
                 "Warning: No `version` was added to the AutoPkg env up to "
-                "this point. JSSImporter is defaulting to version %s!"
-                % self.version)
+                "this point. JSSImporter is defaulting to version {}!"
+                    .format(self.version))
 
         # Build and init jss_changed_objects
         self.init_jss_changed_objects()
@@ -380,7 +379,7 @@ class JSSImporter(Processor):
         self.package = self.handle_package()
 
         # stop if no package was uploaded and STOP_IF_NO_JSS_UPLOAD is True
-        if (self.env["STOP_IF_NO_JSS_UPLOAD"] == True
+        if (self.env["STOP_IF_NO_JSS_UPLOAD"] is True
             and not self.upload_needed):
             # Done with DPs, unmount them.
             for dp in self.jss.distribution_points:
@@ -452,8 +451,8 @@ class JSSImporter(Processor):
                 category = self.jss.Category(category_name)
                 category_name = category.name
                 self.output(
-                    "Category type: %s-'%s' already exists according to JSS, "
-                    "moving on..." % (category_type, category_name))
+                    "Category type '{}'-'{}' already exists according to JSS, "
+                    "moving on...".format(category_type, category_name))
             except jss.GetError:
                 # Category doesn't exist
                 category = jss.Category(self.jss, category_name)
@@ -472,8 +471,8 @@ class JSSImporter(Processor):
                 except:
                     pass
                 self.output(
-                    "Category type: %s-'%s' created." % (category_type,
-                                                         category_name))
+                    "Category type '{}'-'{}' created.".format(category_type,
+                                                             category_name))
                 self.env["jss_changed_objects"]["jss_category_added"].append(
                     category_name)
         else:
@@ -523,10 +522,8 @@ class JSSImporter(Processor):
                 # for CDP or JDS types, the package has to be uploaded first to generate a package object
                 # then we wait for the package ID, then we can continue to assign attributes to the package
                 # object.
-                if self.repo_type() == "JDS" or self.repo_type() == "CDP" or self.repo_type() == "JCDS":
+                if self.repo_type() == "JDS" or self.repo_type() == "CDP" or self.repo_type() == "AWS":
                     self.copy(pkg_path)
-                    self.output("Package uploaded to {}.".format(self.repo_type()))
-                    self.upload_needed = True
 
                     # wait for feedback that the package is there
                     timeout = time.time() + 120
@@ -536,6 +533,8 @@ class JSSImporter(Processor):
                             if package.id != 0:
                                 self.output("Package id reported: {}".format(package.id))
                                 time.sleep(10)
+                                self.output("Package uploaded to {}.".format(self.repo_type()))
+                                self.upload_needed = True
                                 break
                             else:
                                 self.output("Waiting to get package id from cloud server (reported: {})...".format(
@@ -551,15 +550,22 @@ class JSSImporter(Processor):
                         self.env["stop_processing_recipe"] = True
                         return
                     pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
-                elif self.repo_type() == "DP":
+                elif self.repo_type() == "DP" or self.repo_type() == "Local":
                     # for AFP/SMB shares, we create the package object first and then copy the package
                     # if it is not already there
                     package = jss.Package(self.jss, self.pkg_name)
+                    pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
                 else:
                     # no repo, or type that is not supported
-                    self.output("Package not uploaded (repo type: {}).".format(
-                        self.repo_type()))
-                    self.upload_needed = False
+                    if self.repo_type() is not None:
+                        self.output("Package not uploaded. Repo type {} is not supported. "
+                                    "Please reconfigure your JSSImporter prefs.".format(
+                                        self.repo_type()))
+                        self.env["stop_processing_recipe"] = True
+                        return
+                    else:
+                        self.output("Package not uploaded as there are no repos.")
+                        self.upload_needed = False
 
             # For local DPs we check that the package is already on the distribution point and upload it if not
             if self.repo_type() == "DP":
@@ -635,7 +641,7 @@ class JSSImporter(Processor):
                 for member in files:
                     zip_handle.write(os.path.join(root, member))
 
-            self.output("Closing: %s" % zip_name)
+            self.output("Closing: {}".format(zip_name))
 
         return zip_name
 
@@ -659,7 +665,7 @@ class JSSImporter(Processor):
         computer_groups = []
         if groups:
             for group in groups:
-                self.output("Computer Group to process: {}".format(group["name"]))
+                # self.output("Computer Group to process: {}".format(group["name"]))
                 if self.validate_input_var(group):
                     is_smart = group.get("smart", False)
                     if is_smart:
@@ -837,23 +843,23 @@ class JSSImporter(Processor):
         if data != obj.findtext(path):
             obj.find(path).text = data
             obj.save()
-            self.output("%s %s updated." % (
+            self.output("{} '{}' updated.".format(
                 str(obj.__class__).split(".")[-1][:-2], path))
             update.append(obj.name)
 
     def copy(self, source_item, id_=-1):
         """Copy a package or script using the JSS_REPOS preference."""
-        self.output("Copying %s to all distribution points." % source_item)
+        self.output("Copying {} to all distribution points.".format(source_item))
 
         def output_copy_status(connection):
             """Output AutoPkg copying status."""
-            self.output("Copying to %s" % connection["url"])
+            self.output("Copying to {}".format(connection["url"]))
 
         self.jss.distribution_points.copy(source_item, id_=id_,
                                           pre_callback=output_copy_status)
         self.env["jss_changed_objects"]["jss_repo_updated"].append(
             os.path.basename(source_item))
-        self.output("Copied %s" % source_item)
+        self.output("Copied '{}'".format(source_item))
 
     def build_replace_dict(self):
         """Build dict of replacement values based on available input."""
@@ -993,13 +999,13 @@ class JSSImporter(Processor):
             recipe_object.save()
             # Retrieve the updated XML.
             recipe_object = search_method(name)
-            self.output("%s: %s updated." % (obj_cls.__name__, name))
+            self.output("{} '{}' updated.".format(obj_cls.__name__, name))
             if update_env:
                 self.env["jss_changed_objects"][update_env].append(name)
         else:
             # Object doesn't exist yet.
             recipe_object.save()
-            self.output("%s: %s created." % (obj_cls.__name__, name))
+            self.output("{} '{}' created.".format(obj_cls.__name__, name))
             if added_env:
                 self.env["jss_changed_objects"][added_env].append(name)
 
@@ -1092,13 +1098,13 @@ class JSSImporter(Processor):
             tested.append(test_parent_folder_path)
 
             if final_path:
-                self.output("Found file: %s" % final_path)
+                self.output("Found file: {}".format(final_path))
                 break
 
         if not final_path:
             raise ProcessorError(
-                "Unable to find file %s at any of the following locations: %s"
-                % (filename, tested))
+                "Unable to find file {} at any of the following locations: {}"
+                    .format(filename, tested))
 
         return final_path
 
@@ -1155,19 +1161,28 @@ class JSSImporter(Processor):
         if not do_update:
             try:
                 computer_group = self.jss.ComputerGroup(group["name"])
-                self.output("Computer Group: %s already exists "
+                self.output("ComputerGroup '%s' already exists "
                             "and set not to update." %
                             computer_group.name)
                 return computer_group
             except jss.GetError:
-                self.output("Computer Group: %s does not already exist. "
+                self.output("ComputerGroup '%s' does not already exist. "
                             "Creating from template." %
                             group["name"])
-                pass
 
         computer_group = self.update_or_create_new(
-            jss.ComputerGroup, group["template_path"],
-            update_env="jss_group_updated", added_env="jss_group_added")
+                jss.ComputerGroup, group["template_path"],
+                update_env="jss_group_updated", added_env="jss_group_added")
+        # wait for feedback that the group is there
+        timeout = time.time() + 60
+        while time.time() < timeout:
+            try:
+                group_check = self.jss.ComputerGroup(computer_group)
+                self.output("ComputerGroup id: {}".format(group_check.id))
+                break
+            except:
+                self.output("Waiting for ComputerGroup id from server...")
+                time.sleep(5)
 
         return computer_group
 
@@ -1176,12 +1191,12 @@ class JSSImporter(Processor):
         # Check for pre-existing group first
         try:
             computer_group = self.jss.ComputerGroup(group["name"])
-            self.output("Computer Group: %s already exists." %
-                        computer_group.name)
+            self.output("Computer Group: {} already exists."
+                        .format(computer_group.name))
         except jss.GetError:
             computer_group = jss.ComputerGroup(self.jss, group["name"])
             computer_group.save()
-            self.output("Computer Group: %s created." % computer_group.name)
+            self.output("Computer Group '{}' created.".format(computer_group.name))
             self.env["jss_changed_objects"]["jss_group_added"].append(
                 computer_group.name)
 
