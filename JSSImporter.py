@@ -499,10 +499,11 @@ class JSSImporter(Processor):
             # Ensure that `pkg_path` is valid.
             if not os.path.exists(pkg_path):
                 raise ProcessorError(
-                    "JSSImporter can't find a package at '%s'!" % pkg_path)
+                    "JSSImporter can't find a package at '{}}'!".format(pkg_path))
             # See if the package is non-flat (requires zipping prior to
             # upload).
             if os.path.isdir(pkg_path):
+                self.output("Pkg-object is a bundle. Converting to zip...")
                 pkg_path = self.zip_pkg_path(pkg_path)
                 self.env["pkg_path"] = pkg_path
                 # Make sure our change gets added back into the env for
@@ -517,7 +518,7 @@ class JSSImporter(Processor):
                 # for cloud DPs we assume that the package object means there is an associated package
             except jss.GetError:
                 # Package doesn't exist
-                self.output("Pkg-object does not exist according to JSS.")
+                self.output("Pkg-object does not already exist on the JSS.")
 
                 # for CDP or JDS types, the package has to be uploaded first to generate a package object
                 # then we wait for the package ID, then we can continue to assign attributes to the package
@@ -545,14 +546,15 @@ class JSSImporter(Processor):
                             time.sleep(10)
                     try:
                         package.id
+                        pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
                     except ValueError:
                         self.output("Failed to get package id from cloud server.")
                         self.env["stop_processing_recipe"] = True
                         return
-                    pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
                 elif self.repo_type() == "DP" or self.repo_type() == "Local":
                     # for AFP/SMB shares, we create the package object first and then copy the package
                     # if it is not already there
+                    self.output("Creating Pkg-object...")
                     package = jss.Package(self.jss, self.pkg_name)
                     pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
                 else:
@@ -568,7 +570,7 @@ class JSSImporter(Processor):
                         self.upload_needed = False
 
             # For local DPs we check that the package is already on the distribution point and upload it if not
-            if self.repo_type() == "DP":
+            if self.repo_type() == "DP" or self.repo_type() == "Local":
                 if not self.jss.distribution_points.exists(
                 os.path.basename(pkg_path)):
                     self.copy(pkg_path)
@@ -591,6 +593,7 @@ class JSSImporter(Processor):
                 self.output("Overwriting policy although upload requirement is determined as {} "
                             "because STOP_IF_NO_JSS_UPLOAD is set to {}.".format(self.upload_needed,
                             self.env["STOP_IF_NO_JSS_UPLOAD"]))
+
             # now update the package object
             os_requirements = self.env.get("os_requirements")
             package_info = self.env.get("package_info")
