@@ -5,8 +5,14 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Known issues in latest version
 
- - `JCDS` mode remains "experimental" only. JCDS users may wish to continue to use the CDP mode if they encounter problems.
- - Jamf cloud users may see intermittent failures of upload of packages, icons or other objects. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
+ - `JCDS` mode does not currently work. JCDS users should use the `CDP` mode.
+ - Efforts have been made to reduce incidences of this problem, but Jamf cloud users may see intermittent failures of upload of packages, icons or other objects. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
+
+## [1.0.2b6] - 2019-08-29 - 1.0.2b6
+
+### Fixed
+
+- Fixed a bug that was introduced in 1.0.2b5 which prevented certain packages from uploading (relevant to #162).
 
 
 ## [1.0.2b5] - 2019-08-08 - 1.0.2b5
