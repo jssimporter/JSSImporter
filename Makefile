@@ -49,5 +49,5 @@ $(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py:
 clean :
 	@echo "Cleaning up package root"
 	rm $(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py
-	rm -rf "$(PKG_ROOT)/Library/Application Support/JSSImporter/*"
+	rm -rf "$(PKG_ROOT)/Library/Application Support/JSSImporter/"*
 	rm $(CURDIR)/pkg/jssimporter/build/*.pkg
