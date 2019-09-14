@@ -5,8 +5,19 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Known issues in latest version
 
- - `JCDS` mode does not currently work. JCDS users should use the `CDP` mode.
- - Efforts have been made to reduce incidences of this problem, but Jamf cloud users may see intermittent failures of upload of packages, icons or other objects. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
+ - `JCDS` mode does not currently work and will cause a recipe to fail if configured. JCDS users should use the `CDP` mode.
+ - Efforts continue to be made to reduce intermittent failures of upload of packages to Jamf Cloud Distribution Points and CDPs, icons or other objects, but they may still occur. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
+ - The above efforts to improve package upload reliability may conversely cause problems on setups with multiple DPs of different types. Scenarios involving Cloud plus Local DPs are not yet tested, and there probably needs to be a more intelligent method of treating each DP as a separate package upload process than currently exists.
+
+
+## [1.0.2b7] - 2019-09-14 - 1.0.2b7
+
+### Added
+
+- @grahamrpugh added a new `wait_for_id` definition, which provides a common method to check for feedback on the upload of each API object, in an attempt to reduce the chance of cloud clusters returning conflicting information about whether an object has been successfully uploaded or not.
+- Verbosity is increased with respect to reporting object IDs.
+- References to JSS are changed to "Jamf Pro Server"... except in the name `JSSImporter` of course! I think we're stuck with that one.
+
 
 ## [1.0.2b6] - 2019-08-29 - 1.0.2b6
 
