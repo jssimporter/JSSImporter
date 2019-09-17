@@ -923,8 +923,6 @@ class JSSImporter(Processor):
         to copy templates, icons, etc, to the override directory.
 
         Args:
-            obj_cls: JSSObject class (for the purposes of JSSImporter a
-                Policy or a ComputerGroup)
             path: String filename or path to file.
 
                 If path is just a filename, path is assumed to

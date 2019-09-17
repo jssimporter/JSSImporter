@@ -40,8 +40,6 @@ $(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py:
 
 "$(PKG_ROOT)/Library/Application Support/JSSImporter/jss":
 	@echo "Installing python-jss"
-	#@echo "Using amended PYTHONPATH inside package root, otherwise easy_install will complain we arent installing to a PYTHONPATH"
-	#cd $(JSS_GIT_ROOT) && PYTHONPATH="$(PKG_ROOT)/Library/Application Support/JSSImporter" easy_install --install-dir "$(PKG_ROOT)/Library/Application Support/JSSImporter" .
 	mkdir -p "$(PKG_ROOT)/Library/Application Support/JSSImporter"
 	cp -Rf "$(JSS_GIT_ROOT)/jss" "$(PKG_ROOT)/Library/Application Support/JSSImporter"
 
