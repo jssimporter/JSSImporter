@@ -10,53 +10,25 @@ All notable changes to this project will be documented in this file. This projec
  - The above efforts to improve package upload reliability may conversely cause problems on setups with multiple DPs of different types. Scenarios involving Cloud plus Local DPs are not yet tested, and there probably needs to be a more intelligent method of treating each DP as a separate package upload process than currently exists.
 
 
-## [1.0.2b7] - 2019-09-14 - 1.0.2b7
+## [1.0.2] - 2019-09-25 - 1.0.2
 
-### Added
+This is the official 1.0.2 release, exactly the same as the former 1.0.2b8.
 
 - @grahamrpugh added a new `wait_for_id` definition, which provides a common method to check for feedback on the upload of each API object, in an attempt to reduce the chance of cloud clusters returning conflicting information about whether an object has been successfully uploaded or not.
 - Verbosity is increased with respect to reporting object IDs.
 - References to JSS are changed to "Jamf Pro Server"... except in the name `JSSImporter` of course! I think we're stuck with that one.
-
-
-## [1.0.2b6] - 2019-08-29 - 1.0.2b6
-
-### Fixed
-
-- Fixed a bug that was introduced in 1.0.2b5 which prevented certain packages from uploading (relevant to #162).
-
-
-## [1.0.2b5] - 2019-08-08 - 1.0.2b5
-
-### Added
-
 - @grahamrpugh added a `do_update` feature to prevent overwriting a computer group if it already exists on the server, while continuing to create the group if it is not there.
 - @nstrauss added a `skip_scope` feature to allow the upload of a policy without changing any existing scope.
 - @nstrauss added a `skip_scripts` feature to allow the upload of a policy without changing any existing script objects in the script.
-
-### Fixed
-
- - Changed the order of the code which waits for the creation of a package id, and added a wait for the creation of a category id, to fix problems with package objects not yet existing when uploading a package.
-
-
-## [1.0.2b4] - 2019-06-25 - 1.0.2b4
-
-### Fixed
-
- - Minor update to embedded python-jss, which fixes a `urllib` problem when running in python2 (#151)
-
-
-## [1.0.2b3] - 2019-06-13 - A brave new world (with just a handful of men)
-
-There are a bunch of small fixes and improvements in this release, plus a few known issues - we'll update this file as time allows.
-
-### Added
-
 - @grahamrpugh added a feature that prevents policies from being overwritten if there is no new package to upload, called `STOP_IF_NO_JSS_UPLOAD`. It is enabled by default. To override this behaviour and force the processor to continue and overwrite policies etc., run your autopkg recipe with the `--key STOP_IF_NO_JSS_UPLOAD=False` parameter.
+- @grahamrpugh contributed (#135) which prevents uploaded scripts from having certain special characters incorrectly escaped, namely `>`, `<` and `&`.
 
 ### Fixed
 
-- @grahamrpugh contributed (#135) which prevents uploaded scripts from having certain special characters incorrectly escaped, namely `>`, `<` and `&`.
+- Fixed a bug that prevented Types `AFP` and `SMB` from being accepted (was introduced in 1.0.2b5).
+- Fixed a bug that was introduced in 1.0.2b5 which prevented certain packages from uploading (relevant to #162).
+- Changed the order of the code which waits for the creation of a package id, and added a wait for the creation of a category id, to fix problems with package objects not yet existing when uploading a package.
+- Updated the embedded python-jss, which fixes a `urllib` problem when running in python2 (#151)
 
 
 ## [1.0.2b2] - 2018-09-22 - Bundled Dependency Testing

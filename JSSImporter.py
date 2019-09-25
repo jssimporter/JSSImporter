@@ -38,7 +38,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.0.2b7"
+__version__ = "1.0.2"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.1")
 
 
@@ -474,7 +474,7 @@ class JSSImporter(Processor):
                 except ValueError:
                     raise ProcessorError("Failed to get Package ID from {}.".format(self.repo_type()))
 
-            elif self.repo_type() == "DP" or self.repo_type() == "Local":
+            elif self.repo_type() == "DP" or self.repo_type() == "SMB" or self.repo_type() == "AFP" or self.repo_type() == "Local":
                 # for AFP/SMB shares, we create the package object first and then copy the package
                 # if it is not already there
                 self.output("Creating Package object...")
@@ -486,7 +486,7 @@ class JSSImporter(Processor):
                     "JSSImporter can't upload the Package at '{}'! Repo type {} is not supported. Please reconfigure your JSSImporter prefs.".format(pkg_path, self.repo_type()))
 
         # For local DPs we check that the package is already on the distribution point and upload it if not
-        if self.repo_type() == "DP" or self.repo_type() == "Local":
+        if self.repo_type() == "DP" or self.repo_type() == "SMB" or self.repo_type() == "AFP" or self.repo_type() == "Local":
             if not self.jss.distribution_points.exists(os.path.basename(pkg_path)):
                 self.copy(pkg_path)
                 package = self.wait_for_id(jss.Package, self.pkg_name)
