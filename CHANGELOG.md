@@ -3,29 +3,32 @@
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## [1.0.2b4] - 2019-06-25 - 1.0.2b4
+### Known issues in latest version
 
-### Fixed
-
- - Minor update to embedded python-jss, which fixes a `urllib` problem when running in python2 (#151)
-
-### Known issues
-
- - `JCDS` mode remains "experimental" only. JCDS users may wish to continue to use the CDP mode if they encounter problems.
- - Jamf cloud users may see intermittent failures of upload of packages, icons or other objects. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
+ - `JCDS` mode does not currently work and will cause a recipe to fail if configured. JCDS users should use the `CDP` mode.
+ - Efforts continue to be made to reduce intermittent failures of upload of packages to Jamf Cloud Distribution Points and CDPs, icons or other objects, but they may still occur. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
+ - The above efforts to improve package upload reliability may conversely cause problems on setups with multiple DPs of different types. Scenarios involving Cloud plus Local DPs are not yet tested, and there probably needs to be a more intelligent method of treating each DP as a separate package upload process than currently exists.
 
 
-## [1.0.2b3] - 2019-06-13 - A brave new world (with just a handful of men)
+## [1.0.2] - 2019-09-25 - 1.0.2
 
-There are a bunch of small fixes and improvements in this release, plus a few known issues - we'll update this file as time allows.
+This is the official 1.0.2 release, exactly the same as the former 1.0.2b8.
 
-### Added
-
+- @grahamrpugh added a new `wait_for_id` definition, which provides a common method to check for feedback on the upload of each API object, in an attempt to reduce the chance of cloud clusters returning conflicting information about whether an object has been successfully uploaded or not.
+- Verbosity is increased with respect to reporting object IDs.
+- References to JSS are changed to "Jamf Pro Server"... except in the name `JSSImporter` of course! I think we're stuck with that one.
+- @grahamrpugh added a `do_update` feature to prevent overwriting a computer group if it already exists on the server, while continuing to create the group if it is not there.
+- @nstrauss added a `skip_scope` feature to allow the upload of a policy without changing any existing scope.
+- @nstrauss added a `skip_scripts` feature to allow the upload of a policy without changing any existing script objects in the script.
 - @grahamrpugh added a feature that prevents policies from being overwritten if there is no new package to upload, called `STOP_IF_NO_JSS_UPLOAD`. It is enabled by default. To override this behaviour and force the processor to continue and overwrite policies etc., run your autopkg recipe with the `--key STOP_IF_NO_JSS_UPLOAD=False` parameter.
+- @grahamrpugh contributed (#135) which prevents uploaded scripts from having certain special characters incorrectly escaped, namely `>`, `<` and `&`.
 
 ### Fixed
 
-- @grahamrpugh contributed (#135) which prevents uploaded scripts from having certain special characters incorrectly escaped, namely `>`, `<` and `&`.
+- Fixed a bug that prevented Types `AFP` and `SMB` from being accepted (was introduced in 1.0.2b5).
+- Fixed a bug that was introduced in 1.0.2b5 which prevented certain packages from uploading (relevant to #162).
+- Changed the order of the code which waits for the creation of a package id, and added a wait for the creation of a category id, to fix problems with package objects not yet existing when uploading a package.
+- Updated the embedded python-jss, which fixes a `urllib` problem when running in python2 (#151)
 
 
 ## [1.0.2b2] - 2018-09-22 - Bundled Dependency Testing
