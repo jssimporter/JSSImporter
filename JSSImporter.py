@@ -38,7 +38,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.1")
 
 
@@ -487,19 +487,13 @@ class JSSImporter(Processor):
 
         # For local DPs we check that the package is already on the distribution point and upload it if not
         if self.repo_type() == "DP" or self.repo_type() == "SMB" or self.repo_type() == "AFP" or self.repo_type() == "Local":
-            if not self.jss.distribution_points.exists(os.path.basename(pkg_path)):
-                self.copy(pkg_path)
-                package = self.wait_for_id(jss.Package, self.pkg_name)
-                try:
-                    package.id
-                    pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
-                except ValueError:
-                    raise ProcessorError("Failed to get Package ID from {}.".format(self.repo_type()))
-                self.output("Package {} uploaded to distribution point.".format(self.pkg_name))
-                self.upload_needed = True
-            else:
+            if self.jss.distribution_points.exists(os.path.basename(pkg_path)):
                 self.output("Package upload not required.")
                 self.upload_needed = False
+            else:
+                self.copy(pkg_path)
+                self.output("Package {} uploaded to distribution point.".format(self.pkg_name))
+                self.upload_needed = True
 
         # only update the package object if an uploand ad was carried out
         if (self.env["STOP_IF_NO_JSS_UPLOAD"] is True
@@ -528,12 +522,13 @@ class JSSImporter(Processor):
             cat_name = self.category.name
         else:
             cat_name = ""
-        self.wait_for_id(jss.Package, self.pkg_name)
-        try:
-            package.id
-            pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
-        except ValueError:
-            raise ProcessorError("Failed to get Package ID from {}.".format(self.repo_type()))
+        if self.repo_type() == "JDS" or self.repo_type() == "CDP" or self.repo_type() == "AWS":
+            self.wait_for_id(jss.Package, self.pkg_name)
+            try:
+                package.id
+                pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
+            except ValueError:
+                raise ProcessorError("Failed to get Package ID from {}.".format(self.repo_type()))
         self.update_object(cat_name, package, "category", pkg_update)
         self.update_object(os_requirements, package, "os_requirements",
                            pkg_update)
