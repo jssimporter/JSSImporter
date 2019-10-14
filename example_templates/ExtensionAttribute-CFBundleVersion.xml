@@ -6,7 +6,9 @@
         <type>script</type>
         <platform>Mac</platform>
         <script>#!/bin/bash
+
 CFBundleVersion=$(defaults read /Applications/"%NAME%.app"/Contents/Info.plist CFBundleVersion)
+
 echo "&lt;result&gt;$CFBundleVersion&lt;/result&gt;"
 exit 0</script>
     </input_type>

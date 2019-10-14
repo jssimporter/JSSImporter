@@ -2,8 +2,8 @@
     <general>
         <!-- Enable ID or Name for a Site-based Policy
         <site>
-            <id>%SITE_ID%</id>
-            <name>%SITE_NAME%</name>
+            <id>%site_id%</id>
+            <name>%site_name%</name>
         </site> -->
         <name>Install Latest %PROD_NAME%</name>
         <enabled>true</enabled>
@@ -25,6 +25,8 @@
         <!--Icons added by JSSImporter-->
         <use_for_self_service>true</use_for_self_service>
         <install_button_text>Install %VERSION%</install_button_text>
+        <reinstall_button_text>Install %VERSION%</reinstall_button_text>
+        <self_service_display_name>Install Latest %PROD_NAME%</self_service_display_name>
         <self_service_description>%SELF_SERVICE_DESCRIPTION%</self_service_description>
     </self_service>
     <maintenance>

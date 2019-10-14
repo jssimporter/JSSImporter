@@ -5,12 +5,14 @@
     <input_type>
         <type>script</type>
         <platform>Mac</platform>
-        <script>#!/usr/bin/python
+        <script>#!/bin/bash
 
 # Do some stuff
+result="True"
 
 # Don't forget to encode reserved characters
-print '&lt;result&gt;%s&lt;/result&gt;' % 'True'</script>
+echo "&lt;result&gt;$result&lt;/result&gt;"
+exit 0</script>
     </input_type>
     <inventory_display>Extension Attributes</inventory_display>
     <recon_display>Extension Attributes</recon_display>
