@@ -10,6 +10,11 @@ All notable changes to this project will be documented in this file. This projec
  - The above efforts to improve package upload reliability may conversely cause problems on setups with multiple DPs of different types. Scenarios involving Cloud plus Local DPs are not yet tested, and there probably needs to be a more intelligent method of treating each DP as a separate package upload process than currently exists.
 
 
+## [1.0.4] - 2019-10-15 - 1.0.4
+
+This is a bugfix release to improve performance for Jamf Cloud customers using a local DP as the Master.
+
+
 ## [1.0.3] - 2019-10-04 - 1.0.3
 
 This is a bugfix release to address Issue #165 - local distribution points failing to upload new packages due to failing to obtain a package ID. The package ID check has been removed from local DPs, but left for cloud DPs. Tested and now working on JCDS and SMB DPs.
@@ -17,7 +22,7 @@ This is a bugfix release to address Issue #165 - local distribution points faili
 
 ## [1.0.2] - 2019-09-25 - 1.0.2
 
-This is the official 1.0.2 release, exactly the same as the former 1.0.2b8.
+This is the official 1.0.2 release, exactly the same as the former 1.0.2b8. I don't intend to use beta version numbering for bugfixes in the future.
 
 - @grahamrpugh added a new `wait_for_id` definition, which provides a common method to check for feedback on the upload of each API object, in an attempt to reduce the chance of cloud clusters returning conflicting information about whether an object has been successfully uploaded or not.
 - Verbosity is increased with respect to reporting object IDs.

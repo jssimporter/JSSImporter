@@ -38,7 +38,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.1")
 
 
@@ -365,27 +365,6 @@ class JSSImporter(Processor):
             return
         return repo
 
-    def wait_for_id(self, obj_cls, obj_name):
-        """wait for feedback that the object is there"""
-        object = None
-        search_method = getattr(self.jss, obj_cls.__name__)
-        # limit time to wait to get a package ID.
-        timeout = time.time() + 120
-        while time.time() < timeout:
-            try:
-                object = search_method(obj_name)
-                if object.id != 0:
-                    self.output("{} ID '{}' verified on server".format(obj_cls.__name__, object.id))
-                    self.upload_needed = True
-                    return object
-                else:
-                    self.output("Waiting to get {} ID from server (reported: {})...".format(obj_cls.__name__,
-                        object.id))
-                    time.sleep(10)
-            except jss.GetError:
-                self.output("Waiting to get {} ID from server (none reported)...".format(obj_cls.__name__))
-                time.sleep(10)
-
     def handle_category(self, category_type, category_name=None):
         """Ensure a category is present."""
         if self.env.get(category_type):
@@ -406,8 +385,8 @@ class JSSImporter(Processor):
                 try:
                     category.id
                     self.output(
-                        "Category, type '{}', name '{}', created.".format(category_type,
-                                                                 category_name))
+                        "Category, type '{}', name '{}', created (ID: {}).".format(category_type,
+                                                                 category_name, category.id))
                     self.env["jss_changed_objects"]["jss_category_added"].append(
                         category_name)
                 except ValueError:
@@ -415,6 +394,28 @@ class JSSImporter(Processor):
         else:
             category = None
         return category
+
+    def wait_for_id(self, obj_cls, obj_name):
+        """wait for feedback that the object is there"""
+        object = None
+        search_method = getattr(self.jss, obj_cls.__name__)
+        # limit time to wait to get a package ID.
+        timeout = time.time() + 60
+        while time.time() < timeout:
+            try:
+                object = search_method(obj_name)
+                if int(object.id) != 0:
+                    # self.output("{} ID '{}' verified on server".format(obj_cls.__name__, object.id))
+                    self.upload_needed = True
+                    return object
+                else:
+                    self.output("Waiting to get {} ID from server (reported: {})"
+                                "...".format(obj_cls.__name__, object.id))
+                    time.sleep(10)
+            except jss.GetError:
+                self.output("Waiting to get {} ID from server (none reported)"
+                            "...".format(obj_cls.__name__))
+                time.sleep(10)
 
     def handle_package(self):
         """Creates or updates, and copies a package object.
@@ -469,33 +470,43 @@ class JSSImporter(Processor):
                 self.copy(pkg_path)
                 package = self.wait_for_id(jss.Package, self.pkg_name)
                 try:
-                    package.id
+                    self.output("First pass (cloud): Package object ID: {}".format(package.id))
                     pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
                 except ValueError:
                     raise ProcessorError("Failed to get Package ID from {}.".format(self.repo_type()))
 
-            elif self.repo_type() == "DP" or self.repo_type() == "SMB" or self.repo_type() == "AFP" or self.repo_type() == "Local":
-                # for AFP/SMB shares, we create the package object first and then copy the package
-                # if it is not already there
-                self.output("Creating Package object...")
+            elif (self.repo_type() == "DP" or self.repo_type() == "SMB" or
+                  self.repo_type() == "AFP" or self.repo_type() == "Local"):
+                # For local DPs we check that the package is already on the distribution point and upload it if not
+                if self.jss.distribution_points.exists(os.path.basename(pkg_path)):
+                    self.output("Package '{}' found, so copy to {} repo not required."
+                                "(Delete package from repo and re-run recipe if you need to"
+                                "update it).".format(self.pkg_name, self.repo_type()))
+                    self.upload_needed = False
+                else:
+                    self.copy(pkg_path)
+                    self.output("Package '{}' copied to {} repo.".format(self.pkg_name, self.repo_type()))
+                    self.upload_needed = True
+
+                # next we create the package object as it is not already there
+                self.output("Creating Package object for '{}'...".format(self.pkg_name))
                 package = jss.Package(self.jss, self.pkg_name)
+                package.save()
                 pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
+                # test check
+                package = self.wait_for_id(jss.Package, package)
+                try:
+                    self.output("First pass (local): Package object ID: {}".format(package.id))
+                    pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
+                except ValueError:
+                    raise ProcessorError("Failed to get Package ID from {}.".format(self.repo_type()))
             else:
                 # repo type that is not supported
                 raise ProcessorError(
-                    "JSSImporter can't upload the Package at '{}'! Repo type {} is not supported. Please reconfigure your JSSImporter prefs.".format(pkg_path, self.repo_type()))
+                    "JSSImporter can't upload the Package at '{}'! Repo type {} is not supported."
+                    "Please reconfigure your JSSImporter prefs.".format(pkg_path, self.repo_type()))
 
-        # For local DPs we check that the package is already on the distribution point and upload it if not
-        if self.repo_type() == "DP" or self.repo_type() == "SMB" or self.repo_type() == "AFP" or self.repo_type() == "Local":
-            if self.jss.distribution_points.exists(os.path.basename(pkg_path)):
-                self.output("Package upload not required.")
-                self.upload_needed = False
-            else:
-                self.copy(pkg_path)
-                self.output("Package {} uploaded to distribution point.".format(self.pkg_name))
-                self.upload_needed = True
-
-        # only update the package object if an uploand ad was carried out
+        # only update the package object if an upload was carried out
         if (self.env["STOP_IF_NO_JSS_UPLOAD"] is True
                 and not self.upload_needed):
             self.output("Not overwriting policy as upload requirement is determined as {} "
@@ -518,17 +529,17 @@ class JSSImporter(Processor):
         package_boot_volume_required = self.env.get(
             "package_boot_volume_required")
 
+        self.wait_for_id(jss.Package, package)
+        try:
+            self.output("Second pass: Package object ID: {}".format(package.id))
+            pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
+        except ValueError:
+            raise ProcessorError("Failed to get Package ID from {}.".format(self.repo_type()))
+
         if self.category is not None:
             cat_name = self.category.name
         else:
             cat_name = ""
-        if self.repo_type() == "JDS" or self.repo_type() == "CDP" or self.repo_type() == "AWS":
-            self.wait_for_id(jss.Package, self.pkg_name)
-            try:
-                package.id
-                pkg_update = (self.env["jss_changed_objects"]["jss_package_added"])
-            except ValueError:
-                raise ProcessorError("Failed to get Package ID from {}.".format(self.repo_type()))
         self.update_object(cat_name, package, "category", pkg_update)
         self.update_object(os_requirements, package, "os_requirements",
                            pkg_update)
@@ -854,7 +865,7 @@ class JSSImporter(Processor):
                 object.id
                 # Retrieve the updated XML.
                 recipe_object = search_method(name)
-                self.output("{} '{}' updated.".format(obj_cls.__name__, name))
+                self.output("{} '{}' updated (ID: {}).".format(obj_cls.__name__, name, object.id))
                 if update_env:
                     self.env["jss_changed_objects"][update_env].append(name)
             except ValueError:
@@ -867,7 +878,7 @@ class JSSImporter(Processor):
             object = self.wait_for_id(obj_cls, name)
             try:
                 object.id
-                self.output("{} '{}' created.".format(obj_cls.__name__, name))
+                self.output("{} '{}' updated (ID: {}).".format(obj_cls.__name__, name, object.id))
                 if added_env:
                     self.env["jss_changed_objects"][added_env].append(name)
             except ValueError:
