@@ -10,6 +10,11 @@ All notable changes to this project will be documented in this file. This projec
  - The above efforts to improve package upload reliability may conversely cause problems on setups with multiple DPs of different types. Scenarios involving Cloud plus Local DPs are not yet tested, and there probably needs to be a more intelligent method of treating each DP as a separate package upload process than currently exists.
 
 
+## [1.0.5] - 2019-11-05 - 1.0.5
+
+This is a bugfix release to incorporate an updates to the bundled `python-jss` - an update to `urllib3` and a fix to allow hidden shares (with `$` in the share name).
+
+
 ## [1.0.4] - 2019-10-15 - 1.0.4
 
 This is a bugfix release to improve performance for Jamf Cloud customers using a local DP as the Master.

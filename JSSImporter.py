@@ -38,7 +38,7 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.0.4"
+__version__ = "1.0.5"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.1")
 
 
@@ -479,8 +479,8 @@ class JSSImporter(Processor):
                   self.repo_type() == "AFP" or self.repo_type() == "Local"):
                 # For local DPs we check that the package is already on the distribution point and upload it if not
                 if self.jss.distribution_points.exists(os.path.basename(pkg_path)):
-                    self.output("Package '{}' found, so copy to {} repo not required."
-                                "(Delete package from repo and re-run recipe if you need to"
+                    self.output("Package '{}' found, so copy to {} repo not required. "
+                                "(Delete package from repo and re-run recipe if you need to "
                                 "update it).".format(self.pkg_name, self.repo_type()))
                     self.upload_needed = False
                 else:
@@ -503,7 +503,7 @@ class JSSImporter(Processor):
             else:
                 # repo type that is not supported
                 raise ProcessorError(
-                    "JSSImporter can't upload the Package at '{}'! Repo type {} is not supported."
+                    "JSSImporter can't upload the Package at '{}'! Repo type {} is not supported. "
                     "Please reconfigure your JSSImporter prefs.".format(pkg_path, self.repo_type()))
 
         # only update the package object if an upload was carried out
