@@ -995,9 +995,9 @@ class JSSImporter(Processor):
         Returns:
             The text after replacement.
         """
-        for key, value in replace_dict.iteritems():
+        for key in replace_dict:
             # Wrap our keys in % to match template tags.
-            value = escape(value)
+            value = escape(replace_dict[key])
             text = text.replace("%%%s%%" % key, value)
         return text
 
