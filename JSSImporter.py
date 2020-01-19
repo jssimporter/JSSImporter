@@ -48,6 +48,10 @@ __all__ = ["JSSImporter"]
 __version__ = "1.1.0"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.1.0")
 
+# Map Python 2 basestring type for Python 3.
+if sys.version_info.major == 3:
+    basestring = str
+
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
 class JSSImporter(Processor):
