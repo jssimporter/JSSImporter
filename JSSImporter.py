@@ -17,14 +17,20 @@
 """See docstring for JSSImporter class."""
 
 from __future__ import absolute_import
+import importlib
 import os
 import sys
 import time
 from collections import OrderedDict
 from distutils.version import StrictVersion
 from zipfile import ZipFile, ZIP_DEFLATED
-from xml.etree import ElementTree
 from xml.sax.saxutils import escape
+
+# ElementTree monkey patch borrowed with love from Matteo Ferla.
+# https://blog.matteoferla.com/2019/02/uniprot-xml-and-python-elementtree.html
+sys.modules.pop('xml.etree.ElementTree', None)
+sys.modules['_elementtree'] = None
+ElementTree = importlib.import_module('xml.etree.ElementTree')
 
 sys.path.insert(0, '/Library/Application Support/JSSImporter')
 
