@@ -10,12 +10,17 @@ All notable changes to this project will be documented in this file. This projec
  - The above efforts to improve package upload reliability may conversely cause problems on setups with multiple DPs of different types. Scenarios involving Cloud plus Local DPs are not yet tested, and there probably needs to be a more intelligent method of treating each DP as a separate package upload process than currently exists.
 
 
-## [1.0.3] - 2019-10-04 - 1.0.3
+## [1.1.0] - date TBD
+
+No changes yet.
+
+
+## [1.0.3] - 2019-10-04
 
 This is a bugfix release to address Issue #165 - local distribution points failing to upload new packages due to failing to obtain a package ID. The package ID check has been removed from local DPs, but left for cloud DPs. Tested and now working on JCDS and SMB DPs.
 
 
-## [1.0.2] - 2019-09-25 - 1.0.2
+## [1.0.2] - 2019-09-25
 
 This is the official 1.0.2 release, exactly the same as the former 1.0.2b8.
 
