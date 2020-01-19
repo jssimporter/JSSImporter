@@ -40,7 +40,7 @@ from autopkglib import Processor, ProcessorError
 
 __all__ = ["JSSImporter"]
 __version__ = "1.1.0"
-REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.1")
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.1.0")
 
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
