@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
 
-### Known issues in latest version
+## Known issues in latest version
 
  - `JCDS` mode does not currently work and will cause a recipe to fail if configured. JCDS users should use the `CDP` mode.
  - Efforts continue to be made to reduce intermittent failures of upload of packages to Jamf Cloud Distribution Points and CDPs, icons or other objects, but they may still occur. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
@@ -12,7 +12,8 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [1.1.0] - date TBD
 
-No changes yet.
+### Added
+- Retained compatibility with AutoPkg 1.x (Python 2) while adding compatibility for AutoPkg 2.x (Python 3).
 
 
 ## [1.0.3] - 2019-10-04
