@@ -954,7 +954,7 @@ class JSSImporter(Processor):
         unique_parent_dirs = OrderedDict()
         for parent in parent_recipe_dirs:
             unique_parent_dirs[parent] = parent
-        search_dirs = ([os.path.dirname(path)] + unique_parent_dirs.keys())
+        search_dirs = ([os.path.dirname(path)] + list(unique_parent_dirs))
 
         tested = []
         final_path = ""
