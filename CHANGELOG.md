@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Added
 - Retained compatibility with AutoPkg 1.x (Python 2) while adding compatibility for AutoPkg 2.x (Python 3).
+- Moved supporting files from `/Library/Application Support/JSSImporter` to `/Library/AutoPkg/JSSImporter`.
 
 
 ## [1.0.3] - 2019-10-04

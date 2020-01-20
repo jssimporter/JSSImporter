@@ -5,5 +5,5 @@
 build/
 
 # package products
-payload/Library/Application Support/JSSImporter/*
+payload/Library/AutoPkg/JSSImporter/*
 payload/Library/AutoPkg/autopkglib/*

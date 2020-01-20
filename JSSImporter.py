@@ -32,7 +32,7 @@ sys.modules.pop('xml.etree.ElementTree', None)
 sys.modules['_elementtree'] = None
 ElementTree = importlib.import_module('xml.etree.ElementTree')
 
-sys.path.insert(0, '/Library/Application Support/JSSImporter')
+sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
 
 import jss
 # Ensure that python-jss dependency is at minimum version
