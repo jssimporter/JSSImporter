@@ -3,19 +3,25 @@
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
 
-### Known issues in latest version
+## Known issues in latest version
 
  - `JCDS` mode does not currently work and will cause a recipe to fail if configured. JCDS users should use the `CDP` mode.
  - Efforts continue to be made to reduce intermittent failures of upload of packages to Jamf Cloud Distribution Points and CDPs, icons or other objects, but they may still occur. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
  - The above efforts to improve package upload reliability may conversely cause problems on setups with multiple DPs of different types. Scenarios involving Cloud plus Local DPs are not yet tested, and there probably needs to be a more intelligent method of treating each DP as a separate package upload process than currently exists.
 
 
-## [1.0.3] - 2019-10-04 - 1.0.3
+## [1.1.0] - date TBD
+
+### Added
+- Retained compatibility with AutoPkg 1.x (Python 2) while adding compatibility for AutoPkg 2.x (Python 3).
+
+
+## [1.0.3] - 2019-10-04
 
 This is a bugfix release to address Issue #165 - local distribution points failing to upload new packages due to failing to obtain a package ID. The package ID check has been removed from local DPs, but left for cloud DPs. Tested and now working on JCDS and SMB DPs.
 
 
-## [1.0.2] - 2019-09-25 - 1.0.2
+## [1.0.2] - 2019-09-25
 
 This is the official 1.0.2 release, exactly the same as the former 1.0.2b8.
 
