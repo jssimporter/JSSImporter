@@ -5,10 +5,10 @@ PKG_BUILD := $(CURDIR)/pkg/jssimporter/build
 PKG_VERSION := $(shell defaults read $(CURDIR)/pkg/jssimporter/build-info.plist version)
 JSS_GIT_ROOT := $(abspath $(CURDIR)/../python-jss)
 
-objects = "$(PKG_ROOT)/Library/Application Support/JSSImporter/requests" \
-	"$(PKG_ROOT)/Library/Application Support/JSSImporter/boto" \
+objects = "$(PKG_ROOT)/Library/AutoPkg/JSSImporter/requests" \
+	"$(PKG_ROOT)/Library/AutoPkg/JSSImporter/boto" \
 	$(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py \
-	"$(PKG_ROOT)/Library/Application Support/JSSImporter/jss"
+	"$(PKG_ROOT)/Library/AutoPkg/JSSImporter/jss"
 
 
 default : $(PKG_BUILD)/jssimporter-$(PKG_VERSION).pkg
@@ -19,16 +19,16 @@ $(PKG_BUILD)/jssimporter-$(PKG_VERSION).pkg: $(objects)
 	cd $(CURDIR)/pkg && $(MUNKIPKG) jssimporter
 
 
-"$(PKG_ROOT)/Library/Application Support/JSSImporter/boto":
+"$(PKG_ROOT)/Library/AutoPkg/JSSImporter/boto":
 	@echo "Installing boto into JSSImporter support directory"
-	#pip install --install-option="--prefix=$(PKG_ROOT)/Library/Application Support/JSSImporter/boto" --ignore-installed boto
-	pip install --target "$(PKG_ROOT)/Library/Application Support/JSSImporter" --ignore-installed boto
+	#pip install --install-option="--prefix=$(PKG_ROOT)/Library/AutoPkg/JSSImporter/boto" --ignore-installed boto
+	pip3 install --target "$(PKG_ROOT)/Library/AutoPkg/JSSImporter" --ignore-installed boto
 
 
-"$(PKG_ROOT)/Library/Application Support/JSSImporter/requests":
+"$(PKG_ROOT)/Library/AutoPkg/JSSImporter/requests":
 	@echo "Installing requests into JSSImporter support directory"
-	#pip install --install-option="--prefix=$(PKG_ROOT)/Library/Application Support/JSSImporter/requests" --ignore-installed requests
-	pip install --target "$(PKG_ROOT)/Library/Application Support/JSSImporter" --ignore-installed requests
+	#pip install --install-option="--prefix=$(PKG_ROOT)/Library/AutoPkg/JSSImporter/requests" --ignore-installed requests
+	pip3 install --target "$(PKG_ROOT)/Library/AutoPkg/JSSImporter" --ignore-installed requests
 
 
 $(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py:
@@ -38,14 +38,14 @@ $(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py:
 	chmod 755 "$(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py"
 
 
-"$(PKG_ROOT)/Library/Application Support/JSSImporter/jss":
+"$(PKG_ROOT)/Library/AutoPkg/JSSImporter/jss":
 	@echo "Installing python-jss"
-	mkdir -p "$(PKG_ROOT)/Library/Application Support/JSSImporter"
-	cp -Rf "$(JSS_GIT_ROOT)/jss" "$(PKG_ROOT)/Library/Application Support/JSSImporter"
+	mkdir -p "$(PKG_ROOT)/Library/AutoPkg/JSSImporter"
+	cp -Rf "$(JSS_GIT_ROOT)/jss" "$(PKG_ROOT)/Library/AutoPkg/JSSImporter"
 
 .PHONY : clean
 clean :
 	@echo "Cleaning up package root"
 	rm $(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py
-	rm -rf "$(PKG_ROOT)/Library/Application Support/JSSImporter/"*
+	rm -rf "$(PKG_ROOT)/Library/AutoPkg/JSSImporter/"*
 	rm $(CURDIR)/pkg/jssimporter/build/*.pkg

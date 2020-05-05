@@ -16,16 +16,23 @@
 # limitations under the License.
 """See docstring for JSSImporter class."""
 
+from __future__ import absolute_import
+import importlib
 import os
 import sys
 import time
 from collections import OrderedDict
 from distutils.version import StrictVersion
 from zipfile import ZipFile, ZIP_DEFLATED
-from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
-sys.path.insert(0, '/Library/Application Support/JSSImporter')
+# ElementTree monkey patch borrowed with love from Matteo Ferla.
+# https://blog.matteoferla.com/2019/02/uniprot-xml-and-python-elementtree.html
+sys.modules.pop('xml.etree.ElementTree', None)
+sys.modules['_elementtree'] = None
+ElementTree = importlib.import_module('xml.etree.ElementTree')
+
+sys.path.insert(0, '/Library/AutoPkg/JSSImporter')
 
 import jss
 # Ensure that python-jss dependency is at minimum version
@@ -38,8 +45,12 @@ from autopkglib import Processor, ProcessorError
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.0.3"
-REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.0.1")
+__version__ = "1.1.0"
+REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.1.0")
+
+# Map Python 2 basestring type for Python 3.
+if sys.version_info.major == 3:
+    basestring = str
 
 
 # pylint: disable=too-many-instance-attributes, too-many-public-methods
@@ -943,7 +954,7 @@ class JSSImporter(Processor):
         unique_parent_dirs = OrderedDict()
         for parent in parent_recipe_dirs:
             unique_parent_dirs[parent] = parent
-        search_dirs = ([os.path.dirname(path)] + unique_parent_dirs.keys())
+        search_dirs = ([os.path.dirname(path)] + list(unique_parent_dirs))
 
         tested = []
         final_path = ""
@@ -984,9 +995,9 @@ class JSSImporter(Processor):
         Returns:
             The text after replacement.
         """
-        for key, value in replace_dict.iteritems():
+        for key in replace_dict:
             # Wrap our keys in % to match template tags.
-            value = escape(value)
+            value = escape(replace_dict[key])
             text = text.replace("%%%s%%" % key, value)
         return text
 
