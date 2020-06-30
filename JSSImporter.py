@@ -507,18 +507,20 @@ class JSSImporter(Processor):
                 self.upload_needed = True
 
         # only update the package object if an uploand ad was carried out
-        if (self.env["STOP_IF_NO_JSS_UPLOAD"] is True
-                and not self.upload_needed):
-            self.output("Not overwriting policy as upload requirement is determined as {} "
-                        "and STOP_IF_NO_JSS_UPLOAD is set to {}.".format(self.upload_needed,
-                        self.env["STOP_IF_NO_JSS_UPLOAD"]))
-            self.env["stop_processing_recipe"] = True
-            return
-        elif (self.env["STOP_IF_NO_JSS_UPLOAD"] is False
-                and not self.upload_needed):
-            self.output("Overwriting policy although upload requirement is determined as {} "
-                        "because STOP_IF_NO_JSS_UPLOAD is set to {}.".format(self.upload_needed,
-                        self.env["STOP_IF_NO_JSS_UPLOAD"]))
+        if not self.upload_needed:
+            if self.env["STOP_IF_NO_JSS_UPLOAD"] != True or self.env["STOP_IF_NO_JSS_UPLOAD"] != False:
+                self.output("Invalid STOP_IF_NO_JSS_UPLOAD value given so not overwriting, eg. "
+                "STOP_IF_NO_JSS_UPLOAD is set to {}.".format(self.upload_needed, self.env["STOP_IF_NO_JSS_UPLOAD"]))
+                self.env["stop_processing_recipe"] = True
+                return         
+            elif self.env["STOP_IF_NO_JSS_UPLOAD"] == True:
+                self.output("Not overwriting policy as upload requirement is determined as {} "
+                "and STOP_IF_NO_JSS_UPLOAD is set to {}.".format(self.upload_needed, self.env["STOP_IF_NO_JSS_UPLOAD"]))
+                self.env["stop_processing_recipe"] = True
+                return
+            elif self.env["STOP_IF_NO_JSS_UPLOAD"] == False:
+                self.output("Overwriting policy although upload requirement is determined as {} "
+                "because STOP_IF_NO_JSS_UPLOAD is set to {}.".format(self.upload_needed,self.env["STOP_IF_NO_JSS_UPLOAD"]))
 
         # now update the package object
         os_requirements = self.env.get("os_requirements")
