@@ -14,7 +14,7 @@ Changes since last release.
 
 ## [1.1.1] - 2020-07-01
 
-This is a bugfix release which addresses #176, #182 and #183, improving the language of the output when there is either no `JSS_REPO` set, no `pkg_path`, or `STOP_IF_NO_JSS_UPLOAD` is not set to `False`. There are also a million minor python format changes due to the use of `black` when saving the file.
+This is a bugfix release which addresses #176, #182 and #183, improving the language of the output when there is either no `JSS_REPO` set, no `pkg_path`, or `STOP_IF_NO_JSS_UPLOAD` is not set to `False`. I have also removed some verbosity when running in `-v` or zero verbosity mode. Run with at least `-vv` to retain all previous output. There are also a million minor python format changes due to the use of `black` when saving the file.
 
 The package installer incorporates a [fix in python-jss](https://github.com/jssimporter/python-jss/pull/98).
 
