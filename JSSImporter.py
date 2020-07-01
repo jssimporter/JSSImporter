@@ -441,7 +441,7 @@ class JSSImporter(Processor):
         """
         # Skip package handling if there is no package or repos.
         pkg_path = self.env["pkg_path"]
-        if self.repo_type():
+        if self.repo_type() is None:
             self.output(
                 "No repos are setup so JSSImporter cannot upload packages. "
                 "If this is a mistake, check your JSS_REPOS array."
@@ -541,14 +541,16 @@ class JSSImporter(Processor):
         if self.env["STOP_IF_NO_JSS_UPLOAD"] is True and not self.upload_needed:
             self.output(
                 "Not overwriting policy as upload requirement is determined as {} "
-                "and STOP_IF_NO_JSS_UPLOAD is set to True."
+                "and STOP_IF_NO_JSS_UPLOAD is set to True.".format(self.upload_needed)
             )
             self.env["stop_processing_recipe"] = True
             return
         elif not self.upload_needed:
             self.output(
                 "Overwriting policy although upload requirement is determined as {} "
-                "because STOP_IF_NO_JSS_UPLOAD is not set to True."
+                "because STOP_IF_NO_JSS_UPLOAD is not set to True.".format(
+                    self.upload_needed
+                )
             )
 
         # now update the package object
