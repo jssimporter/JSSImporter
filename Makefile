@@ -22,13 +22,15 @@ $(PKG_BUILD)/jssimporter-$(PKG_VERSION).pkg: $(objects)
 "$(PKG_ROOT)/Library/AutoPkg/JSSImporter/boto":
 	@echo "Installing boto into JSSImporter support directory"
 	#pip install --install-option="--prefix=$(PKG_ROOT)/Library/AutoPkg/JSSImporter/boto" --ignore-installed boto
-	pip3 install --target "$(PKG_ROOT)/Library/AutoPkg/JSSImporter" --ignore-installed boto
+	#pip3 install --target "$(PKG_ROOT)/Library/AutoPkg/JSSImporter" --ignore-installed boto
+	/usr/local/autopkg/python -m pip install --target "$(PKG_ROOT)/Library/AutoPkg/JSSImporter" --ignore-installed boto
 
 
 "$(PKG_ROOT)/Library/AutoPkg/JSSImporter/requests":
 	@echo "Installing requests into JSSImporter support directory"
 	#pip install --install-option="--prefix=$(PKG_ROOT)/Library/AutoPkg/JSSImporter/requests" --ignore-installed requests
-	pip3 install --target "$(PKG_ROOT)/Library/AutoPkg/JSSImporter" --ignore-installed requests
+	# pip3 install --target "$(PKG_ROOT)/Library/AutoPkg/JSSImporter" --ignore-installed requests
+	/usr/local/autopkg/python -m pip install --target "$(PKG_ROOT)/Library/AutoPkg/JSSImporter" --ignore-installed requests
 
 
 $(PKG_ROOT)/Library/AutoPkg/autopkglib/JSSImporter.py:

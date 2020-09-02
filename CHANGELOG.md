@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file. This projec
 
 Changes since last release.
 
+## [1.1.2] - 2020-09-02
+
+This is a bugfix release which addresses #184, where `STOP_IF_NO_JSS_UPLOAD` was not being handled properly when set to `False`.
+
+The `Makefile` now uses `/usr/local/autopkg/python` when compiling the `pip` requirements rather than `pip3` to ensure compatibility with the version of python included with AutoPkg.
+
 ## [1.1.1] - 2020-07-01
 
 This is a bugfix release which addresses #176, #182 and #183, improving the language of the output when there is either no `JSS_REPO` set, no `pkg_path`, or `STOP_IF_NO_JSS_UPLOAD` is not set to `False`. I have also removed some verbosity when running in `-v` or zero verbosity mode. Run with at least `-vv` to retain all previous output. There are also a million minor python format changes due to the use of `black` when saving the file.

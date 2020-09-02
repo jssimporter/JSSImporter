@@ -34,7 +34,7 @@ ElementTree = importlib.import_module("xml.etree.ElementTree")
 
 sys.path.insert(0, "/Library/AutoPkg/JSSImporter")
 
-import jss
+import jss  # pylint: disable=import-error
 
 # Ensure that python-jss dependency is at minimum version
 try:
@@ -42,11 +42,11 @@ try:
 except ImportError:
     PYTHON_JSS_VERSION = "0.0.0"
 
-from autopkglib import Processor, ProcessorError
+from autopkglib import Processor, ProcessorError  # pylint: disable=import-error
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.1.0")
 
 # Map Python 2 basestring type for Python 3.
@@ -430,7 +430,7 @@ class JSSImporter(Processor):
             category = None
         return category
 
-    def handle_package(self):
+    def handle_package(self, stop_if_no_upload):
         """Creates or updates, and copies a package object.
 
         This will only upload a package if a file with the same name
@@ -543,9 +543,8 @@ class JSSImporter(Processor):
                 )
                 self.upload_needed = True
 
-        # only update the package object if an uploand ad was carried out
-        self.stop_if_no_upload = "{}".format(self.env.get("STOP_IF_NO_JSS_UPLOAD"))
-        if self.stop_if_no_upload != "False" and not self.upload_needed:
+        # only update the package object if an upload ad was carried out
+        if stop_if_no_upload != "False" and not self.upload_needed:
             self.output(
                 "Not overwriting policy as upload requirement is determined as False, "
                 "and STOP_IF_NO_JSS_UPLOAD is not set to False."
@@ -1358,10 +1357,14 @@ class JSSImporter(Processor):
         if self.env["pkg_path"]:
             self.jss.distribution_points.mount()
 
-        self.package = self.handle_package()
+        # define whether we will stop based on the value of STOP_IF_NO_JSS_UPLOAD
+        self.stop_if_no_upload = "{}".format(self.env.get("STOP_IF_NO_JSS_UPLOAD"))
+
+        # handle package
+        self.package = self.handle_package(self.stop_if_no_upload)
 
         # stop if no package was uploaded and STOP_IF_NO_JSS_UPLOAD is True
-        if self.stop_if_no_upload and not self.upload_needed:
+        if self.stop_if_no_upload != "False" and not self.upload_needed:
             # Done with DPs, unmount them.
             for dp in self.jss.distribution_points:
                 if not dp.was_mounted:
