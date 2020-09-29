@@ -165,7 +165,7 @@ class JSSImporter(Processor):
         },
         "os_requirements": {
             "required": False,
-            "description": "Comma-seperated list of OS version numbers to "
+            "description": "Comma-separated list of OS version numbers to "
             "allow. Corresponds to the OS Requirements field for "
             "packages. The character 'x' may be used as a wildcard, as "
             "in '10.9.x'",
