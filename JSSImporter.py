@@ -315,6 +315,11 @@ class JSSImporter(Processor):
         self.policy = None
         self.upload_needed = False
 
+        #  clear any cookies since we want a new session
+        cookiejar = "/tmp/pythonjss_cookie_jar"
+        if os.path.isfile(cookiejar):
+            os.remove(cookiejar)
+
     def create_jss(self):
         """Create a JSS object for API calls"""
         kwargs = {
