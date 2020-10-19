@@ -5,12 +5,16 @@ All notable changes to this project will be documented in this file. This projec
 ## Known issues in latest version
 
 - `JCDS` mode does not currently work and will cause a recipe to fail if configured. JCDS users should use the `CDP` mode.
-- Efforts continue to be made to reduce intermittent failures of upload of packages to Jamf Cloud Distribution Points and CDPs, icons or other objects, but they may still occur. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible!
+- Efforts continue to be made to reduce intermittent failures of upload of packages to Jamf Cloud Distribution Points and CDPs, icons or other objects, but they may still occur. We believe this is due to the clustering involved with Jamf Cloud Distribution Points. See (#81), (#119), (#145) etc. Ultimately, we need Jamf to provide proper endpoints for package uploads and managing icons. Please bug your Jamf support and sales consultants as often as possible! Note an attempt to fix this is made in python-jss v2.1.1 which is incorporated into the package of JSSImporter v1.1.3.
 - The above efforts to improve package upload reliability may conversely cause problems on setups with multiple DPs of different types. Scenarios involving Cloud plus Local DPs are not yet tested, and there probably needs to be a more intelligent method of treating each DP as a separate package upload process than currently exists.
 
 ## [unreleased]
 
 Changes since last release.
+
+## [1.1.3] - 2020-10-19
+
+No changes to JSSImporter, but the package incorporates upstream changes to python-jss to set a session cookie which should ensure each request goes to the same cluster node.
 
 ## [1.1.2] - 2020-09-02
 
@@ -317,7 +321,9 @@ each recipe.
 
 - Deprecated `JSS_REPO` key. It will still work, but the processor prioritizes `JSS_REPOS` over it.
 
-[unreleased]: https://github.com/sheagcraig/JSSImporter/compare/v1.1.1...HEAD
+[unreleased]: https://github.com/sheagcraig/JSSImporter/compare/v1.1.3...HEAD
+[1.1.3]: https://github.com/sheagcraig/JSSImporter/compare/v1.1.2...v1.1.3
+[1.1.2]: https://github.com/sheagcraig/JSSImporter/compare/v1.1.2...v1.1.2
 [1.1.1]: https://github.com/sheagcraig/JSSImporter/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/sheagcraig/JSSImporter/compare/v1.0.3...v1.1.0
 [1.0.3]: https://github.com/sheagcraig/JSSImporter/compare/v1.0.2...v1.0.3
