@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file. This projec
 
 Changes since last release.
 
+## [1.1.4] - 2021-03-26
+
+No changes to JSSImporter, but the package incorporates upstream changes to python-jss to mount shares at /Users/Shared instead of /Volumes.
+
 ## [1.1.3] - 2020-10-19
 
 No changes to JSSImporter, but the package incorporates upstream changes to python-jss to set a session cookie which should ensure each request goes to the same cluster node.
@@ -321,7 +325,8 @@ each recipe.
 
 - Deprecated `JSS_REPO` key. It will still work, but the processor prioritizes `JSS_REPOS` over it.
 
-[unreleased]: https://github.com/sheagcraig/JSSImporter/compare/v1.1.3...HEAD
+[unreleased]: https://github.com/sheagcraig/JSSImporter/compare/v1.1.4...HEAD
+[1.1.4]: https://github.com/sheagcraig/JSSImporter/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/sheagcraig/JSSImporter/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/sheagcraig/JSSImporter/compare/v1.1.2...v1.1.2
 [1.1.1]: https://github.com/sheagcraig/JSSImporter/compare/v1.1.0...v1.1.1
