@@ -46,7 +46,7 @@ from autopkglib import Processor, ProcessorError  # pylint: disable=import-error
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.1.4"
+__version__ = "1.1.5"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.1.1")
 
 # Map Python 2 basestring type for Python 3.
