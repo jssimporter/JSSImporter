@@ -46,7 +46,7 @@ from autopkglib import Processor, ProcessorError  # pylint: disable=import-error
 
 
 __all__ = ["JSSImporter"]
-__version__ = "1.1.5"
+__version__ = "1.1.6"
 REQUIRED_PYTHON_JSS_VERSION = StrictVersion("2.1.1")
 
 # Map Python 2 basestring type for Python 3.
@@ -79,7 +79,10 @@ class JSSImporter(Processor):
     """
 
     input_variables = {
-        "prod_name": {"required": True, "description": "Name of the product.",},
+        "prod_name": {
+            "required": True,
+            "description": "Name of the product.",
+        },
         "jss_inventory_name": {
             "required": False,
             "description": "Smart groups using the 'Application Title' "
@@ -193,12 +196,6 @@ class JSSImporter(Processor):
             "Boolean. Defaults to 'False'",
             "default": "False",
         },
-        "package_boot_volume_required": {
-            "required": False,
-            "description": "Ensure that the package is installed on the boot drive "
-            "after imaging. Boolean. Defaults to 'True'",
-            "default": "True",
-        },
         "groups": {
             "required": False,
             "description": "Array of group dictionaries. Wrap each group in a "
@@ -261,8 +258,14 @@ class JSSImporter(Processor):
             "even exists). Please see the README for more information.",
             "default": "",
         },
-        "site_id": {"required": False, "description": "ID of the target Site",},
-        "site_name": {"required": False, "description": "Name of the target Site",},
+        "site_id": {
+            "required": False,
+            "description": "ID of the target Site",
+        },
+        "site_name": {
+            "required": False,
+            "description": "Name of the target Site",
+        },
         "STOP_IF_NO_JSS_UPLOAD": {
             "required": False,
             "default": True,
@@ -486,7 +489,8 @@ class JSSImporter(Processor):
             package = self.jss.Package(self.pkg_name)
             self.output("Package object already exists on the Jamf Pro server.")
             self.output(
-                "Package ID: {}".format(package.id), verbose_level=2,
+                "Package ID: {}".format(package.id),
+                verbose_level=2,
             )
             pkg_update = self.env["jss_changed_objects"]["jss_package_updated"]
             # for cloud DPs we must assume that the package object means there is an associated package
@@ -568,7 +572,6 @@ class JSSImporter(Processor):
         package_notes = self.env.get("package_notes")
         package_priority = self.env.get("package_priority")
         package_reboot = self.env.get("package_reboot")
-        package_boot_volume_required = self.env.get("package_boot_volume_required")
 
         if self.category is not None:
             cat_name = self.category.name
@@ -593,9 +596,6 @@ class JSSImporter(Processor):
         self.update_object(package_notes, package, "notes", pkg_update)
         self.update_object(package_priority, package, "priority", pkg_update)
         self.update_object(package_reboot, package, "reboot_required", pkg_update)
-        self.update_object(
-            package_boot_volume_required, package, "boot_volume_required", pkg_update
-        )
         return package
 
     def zip_pkg_path(self, path):
@@ -698,7 +698,8 @@ class JSSImporter(Processor):
                 added_env="jss_policy_added",
             )
             self.output(
-                "Policy object: {}".format(policy.id), verbose_level=3,
+                "Policy object: {}".format(policy.id),
+                verbose_level=3,
             )
         else:
             self.output("Policy creation not desired, moving on...")
@@ -724,9 +725,8 @@ class JSSImporter(Processor):
         if self.env.get("self_service_icon") and self.policy is not None:
             # Search through search-paths for icon file.
             self.output(
-                "Looking for Icon file {}...".format(
-                    self.env["self_service_icon"], verbose_level=2,
-                )
+                "Looking for Icon file {}...".format(self.env["self_service_icon"]),
+                verbose_level=2,
             )
             icon_path = self.find_file_in_search_path(self.env["self_service_icon"])
             icon_filename = os.path.basename(icon_path)
@@ -992,8 +992,9 @@ class JSSImporter(Processor):
         """
         self.output(
             "Looking for {} template file {}...".format(
-                obj_cls.__name__, os.path.basename(template_path), verbose_level=2,
-            )
+                obj_cls.__name__, os.path.basename(template_path)
+            ),
+            verbose_level=2,
         )
         final_template_path = self.find_file_in_search_path(template_path)
 
@@ -1068,7 +1069,8 @@ class JSSImporter(Processor):
 
             if final_path:
                 self.output(
-                    "Found file: {}".format(final_path), verbose_level=2,
+                    "Found file: {}".format(final_path),
+                    verbose_level=2,
                 )
                 break
 
@@ -1309,7 +1311,8 @@ class JSSImporter(Processor):
         # Ensure we have the right version of python-jss
         python_jss_version = StrictVersion(PYTHON_JSS_VERSION)
         self.output(
-            "python-jss version: {}.".format(python_jss_version), verbose_level=2,
+            "python-jss version: {}.".format(python_jss_version),
+            verbose_level=2,
         )
         if python_jss_version < REQUIRED_PYTHON_JSS_VERSION:
             self.output(
@@ -1320,7 +1323,8 @@ class JSSImporter(Processor):
             raise ProcessorError
 
         self.output(
-            "JSSImporter version: {}.".format(__version__), verbose_level=2,
+            "JSSImporter version: {}.".format(__version__),
+            verbose_level=2,
         )
 
         # clear any pre-existing summary result
@@ -1356,7 +1360,8 @@ class JSSImporter(Processor):
             self.output("Warning: No distribution points configured!")
         for dp in self.jss.distribution_points:
             self.output(
-                "Checking if DP already mounted...", verbose_level=2,
+                "Checking if DP already mounted...",
+                verbose_level=2,
             )
             dp.was_mounted = hasattr(dp, "is_mounted") and dp.is_mounted()
         # Don't bother mounting the DPs if there's no package.
@@ -1375,7 +1380,8 @@ class JSSImporter(Processor):
             for dp in self.jss.distribution_points:
                 if not dp.was_mounted:
                     self.output(
-                        "Unmounting DP...", verbose_level=2,
+                        "Unmounting DP...",
+                        verbose_level=2,
                     )
                     self.jss.distribution_points.umount()
             self.summarize()

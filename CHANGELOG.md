@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file. This projec
 
 Changes since last release.
 
+## [1.1.6] - 2022-01-26
+
+Removed deprecated `boot_volume_required` key from `packages` endpoint.
+
 ## [1.1.5] - 2021-05-25
 
 No changes to JSSImporter, but the package re-incorporates upstream changes to python-jss that were temporarily put in 1.1.2 but inadvertently removed again in 1.1.4 (because those changes were meant to be temporary and so were not in the `master` branch).
