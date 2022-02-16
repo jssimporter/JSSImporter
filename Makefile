@@ -16,7 +16,7 @@ default : $(PKG_BUILD)/jssimporter-$(PKG_VERSION).pkg
 
 
 $(PKG_BUILD)/jssimporter-$(PKG_VERSION).pkg: $(objects)
-	cd $(CURDIR)/pkg && $(MUNKIPKG) jssimporter
+	cd $(CURDIR)/pkg && python3 $(MUNKIPKG) jssimporter
 
 
 "$(PKG_ROOT)/Library/AutoPkg/JSSImporter/boto":
